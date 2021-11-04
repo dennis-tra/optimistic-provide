@@ -1,8 +1,12 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	_ "net/http/pprof"
 	"os"
+	"path"
+	"time"
 
 	"golang.org/x/sync/errgroup"
 
@@ -21,15 +25,19 @@ var ProvideCommand = &cli.Command{
 	Action: ProvideAction,
 	Flags: []cli.Flag{
 		&cli.IntFlag{
-			Name:    "requesters",
-			Usage:   "How many requesting libp2p hosts should be spawned",
-			EnvVars: []string{"TENMA_PROVIDE_REQUESTER_COUNT"},
+			Name:        "requesters",
+			Usage:       "How many requesting libp2p hosts should be spawned",
+			EnvVars:     []string{"TENMA_PROVIDE_REQUESTER_COUNT"},
+			DefaultText: "1",
+			Value:       1,
 		},
 		&cli.StringFlag{
-			Name:    "out",
-			Aliases: []string{"o"},
-			Usage:   "Write measurement to this directory",
-			EnvVars: []string{"TENMA_PROVIDE_OUT"},
+			Name:        "out",
+			Aliases:     []string{"o"},
+			Usage:       "Write measurement to this directory",
+			EnvVars:     []string{"TENMA_PROVIDE_OUT"},
+			DefaultText: "out",
+			Value:       "out",
 		},
 		&cli.BoolFlag{
 			Name:    "init-rt",
@@ -37,9 +45,11 @@ var ProvideCommand = &cli.Command{
 			EnvVars: []string{"TENMA_PROVIDE_INIT_ROUTING_TABLE"},
 		},
 		&cli.IntFlag{
-			Name:    "runs",
-			Usage:   "How many provide runs should be performed",
-			EnvVars: []string{"TENMA_PROVIDE_RUN_COUNT"},
+			Name:        "runs",
+			Usage:       "How many provide runs should be performed",
+			EnvVars:     []string{"TENMA_PROVIDE_RUN_COUNT"},
+			DefaultText: "1",
+			Value:       1,
 		},
 	},
 }
@@ -79,6 +89,7 @@ func ProvideAction(c *cli.Context) error {
 		return errors.Wrap(err, "bootstrap err group")
 	}
 
+	runStart := time.Now()
 	for i := 0; i < c.Int("runs"); i++ {
 		log.WithField("total", c.Int("runs")).Infof("Starting measurement run %d", i+1)
 
@@ -87,9 +98,10 @@ func ProvideAction(c *cli.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "new random content")
 		}
-		log.Infof("Generated random content %s", content.cid.String())
+		log.WithField("contentID", content.cid.String()[:IDLength]).Infof("Generated random content")
 
-		pr, err := provider.Run(c.Context, content)
+		startTime := time.Now()
+		pr, err := provider.Run(c.Context, content, provider.RunAction)
 		if err != nil {
 			return errors.Wrap(err, "provide run")
 		}
@@ -98,7 +110,7 @@ func ProvideAction(c *cli.Context) error {
 		for _, r := range requesters {
 			r2 := r // copy pointer
 			go func() {
-				run, err := r2.Run(c.Context, content)
+				run, err := r2.Run(c.Context, content, r2.RunAction)
 				if err != nil {
 					log.WithError(err).Warnln("error requesting content")
 				}
@@ -114,8 +126,35 @@ func ProvideAction(c *cli.Context) error {
 		}
 		close(runsChan)
 
-		_ = pr
+		requesterRunData := map[string]RunData{}
+		for _, run := range runs {
+			requesterRunData[run.LocalID.Pretty()] = run.Data(content)
+		}
 
+		m := Measurement{
+			StartedAt:  startTime,
+			EndedAt:    time.Now(),
+			ContentID:  content.cid.String(),
+			Provider:   pr.Data(content),
+			Requesters: requesterRunData,
+			InitRT:     false,
+		}
+
+		data, err := json.MarshalIndent(m, "", "  ")
+		if err != nil {
+			return errors.Wrap(err, "marshal measurement")
+		}
+
+		f, err := os.Create(path.Join(c.String("out"), fmt.Sprintf("%s_measurement_%03d.json", runStart.Format("2006-01-02T15:04"), i+1)))
+		if err != nil {
+			return errors.Wrap(err, "creating measurement")
+		}
+
+		if _, err = f.Write(data); err != nil {
+			_ = f.Close()
+			return errors.Wrap(err, "writing measurement")
+		}
+		_ = f.Close()
 	}
 	return nil
 }

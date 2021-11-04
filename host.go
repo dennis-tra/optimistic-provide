@@ -82,7 +82,6 @@ func NewHost(ctx context.Context, optsFunc func(peer.ID, chan Event) libp2p.Opti
 	}
 	newHost.startDiscarding(ctx)
 
-	log.WithField("providerID", FmtPeerID(h.ID())).Infoln("Initialized provider")
 	return newHost, nil
 }
 
@@ -116,14 +115,7 @@ func (h *Host) RefreshRoutingTable(ctx context.Context) {
 	}
 }
 
-func (h *Host) RunAction(ctx context.Context, content *Content) error {
-	return nil
-}
-
-func (h *Host) Run(ctx context.Context, content *Content) (*Run, error) {
-	h.logEntry().Infoln("Starting run")
-	defer h.logEntry().Infoln("Done with run")
-
+func (h *Host) Run(ctx context.Context, content *Content, fn func(context.Context, *Content) error) (*Run, error) {
 	h.cancelDiscard()
 	defer h.startDiscarding(ctx)
 
@@ -133,7 +125,7 @@ func (h *Host) Run(ctx context.Context, content *Content) (*Run, error) {
 
 	queryCtx, queryEvents := routing.RegisterForQueryEvents(ctx)
 	done := make(chan error)
-	go func() { done <- h.RunAction(queryCtx, content) }()
+	go func() { done <- fn(queryCtx, content) }()
 
 	for {
 		select {
