@@ -4,7 +4,7 @@
 [![readme tenma](https://img.shields.io/badge/readme-Tenma-blueviolet)](README.md)
 [![GitHub license](https://img.shields.io/github/license/dennis-tra/tenma-probe)](https://github.com/dennis-tra/tenma-probe/blob/main/LICENSE)
 
-[Tenma](https://en.wikipedia.org/wiki/Tenma) is a libp2p DHT performance measurement tool. As of now, it primarily measures the peformance of providing content in the network.
+[Tenma](https://en.wikipedia.org/wiki/Tenma) is a libp2p DHT performance measurement tool. As of now, it primarily measures the performance of providing content in the network.
 
 ## Table of Contents
 
