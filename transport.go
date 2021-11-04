@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/transport"
@@ -17,35 +18,30 @@ type TCPTransport struct {
 	// The peer ID of the dial-initiating peer
 	local peer.ID
 
-	// Event channel to publish dial events on
-	ec chan<- Event
+	// Span channel to publish dial spans on
+	sc chan<- Span
 
 	// The original TCP transport implementation
 	trpt *tcp.TcpTransport
 }
 
-func NewTCPTransport(local peer.ID, ec chan<- Event) func(*tptu.Upgrader) *TCPTransport {
+func NewTCPTransport(local peer.ID, ec chan<- Span) func(*tptu.Upgrader) *TCPTransport {
 	return func(u *tptu.Upgrader) *TCPTransport {
 		return &TCPTransport{
 			local: local,
-			ec:    ec,
+			sc:    ec,
 			trpt:  tcp.NewTCPTransport(u),
 		}
 	}
 }
 
 func (t *TCPTransport) Dial(ctx context.Context, raddr ma.Multiaddr, p peer.ID) (transport.CapableConn, error) {
-	t.ec <- &DialStart{
-		BaseEvent: NewBaseEvent(t.local, p),
-		Transport: "tcp",
-		Maddr:     raddr,
-	}
+	start := time.Now()
 	dial, err := t.trpt.Dial(ctx, raddr, p)
-	t.ec <- &DialEnd{
-		BaseEvent: NewBaseEvent(t.local, p),
+	t.sc <- &DialSpan{
+		BaseSpan:  NewBaseSpan(start, t.local, p, err),
 		Transport: "tcp",
 		Maddr:     raddr,
-		Err:       err,
 	}
 	return dial, err
 }
@@ -72,35 +68,30 @@ type WSTransport struct {
 	// The peer ID of the dial-initiating peer
 	local peer.ID
 
-	// Event channel to publish dial events on
-	ec chan<- Event
+	// Span channel to publish dial spans on
+	sc chan<- Span
 
 	// The original websocket transport implementation
 	trpt *websocket.WebsocketTransport
 }
 
-func NewWSTransport(local peer.ID, ec chan<- Event) func(u *tptu.Upgrader) *WSTransport {
+func NewWSTransport(local peer.ID, ec chan<- Span) func(u *tptu.Upgrader) *WSTransport {
 	return func(u *tptu.Upgrader) *WSTransport {
 		return &WSTransport{
 			local: local,
-			ec:    ec,
+			sc:    ec,
 			trpt:  websocket.New(u),
 		}
 	}
 }
 
 func (ws *WSTransport) Dial(ctx context.Context, raddr ma.Multiaddr, p peer.ID) (transport.CapableConn, error) {
-	ws.ec <- &DialStart{
-		BaseEvent: NewBaseEvent(ws.local, p),
-		Transport: "ws",
-		Maddr:     raddr,
-	}
+	start := time.Now()
 	dial, err := ws.trpt.Dial(ctx, raddr, p)
-	ws.ec <- &DialEnd{
-		BaseEvent: NewBaseEvent(ws.local, p),
-		Transport: "ws",
+	ws.sc <- &DialSpan{
+		BaseSpan:  NewBaseSpan(start, ws.local, p, err),
+		Transport: "tcp",
 		Maddr:     raddr,
-		Err:       err,
 	}
 	return dial, err
 }

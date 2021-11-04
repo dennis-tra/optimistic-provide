@@ -19,7 +19,7 @@ type Requester struct {
 }
 
 func NewRequester(ctx context.Context) (*Requester, error) {
-	h, err := NewHost(ctx, func(localID peer.ID, ec chan Event) libp2p.Option {
+	h, err := NewHost(ctx, func(localID peer.ID, ec chan Span) libp2p.Option {
 		return libp2p.ChainOptions(
 			libp2p.NoListenAddrs,
 		)

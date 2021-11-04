@@ -14,7 +14,7 @@ type Provider struct {
 }
 
 func NewProvider(ctx context.Context) (*Provider, error) {
-	h, err := NewHost(ctx, func(localID peer.ID, ec chan Event) libp2p.Option {
+	h, err := NewHost(ctx, func(localID peer.ID, ec chan Span) libp2p.Option {
 		return libp2p.ChainOptions(
 			libp2p.DefaultListenAddrs,
 			libp2p.Transport(NewTCPTransport(localID, ec)),

@@ -39,7 +39,7 @@ type messageSenderImpl struct {
 	strmap    map[peer.ID]*peerMessageSender
 	protocols []protocol.ID
 	local     peer.ID
-	ec        chan<- Event
+	sc        chan<- Span
 }
 
 func (m *messageSenderImpl) OnDisconnect(ctx context.Context, p peer.ID) {
@@ -64,11 +64,11 @@ func (m *messageSenderImpl) OnDisconnect(ctx context.Context, p peer.ID) {
 // SendRequest sends out a request, but also makes sure to
 // measure the RTT for latency measurements.
 func (m *messageSenderImpl) SendRequest(ctx context.Context, p peer.ID, pmes *pb.Message) (*pb.Message, error) {
-	m.ec <- NewSendRequestStart(m.host, m.local, p, pmes)
-	endEvent := NewSendRequestEnd(m.host, m.local, p)
+	start := time.Now()
+	var spanErr error
+	var resp *pb.Message
 	defer func() {
-		endEvent.Time = time.Now()
-		m.ec <- endEvent
+		m.sc <- NewSendRequestSpan(m.host, start, m.local, p, pmes, resp, spanErr)
 	}()
 
 	ctx, _ = tag.New(ctx, metrics.UpsertMessageType(pmes))
@@ -80,11 +80,9 @@ func (m *messageSenderImpl) SendRequest(ctx context.Context, p peer.ID, pmes *pb
 			metrics.SentRequestErrors.M(1),
 		)
 		logger.Debugw("request failed to open message sender", "error", err, "to", p)
-		endEvent.Err = err
+		spanErr = err
 		return nil, err
 	}
-
-	start := time.Now()
 
 	rpmes, err := ms.SendRequest(ctx, pmes)
 	if err != nil {
@@ -93,10 +91,10 @@ func (m *messageSenderImpl) SendRequest(ctx context.Context, p peer.ID, pmes *pb
 			metrics.SentRequestErrors.M(1),
 		)
 		logger.Debugw("request failed", "error", err, "to", p)
-		endEvent.Err = err
+		spanErr = err
 		return nil, err
 	}
-	endEvent.Response = rpmes
+	resp = rpmes
 
 	stats.Record(ctx,
 		metrics.SentRequests.M(1),
@@ -109,11 +107,10 @@ func (m *messageSenderImpl) SendRequest(ctx context.Context, p peer.ID, pmes *pb
 
 // SendMessage sends out a message
 func (m *messageSenderImpl) SendMessage(ctx context.Context, p peer.ID, pmes *pb.Message) error {
-	m.ec <- NewSendMessageStart(m.host, m.local, p, pmes)
-	endEvent := NewSendMessageEnd(m.host, m.local, p, pmes)
+	start := time.Now()
+	var spanErr error
 	defer func() {
-		endEvent.Time = time.Now()
-		m.ec <- endEvent
+		m.sc <- NewSendMessageSpan(m.host, start, m.local, p, pmes, spanErr)
 	}()
 
 	ctx, _ = tag.New(ctx, metrics.UpsertMessageType(pmes))
@@ -125,7 +122,7 @@ func (m *messageSenderImpl) SendMessage(ctx context.Context, p peer.ID, pmes *pb
 			metrics.SentMessageErrors.M(1),
 		)
 		logger.Debugw("message failed to open message sender", "error", err, "to", p)
-		endEvent.Err = err
+		spanErr = err
 		return err
 	}
 
@@ -135,7 +132,7 @@ func (m *messageSenderImpl) SendMessage(ctx context.Context, p peer.ID, pmes *pb
 			metrics.SentMessageErrors.M(1),
 		)
 		logger.Debugw("message failed", "error", err, "to", p)
-		endEvent.Err = err
+		spanErr = err
 		return err
 	}
 
@@ -153,7 +150,7 @@ func (m *messageSenderImpl) messageSenderForPeer(ctx context.Context, p peer.ID)
 		m.smlk.Unlock()
 		return ms, nil
 	}
-	ms = &peerMessageSender{p: p, m: m, lk: NewCtxMutex(), ec: m.ec, local: m.local}
+	ms = &peerMessageSender{p: p, m: m, lk: NewCtxMutex(), ec: m.sc, local: m.local}
 	m.strmap[p] = ms
 	m.smlk.Unlock()
 
@@ -185,7 +182,7 @@ type peerMessageSender struct {
 	lk    CtxMutex
 	p     peer.ID
 	m     *messageSenderImpl
-	ec    chan<- Event
+	ec    chan<- Span
 	local peer.ID
 
 	invalid   bool

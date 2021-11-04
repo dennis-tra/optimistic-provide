@@ -21,9 +21,20 @@ type RunData struct {
 	EndedAt   time.Time
 	LocalID   peer.ID
 	Distance  string
-	Spans     []Span
+	Spans     []SpanData
 	PeerInfos map[string]PeerInfo
 	PeerOrder []peer.ID
+}
+
+type SpanData struct {
+	RelStart  float64
+	DurationS float64
+	Start     time.Time
+	End       time.Time
+	PeerID    peer.ID
+	Operation SpanOperation
+	Type      string
+	Error     string
 }
 
 type PeerInfo struct {
@@ -33,4 +44,5 @@ type PeerInfo struct {
 	RelDiscoveredAt float64
 	DiscoveredAt    time.Time
 	DiscoveredFrom  peer.ID
+	IsBootstrap     bool
 }

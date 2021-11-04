@@ -1,9 +1,12 @@
 package main
 
-import
-(
+import (
 	"crypto/rand"
 	"crypto/sha256"
+
+	u "github.com/ipfs/go-ipfs-util"
+	"github.com/libp2p/go-libp2p-core/peer"
+	kbucket "github.com/libp2p/go-libp2p-kbucket"
 
 	"github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
@@ -36,4 +39,8 @@ func NewRandomContent() (*Content, error) {
 		mhash: mhash,
 		cid:   cid.NewCidV0(mhash),
 	}, nil
+}
+
+func (c *Content) DistanceTo(peerID peer.ID) []byte {
+	return u.XOR(kbucket.ConvertPeerID(peerID), kbucket.ConvertKey(string(c.mhash)))
 }

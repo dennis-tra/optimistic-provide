@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"bou.ke/monkey"
@@ -20,12 +21,12 @@ type Host struct {
 	id            string
 	h             host.Host
 	dht           *kaddht.IpfsDHT
-	ec            chan Event
+	sc            chan Span
 	cancelDiscard context.CancelFunc
 }
 
-func NewHost(ctx context.Context, optsFunc func(peer.ID, chan Event) libp2p.Option) (*Host, error) {
-	ec := make(chan Event)
+func NewHost(ctx context.Context, optsFunc func(peer.ID, chan Span) libp2p.Option) (*Host, error) {
+	ec := make(chan Span)
 
 	key, _, err := crypto.GenerateKeyPair(crypto.Secp256k1, 256)
 	if err != nil {
@@ -41,7 +42,7 @@ func NewHost(ctx context.Context, optsFunc func(peer.ID, chan Event) libp2p.Opti
 		protocols: kaddht.DefaultProtocols,
 		strmap:    make(map[peer.ID]*peerMessageSender),
 		local:     localID,
-		ec:        ec,
+		sc:        ec,
 	}
 	pm, err := pb.NewProtocolMessenger(ms)
 	if err != nil {
@@ -78,7 +79,7 @@ func NewHost(ctx context.Context, optsFunc func(peer.ID, chan Event) libp2p.Opti
 		id:  "host",
 		h:   h,
 		dht: dht,
-		ec:  ec,
+		sc:  ec,
 	}
 	newHost.startDiscarding(ctx)
 
@@ -116,12 +117,12 @@ func (h *Host) RefreshRoutingTable(ctx context.Context) {
 }
 
 func (h *Host) Run(ctx context.Context, content *Content, fn func(context.Context, *Content) error) (*Run, error) {
-	h.cancelDiscard()
+	h.stopDiscarding()
 	defer h.startDiscarding(ctx)
 
 	startTime := time.Now()
 	involved := map[peer.ID]struct{}{}
-	events := []Event{}
+	spans := []Span{}
 
 	queryCtx, queryEvents := routing.RegisterForQueryEvents(ctx)
 	done := make(chan error)
@@ -131,25 +132,29 @@ func (h *Host) Run(ctx context.Context, content *Content, fn func(context.Contex
 		select {
 		case event := <-queryEvents:
 			involved[event.ID] = struct{}{}
-		case event := <-h.ec:
-			if event.LocalID() == h.h.ID() {
-				events = append(events, event)
+		case span := <-h.sc:
+			if span.LocalID() == h.h.ID() {
+				spans = append(spans, span)
 			}
 		case err := <-done:
 			if err != nil {
 				return nil, err
 			}
-			var filtered []Event
-			for _, event := range events {
-				if _, isInvolved := involved[event.RemoteID()]; isInvolved {
-					filtered = append(filtered, event)
+			var filtered []Span
+			for _, span := range spans {
+				if _, isInvolved := involved[span.RemoteID()]; isInvolved {
+					filtered = append(filtered, span)
 				}
 			}
+			sort.SliceStable(filtered, func(i, j int) bool {
+				return filtered[i].StartedAt().Before(filtered[j].StartedAt())
+			})
 			return &Run{
 				StartedAt: startTime,
 				EndedAt:   time.Now(),
 				LocalID:   h.h.ID(),
-				Events:    filtered,
+				Spans:     filtered,
+				Involved:  involved,
 			}, nil
 		case <-ctx.Done():
 			return nil, ctx.Err()
@@ -171,8 +176,8 @@ func (h *Host) startDiscarding(ctx context.Context) {
 	go func() {
 		for {
 			select {
-			case <-h.ec:
-				// discard events
+			case <-h.sc:
+				// discard spans
 			case <-cancelCtx.Done():
 				return
 			}
@@ -184,5 +189,6 @@ func (h *Host) startDiscarding(ctx context.Context) {
 func (h *Host) stopDiscarding() {
 	if h.cancelDiscard != nil {
 		h.cancelDiscard()
+		h.cancelDiscard = nil
 	}
 }
