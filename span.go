@@ -24,6 +24,7 @@ type Span interface {
 	RemoteID() peer.ID
 	StartedAt() time.Time
 	Duration() time.Duration
+	EndedAt() time.Time
 	Operation() SpanOperation
 	Type() string
 	Error() error
@@ -61,6 +62,10 @@ func (bs *BaseSpan) StartedAt() time.Time {
 
 func (bs *BaseSpan) Duration() time.Duration {
 	return bs.End.Sub(bs.Start)
+}
+
+func (bs *BaseSpan) EndedAt() time.Time {
+	return bs.End
 }
 
 func (bs *BaseSpan) Error() error {

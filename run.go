@@ -52,17 +52,30 @@ func (r *Run) SpanData() []SpanData {
 func (r *Run) GatherPeerInfos(content *Content) map[string]PeerInfo {
 	peerInfos := map[string]PeerInfo{}
 
+	// Create a span slice that's sorted by the ending time stamp.
+	// Doing it this way we can easily find the peers that have discovered
+	// other peers first as only the final timestamp is determinative.
+	endSortedSpans := make([]Span, len(r.Spans))
+	for i, span := range r.Spans {
+		endSortedSpans[i] = span
+	}
+
+	sort.SliceStable(endSortedSpans, func(i, j int) bool {
+		return endSortedSpans[i].EndedAt().Before(endSortedSpans[j].EndedAt())
+	})
+
 	for peerID := range r.Involved {
 		pi := PeerInfo{
 			ID:           peerID,
 			Distance:     hex.EncodeToString(content.DistanceTo(peerID)),
 			IsBootstrap:  r.IsBootstrapPeer(peerID),
 			AgentVersion: r.AgentVersion(peerID),
+			FirstSpanAt:  r.FirstSpanStartedAt(peerID),
 		}
 
-		for _, span := range r.Spans {
+		for _, span := range endSortedSpans {
 			srs, ok := span.(*SendRequestSpan)
-			if span.RemoteID() == peerID || !ok || !srs.ReturnedCloserPeer(peerID) {
+			if span.RemoteID() == peerID || !ok || !srs.ReturnedCloserPeer(peerID) || span.StartedAt().After(pi.FirstSpanAt) {
 				continue
 			}
 
@@ -86,7 +99,11 @@ func (r *Run) IsBootstrapPeer(peerID peer.ID) bool {
 		}
 
 		_, ok := span.(*DialSpan)
-		return !ok
+		if ok {
+			return false
+		} else {
+			return !span.StartedAt().After(r.StartedAt.Add(100 * time.Millisecond))
+		}
 	}
 
 	log.WithField("peerID", FmtPeerID(peerID)).Warn("unexpected peer")
@@ -111,59 +128,23 @@ func (r *Run) AgentVersion(peerID peer.ID) string {
 	return ""
 }
 
-func (r *Run) EarliestSendRequestEnd(peerID peer.ID) *time.Time {
-	var earliest *time.Time
-
+func (r *Run) FirstSpanStartedAt(peerID peer.ID) time.Time {
 	for _, span := range r.Spans {
-		srs, ok := span.(*SendRequestSpan)
-		if span.RemoteID() != peerID || span.Error() != nil || !ok {
+		if span.RemoteID() != peerID {
 			continue
 		}
-
-		if earliest == nil || earliest.After(srs.End) {
-			earliest = &srs.End
-		}
+		return span.StartedAt()
 	}
-	return earliest
-}
 
-func (r *Run) EarliestSendRequestStart(peerID peer.ID) *time.Time {
-	var earliest *time.Time
-
-	for _, span := range r.Spans {
-		srs, ok := span.(*SendRequestSpan)
-		if span.RemoteID() != peerID || span.Error() != nil || !ok {
-			continue
-		}
-
-		if earliest == nil || earliest.After(srs.Start) {
-			earliest = &srs.Start
-		}
-	}
-	return earliest
-}
-
-func (r *Run) EarliestDialStart(peerID peer.ID) *time.Time {
-	var earliest *time.Time
-
-	for _, span := range r.Spans {
-		srs, ok := span.(*DialSpan)
-		if span.RemoteID() != peerID || span.Error() != nil || !ok {
-			continue
-		}
-
-		if earliest == nil || earliest.After(srs.Start) {
-			earliest = &srs.Start
-		}
-	}
-	return earliest
+	log.Warnln("unexpected")
+	return time.Time{}
 }
 
 func (r *Run) PeerOrder(peerInfos map[string]PeerInfo) []peer.ID {
 	var bootstrapPeers []PeerInfo
 	var discoveredPeers []PeerInfo
 	for _, pi := range peerInfos {
-		if pi.DiscoveredFrom == "" {
+		if pi.IsBootstrap {
 			bootstrapPeers = append(bootstrapPeers, pi)
 		} else {
 			discoveredPeers = append(discoveredPeers, pi)
@@ -171,42 +152,11 @@ func (r *Run) PeerOrder(peerInfos map[string]PeerInfo) []peer.ID {
 	}
 
 	sort.SliceStable(bootstrapPeers, func(i, j int) bool {
-		bpi := r.EarliestSendRequestEnd(bootstrapPeers[i].ID)
-		bpj := r.EarliestSendRequestEnd(bootstrapPeers[j].ID)
-		if bpi == nil && bpj == nil {
-			return true
-		} else if bpi == nil && bpj != nil {
-			return false
-		} else if bpi != nil && bpj == nil {
-			return true
-		} else {
-			return bpi.Before(*bpj)
-		}
+		return bootstrapPeers[i].FirstSpanAt.Before(bootstrapPeers[j].FirstSpanAt)
 	})
 
 	sort.SliceStable(discoveredPeers, func(i, j int) bool {
-		if discoveredPeers[i].DiscoveredAt == discoveredPeers[j].DiscoveredAt {
-			pi := r.EarliestDialStart(discoveredPeers[i].ID)
-			if pi == nil {
-				pi = r.EarliestSendRequestStart(discoveredPeers[i].ID)
-			}
-
-			pj := r.EarliestDialStart(discoveredPeers[j].ID)
-			if pj == nil {
-				pj = r.EarliestSendRequestStart(discoveredPeers[j].ID)
-			}
-
-			if pi == nil && pj == nil {
-				return false
-			} else if pi == nil && pj != nil {
-				return false
-			} else if pi != nil && pj == nil {
-				return true
-			} else {
-				return pi.Before(*pj)
-			}
-		}
-		return discoveredPeers[i].DiscoveredAt.After(discoveredPeers[j].DiscoveredAt)
+		return discoveredPeers[i].FirstSpanAt.Before(discoveredPeers[j].FirstSpanAt)
 	})
 
 	var peerOrder []peer.ID
