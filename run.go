@@ -9,6 +9,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// Run captures the data of either the Provide operation
+// (to store the provider record) or the FindProvider
+// operation.
 type Run struct {
 	StartedAt time.Time
 	EndedAt   time.Time
@@ -17,6 +20,8 @@ type Run struct {
 	Involved  map[peer.ID]bool
 }
 
+// Data transforms the Run data to a format that can
+// easily be marshalled to JSON and saved to disk.
 func (r *Run) Data(content *Content) RunData {
 	peerInfos := r.GatherPeerInfos(content)
 	return RunData{

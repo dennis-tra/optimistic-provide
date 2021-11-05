@@ -150,9 +150,14 @@ func (h *Host) Run(ctx context.Context, content *Content, fn func(context.Contex
 			sort.SliceStable(filtered, func(i, j int) bool {
 				return filtered[i].StartedAt().Before(filtered[j].StartedAt())
 			})
+
+			// Removing all peers that were involved in the provide/request process but didn't yield a span
+			// This can happen e.g., when a requester finds a provider record while a dial to another peer
+			// is still going on (not finished -> no span).
 			for peerID, spanExists := range involved {
 				if !spanExists {
 					// this is safe it seems https://stackoverflow.com/questions/23229975/is-it-safe-to-remove-selected-keys-from-map-within-a-range-loop
+					log.WithField("remoteID", FmtPeerID(peerID)).Infof("Removing involved peer")
 					delete(involved, peerID)
 				}
 			}

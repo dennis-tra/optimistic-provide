@@ -1,21 +1,16 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	_ "net/http/pprof"
 	"os"
-	"path"
 	"time"
 
-	"golang.org/x/sync/errgroup"
-
 	"github.com/libp2p/go-libp2p-core/peer"
-
 	"github.com/pkg/errors"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
+	"golang.org/x/sync/errgroup"
 )
 
 // ProvideCommand contains the provide sub-command configuration.
@@ -34,19 +29,19 @@ var ProvideCommand = &cli.Command{
 		&cli.StringFlag{
 			Name:        "out",
 			Aliases:     []string{"o"},
-			Usage:       "Write measurement to this directory",
+			Usage:       "Write measurement data to this directory",
 			EnvVars:     []string{"TENMA_PROVIDE_OUT"},
 			DefaultText: "out",
 			Value:       "out",
 		},
 		&cli.BoolFlag{
 			Name:    "init-rt",
-			Usage:   "Whether or not Nebula should wait until the provider's routing table was refreshed",
+			Usage:   "Whether to initialize the routing table of the provider and requesters.",
 			EnvVars: []string{"TENMA_PROVIDE_INIT_ROUTING_TABLE"},
 		},
 		&cli.IntFlag{
 			Name:        "runs",
-			Usage:       "How many provide runs should be performed",
+			Usage:       "How many measurement runs should be performed",
 			EnvVars:     []string{"TENMA_PROVIDE_RUN_COUNT"},
 			DefaultText: "1",
 			Value:       1,
@@ -54,10 +49,11 @@ var ProvideCommand = &cli.Command{
 	},
 }
 
-// ProvideAction is the function that is called when running `nebula provide`.
+// ProvideAction is the function that is called when running `tenma provide`.
 func ProvideAction(c *cli.Context) error {
 	log.Infoln("Starting Tenma DHT measurement...")
 
+	// Attempt to create the results directory
 	if err := os.Mkdir(c.String("out"), 0o751); !os.IsExist(err) {
 		return errors.Wrap(err, "creating out dir "+c.String("out"))
 	}
@@ -93,69 +89,74 @@ func ProvideAction(c *cli.Context) error {
 	for i := 0; i < c.Int("runs"); i++ {
 		log.WithField("total", c.Int("runs")).Infof("Starting measurement run %d", i+1)
 
-		// Generate random content that we'll provide in the DHT.
-		content, err := NewRandomContent()
+		measurement, err := StartMeasurement(c, provider, requesters)
 		if err != nil {
-			return errors.Wrap(err, "new random content")
-		}
-		log.WithField("contentID", content.cid.String()[:IDLength]).Infof("Generated random content")
-
-		startTime := time.Now()
-		pr, err := provider.Run(c.Context, content, provider.RunAction)
-		if err != nil {
-			return errors.Wrap(err, "provide run")
+			log.WithError(err).Warnln("error in measurement run")
+			continue
 		}
 
-		runsChan := make(chan *Run)
-		for _, r := range requesters {
-			r2 := r // copy pointer
-			go func() {
-				run, err := r2.Run(c.Context, content, r2.RunAction)
-				if err != nil {
-					log.WithError(err).Warnln("error requesting content")
-				}
-				runsChan <- run
-			}()
+		filename := fmt.Sprintf("%s_measurement_%03d.json", runStart.Format("2006-01-02T15:04"), i+1)
+		if err = measurement.Save(filename); err != nil {
+			log.WithError(err).Warnln("error saving measurement data")
+			continue
 		}
-
-		var runs []*Run
-		for i := 0; i < len(requesters); i++ {
-			if run := <-runsChan; run != nil {
-				runs = append(runs, run)
-			}
-		}
-		close(runsChan)
-
-		requesterRunData := map[string]RunData{}
-		for _, run := range runs {
-			requesterRunData[run.LocalID.Pretty()] = run.Data(content)
-		}
-
-		m := Measurement{
-			StartedAt:  startTime,
-			EndedAt:    time.Now(),
-			ContentID:  content.cid.String(),
-			Provider:   pr.Data(content),
-			Requesters: requesterRunData,
-			InitRT:     false,
-		}
-
-		data, err := json.MarshalIndent(m, "", "  ")
-		if err != nil {
-			return errors.Wrap(err, "marshal measurement")
-		}
-
-		f, err := os.Create(path.Join(c.String("out"), fmt.Sprintf("%s_measurement_%03d.json", runStart.Format("2006-01-02T15:04"), i+1)))
-		if err != nil {
-			return errors.Wrap(err, "creating measurement")
-		}
-
-		if _, err = f.Write(data); err != nil {
-			_ = f.Close()
-			return errors.Wrap(err, "writing measurement")
-		}
-		_ = f.Close()
+		log.WithField("filename", filename).Infoln("Saved measurement data")
 	}
 
 	return nil
+}
+
+// StartMeasurement generates new random content and instructs the provider to advertise the existence to the DHT.
+// After this call has resolved the requesters try to find the provider record. All steps (dialing, DHT RPC calls)
+// are recorded for later analysis.
+func StartMeasurement(c *cli.Context, provider *Provider, requesters map[peer.ID]*Requester) (*Measurement, error) {
+	// Generate random content that we'll provide in the DHT.
+	content, err := NewRandomContent()
+	if err != nil {
+		return nil, errors.Wrap(err, "new random content")
+	}
+	log.WithField("contentID", content.cid.String()[:IDLength]).Infof("Generated random content")
+
+	// Find peers to store the provider record
+	startTime := time.Now()
+	pr, err := provider.Run(c.Context, content, provider.RunAction)
+	if err != nil {
+		return nil, errors.Wrap(err, "provide run")
+	}
+
+	// Start requesters to find the provider record
+	runsChan := make(chan *Run)
+	for _, r := range requesters {
+		r2 := r // copy pointer
+		go func() {
+			run, err := r2.Run(c.Context, content, r2.RunAction)
+			if err != nil {
+				log.WithError(err).Warnln("error requesting content")
+			}
+			runsChan <- run
+		}()
+	}
+
+	// Wait for Requesters to finish
+	var runs []*Run
+	for i := 0; i < len(requesters); i++ {
+		if run := <-runsChan; run != nil {
+			runs = append(runs, run)
+		}
+	}
+	close(runsChan)
+
+	requesterRunData := map[string]RunData{}
+	for _, run := range runs {
+		requesterRunData[run.LocalID.Pretty()] = run.Data(content)
+	}
+
+	return &Measurement{
+		StartedAt:  startTime,
+		EndedAt:    time.Now(),
+		ContentID:  content.cid.String(),
+		Provider:   pr.Data(content),
+		Requesters: requesterRunData,
+		InitRT:     false,
+	}, nil
 }

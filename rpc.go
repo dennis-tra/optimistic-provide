@@ -8,20 +8,17 @@ import (
 	"sync"
 	"time"
 
+	logging "github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
-
-	logging "github.com/ipfs/go-log"
-	"github.com/libp2p/go-msgio"
-	"github.com/libp2p/go-msgio/protoio"
-
-	"go.opencensus.io/stats"
-	"go.opencensus.io/tag"
-
 	"github.com/libp2p/go-libp2p-kad-dht/metrics"
 	pb "github.com/libp2p/go-libp2p-kad-dht/pb"
+	"github.com/libp2p/go-msgio"
+	"github.com/libp2p/go-msgio/protoio"
+	"go.opencensus.io/stats"
+	"go.opencensus.io/tag"
 )
 
 var dhtReadMessageTimeout = 10 * time.Second

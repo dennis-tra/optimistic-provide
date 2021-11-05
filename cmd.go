@@ -9,7 +9,6 @@ import (
 	"syscall"
 
 	"github.com/libp2p/go-libp2p-core/peer"
-
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	_ "net/http/pprof"

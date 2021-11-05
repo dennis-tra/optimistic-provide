@@ -4,11 +4,10 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 
+	"github.com/ipfs/go-cid"
 	u "github.com/ipfs/go-ipfs-util"
 	"github.com/libp2p/go-libp2p-core/peer"
 	kbucket "github.com/libp2p/go-libp2p-kbucket"
-
-	"github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
 	"github.com/pkg/errors"
 )
@@ -41,6 +40,8 @@ func NewRandomContent() (*Content, error) {
 	}, nil
 }
 
+// DistanceTo returns the XOR distance of the content to the provided peer ID
+// as it is used in the libp2p Kademlia DHT.
 func (c *Content) DistanceTo(peerID peer.ID) []byte {
 	return u.XOR(kbucket.ConvertPeerID(peerID), kbucket.ConvertKey(string(c.mhash)))
 }

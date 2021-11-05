@@ -1,9 +1,12 @@
 package main
 
 import (
+	"encoding/json"
+	"os"
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/pkg/errors"
 )
 
 // Measurement keeps track of the starting conditions and results of an experiment.
@@ -14,6 +17,25 @@ type Measurement struct {
 	Provider   RunData
 	Requesters map[string]RunData
 	InitRT     bool
+}
+
+func (m *Measurement) Save(filename string) error {
+	data, err := json.MarshalIndent(m, "", "  ")
+	if err != nil {
+		return errors.Wrap(err, "marshal measurement")
+	}
+
+	f, err := os.Create(filename)
+	if err != nil {
+		return errors.Wrap(err, "creating measurement")
+	}
+	defer f.Close()
+
+	if _, err = f.Write(data); err != nil {
+		return errors.Wrap(err, "writing measurement")
+	}
+
+	return nil
 }
 
 type RunData struct {
