@@ -111,5 +111,8 @@ func Before(c *cli.Context) error {
 }
 
 func FmtPeerID(id peer.ID) string {
+	if len(id.Pretty()) <= IDLength {
+		return id.Pretty()
+	}
 	return id.Pretty()[:IDLength]
 }

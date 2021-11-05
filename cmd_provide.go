@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	_ "net/http/pprof"
 	"os"
+	"path"
 	"time"
 
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -90,12 +92,14 @@ func ProvideAction(c *cli.Context) error {
 		log.WithField("total", c.Int("runs")).Infof("Starting measurement run %d", i+1)
 
 		measurement, err := StartMeasurement(c, provider, requesters)
-		if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return c.Context.Err()
+		} else if err != nil {
 			log.WithError(err).Warnln("error in measurement run")
 			continue
 		}
 
-		filename := fmt.Sprintf("%s_measurement_%03d.json", runStart.Format("2006-01-02T15:04"), i+1)
+		filename := path.Join(c.String("out"), fmt.Sprintf("%s_measurement_%03d.json", runStart.Format("2006-01-02T15:04"), i+1))
 		if err = measurement.Save(filename); err != nil {
 			log.WithError(err).Warnln("error saving measurement data")
 			continue
