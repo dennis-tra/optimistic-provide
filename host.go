@@ -121,7 +121,7 @@ func (h *Host) Run(ctx context.Context, content *Content, fn func(context.Contex
 	defer h.startDiscarding(ctx)
 
 	startTime := time.Now()
-	involved := map[peer.ID]struct{}{}
+	involved := map[peer.ID]bool{}
 	spans := []Span{}
 
 	queryCtx, queryEvents := routing.RegisterForQueryEvents(ctx)
@@ -131,7 +131,7 @@ func (h *Host) Run(ctx context.Context, content *Content, fn func(context.Contex
 	for {
 		select {
 		case event := <-queryEvents:
-			involved[event.ID] = struct{}{}
+			involved[event.ID] = false
 		case span := <-h.sc:
 			if span.LocalID() == h.h.ID() {
 				spans = append(spans, span)
@@ -144,11 +144,19 @@ func (h *Host) Run(ctx context.Context, content *Content, fn func(context.Contex
 			for _, span := range spans {
 				if _, isInvolved := involved[span.RemoteID()]; isInvolved {
 					filtered = append(filtered, span)
+					involved[span.RemoteID()] = true
 				}
 			}
 			sort.SliceStable(filtered, func(i, j int) bool {
 				return filtered[i].StartedAt().Before(filtered[j].StartedAt())
 			})
+			for peerID, spanExists := range involved {
+				if !spanExists {
+					// this is safe it seems https://stackoverflow.com/questions/23229975/is-it-safe-to-remove-selected-keys-from-map-within-a-range-loop
+					delete(involved, peerID)
+				}
+			}
+
 			return &Run{
 				StartedAt: startTime,
 				EndedAt:   time.Now(),

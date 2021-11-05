@@ -156,5 +156,6 @@ func ProvideAction(c *cli.Context) error {
 		}
 		_ = f.Close()
 	}
+
 	return nil
 }

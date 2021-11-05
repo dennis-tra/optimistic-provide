@@ -41,9 +41,11 @@ type PeerInfo struct {
 	ID              peer.ID
 	AgentVersion    string
 	Distance        string
-	FirstSpanAt     time.Time
 	RelDiscoveredAt float64
 	DiscoveredAt    time.Time
 	DiscoveredFrom  peer.ID
 	IsBootstrap     bool
+
+	// Won't be rendered to JSON
+	firstSpan Span
 }

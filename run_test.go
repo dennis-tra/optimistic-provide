@@ -131,14 +131,14 @@ func TestRun_GatherPeerInfos(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		involved map[peer.ID]struct{}
+		involved map[peer.ID]bool
 		spans    []Span
 		want     PeerInfo
 	}{
 		{
 			name: "standard",
-			involved: map[peer.ID]struct{}{
-				remote1.ID(): {},
+			involved: map[peer.ID]bool{
+				remote1.ID(): true,
 			},
 			spans: []Span{
 				&DialSpan{
@@ -157,14 +157,13 @@ func TestRun_GatherPeerInfos(t *testing.T) {
 				DiscoveredAt:    time.Time{},
 				DiscoveredFrom:  "",
 				IsBootstrap:     false,
-				FirstSpanAt:     start,
 			},
 		},
 		{
 			name: "standard",
-			involved: map[peer.ID]struct{}{
-				remote1.ID(): {},
-				remote2.ID(): {},
+			involved: map[peer.ID]bool{
+				remote1.ID(): true,
+				remote2.ID(): true,
 			},
 			spans: []Span{
 				&DialSpan{
@@ -190,14 +189,13 @@ func TestRun_GatherPeerInfos(t *testing.T) {
 				DiscoveredAt:    start.Add(time.Second),
 				DiscoveredFrom:  remote2.ID(),
 				IsBootstrap:     false,
-				FirstSpanAt:     start.Add(2 * time.Second),
 			},
 		},
 		{
 			name: "discovered later",
-			involved: map[peer.ID]struct{}{
-				remote1.ID(): {},
-				remote2.ID(): {},
+			involved: map[peer.ID]bool{
+				remote1.ID(): true,
+				remote2.ID(): true,
 			},
 			spans: []Span{
 				&SendRequestSpan{
@@ -225,15 +223,14 @@ func TestRun_GatherPeerInfos(t *testing.T) {
 				DiscoveredAt:    time.Time{},
 				DiscoveredFrom:  "",
 				IsBootstrap:     true,
-				FirstSpanAt:     start,
 			},
 		},
 		{
 			name: "discovered twice",
-			involved: map[peer.ID]struct{}{
-				remote1.ID(): {},
-				remote2.ID(): {},
-				remote3.ID(): {},
+			involved: map[peer.ID]bool{
+				remote1.ID(): true,
+				remote2.ID(): true,
+				remote3.ID(): true,
 			},
 			spans: []Span{
 				&SendRequestSpan{
@@ -274,7 +271,6 @@ func TestRun_GatherPeerInfos(t *testing.T) {
 				DiscoveredAt:    start.Add(5 * time.Second),
 				DiscoveredFrom:  remote3.ID(),
 				IsBootstrap:     false,
-				FirstSpanAt:     start.Add(20 * time.Second),
 			},
 		},
 	}
@@ -294,6 +290,8 @@ func TestRun_GatherPeerInfos(t *testing.T) {
 
 			info.RelDiscoveredAt = tt.want.RelDiscoveredAt
 			info.DiscoveredAt = tt.want.DiscoveredAt
+			info.firstSpan = tt.want.firstSpan
+
 			assert.Equal(t, tt.want, info)
 		})
 	}
@@ -321,20 +319,43 @@ func TestRun_PeerOrder(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		involved map[peer.ID]struct{}
+		involved map[peer.ID]bool
 		spans    []Span
 		want     []peer.ID
 	}{
 		{
 			name:     "bootstrap after discovered",
-			involved: map[peer.ID]struct{}{remote1.ID(): {}, remote2.ID(): {}},
+			involved: map[peer.ID]bool{remote1.ID(): true, remote2.ID(): true},
 			spans: []Span{
 				&DialSpan{
 					BaseSpan: NewBaseSpan(start, local.ID(), remote2.ID(), nil),
 				},
 				&SendRequestSpan{
-					BaseSpan:     NewBaseSpan(start.Add(time.Second), local.ID(), remote1.ID(), nil),
+					BaseSpan:     NewBaseSpan(start.Add(time.Millisecond), local.ID(), remote1.ID(), nil),
 					AgentVersion: agent,
+				},
+			},
+			want: []peer.ID{remote1.ID(), remote2.ID()},
+		},
+		{
+			name:     "bootstrap order by duration",
+			involved: map[peer.ID]bool{remote1.ID(): true, remote2.ID(): true},
+			spans: []Span{
+				&SendRequestSpan{
+					BaseSpan: BaseSpan{
+						Local:  local.ID(),
+						Remote: remote2.ID(),
+						Start:  start,
+						End:    start.Add(500 * time.Millisecond),
+					},
+				},
+				&SendRequestSpan{
+					BaseSpan: BaseSpan{
+						Local:  local.ID(),
+						Remote: remote1.ID(),
+						Start:  start.Add(time.Millisecond),
+						End:    start.Add(time.Second),
+					},
 				},
 			},
 			want: []peer.ID{remote1.ID(), remote2.ID()},

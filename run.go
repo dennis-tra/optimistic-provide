@@ -14,7 +14,7 @@ type Run struct {
 	EndedAt   time.Time
 	LocalID   peer.ID
 	Spans     []Span
-	Involved  map[peer.ID]struct{}
+	Involved  map[peer.ID]bool
 }
 
 func (r *Run) Data(content *Content) RunData {
@@ -70,12 +70,12 @@ func (r *Run) GatherPeerInfos(content *Content) map[string]PeerInfo {
 			Distance:     hex.EncodeToString(content.DistanceTo(peerID)),
 			IsBootstrap:  r.IsBootstrapPeer(peerID),
 			AgentVersion: r.AgentVersion(peerID),
-			FirstSpanAt:  r.FirstSpanStartedAt(peerID),
+			firstSpan:    r.FirstSpan(peerID),
 		}
 
 		for _, span := range endSortedSpans {
 			srs, ok := span.(*SendRequestSpan)
-			if span.RemoteID() == peerID || !ok || !srs.ReturnedCloserPeer(peerID) || span.StartedAt().After(pi.FirstSpanAt) {
+			if span.RemoteID() == peerID || !ok || !srs.ReturnedCloserPeer(peerID) || span.StartedAt().After(pi.firstSpan.StartedAt()) {
 				continue
 			}
 
@@ -128,16 +128,15 @@ func (r *Run) AgentVersion(peerID peer.ID) string {
 	return ""
 }
 
-func (r *Run) FirstSpanStartedAt(peerID peer.ID) time.Time {
+func (r *Run) FirstSpan(peerID peer.ID) Span {
 	for _, span := range r.Spans {
 		if span.RemoteID() != peerID {
 			continue
 		}
-		return span.StartedAt()
+		return span
 	}
 
-	log.Warnln("unexpected")
-	return time.Time{}
+	panic("unexpected")
 }
 
 func (r *Run) PeerOrder(peerInfos map[string]PeerInfo) []peer.ID {
@@ -152,11 +151,11 @@ func (r *Run) PeerOrder(peerInfos map[string]PeerInfo) []peer.ID {
 	}
 
 	sort.SliceStable(bootstrapPeers, func(i, j int) bool {
-		return bootstrapPeers[i].FirstSpanAt.Before(bootstrapPeers[j].FirstSpanAt)
+		return bootstrapPeers[i].firstSpan.Duration() >= bootstrapPeers[j].firstSpan.Duration()
 	})
 
 	sort.SliceStable(discoveredPeers, func(i, j int) bool {
-		return discoveredPeers[i].FirstSpanAt.Before(discoveredPeers[j].FirstSpanAt)
+		return discoveredPeers[i].firstSpan.StartedAt().Before(discoveredPeers[j].firstSpan.StartedAt())
 	})
 
 	var peerOrder []peer.ID
