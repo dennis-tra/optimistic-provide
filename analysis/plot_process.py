@@ -4,94 +4,92 @@ import matplotlib.patches as mpatches
 
 from model_measurement import Measurement
 
-sns.set_theme(style="darkgrid")
-run_prefix = "2021-10-08T14:06:38"
-
 span_colors = {
     "dial": sns.color_palette()[3],
     "send_request": sns.color_palette()[2],
     "send_message": sns.color_palette()[1],
 }
 
-span_colors_muted = {
-    "dial": "#e8b0b0",
-    "send_request": "#badec4",
-    "send_message": "#f0c5a8",
-}
 
-colors = {
-    'blue': sns.color_palette()[0],
-    'orange': sns.color_palette()[1],
-    'green': sns.color_palette()[2],
-    'red': sns.color_palette()[3],
-    'purple': sns.color_palette()[4],
-    'brown': sns.color_palette()[5],
-}
+# ax.vlines(0, 0, num_peers, linewidth=0.5, colors=colors['brown'])
 
-measurement = Measurement.from_file("../out/2021-11-04T18:11_measurement_001.json")
 
-# Start plotting
-num_peers = len(measurement.provider.peer_order)
+def plot(filename: str):
+    sns.set_theme(style="darkgrid")
 
-fig, ax = plt.subplots(1, figsize=(16, 6))
+    measurement = Measurement.from_file(filename)
 
-for span in measurement.provider.spans:
-    y = num_peers - measurement.provider.peer_order.index(span.peer_id)
-    xmin = span.rel_start
-    xmax = span.rel_start + span.duration_s
-    is_success = span.error == "" or "operation was canceled" in span.error
-    c = span_colors if is_success else span_colors_muted
-    ax.hlines(y, xmin, xmax, color=c[span.operation], linewidth=3)
-    if not is_success:
-        ax.plot([xmax], [y], marker='x', color=c[span.operation], markersize=4)
-    if span.operation == 'send_message':
-        ax.plot([xmin], [y], marker='.', color=c[span.operation], markersize=4)
+    fig, ax = plt.subplots(1, figsize=(15, 5))
 
-for peer_id in measurement.provider.peer_infos:
-    peer_info = measurement.provider.peer_infos[peer_id]
-    if peer_info.discovered_from == "":
-        continue
-    top = num_peers - measurement.provider.peer_order.index(peer_info.discovered_from)
-    bottom = num_peers - measurement.provider.peer_order.index(peer_info.id)
-    ax.arrow(
-        peer_info.rel_discovered_at,
-        top,
-        0,
-        bottom - top,
-        head_width=0.01,
-        head_length=0.5,
-        color="#ccc",
-        length_includes_head=True
-    )
+    # Plot the horizontal spans for each peer
+    for span in measurement.provider.spans:
+        y = measurement.provider.plot_y_position(span.peer_id)
+        xmin = span.rel_start
+        xmax = xmin + span.duration_s
+        ax.hlines(
+            y,
+            xmin,
+            xmax,
+            color=span_colors[span.operation],
+            linewidth=3,
+            alpha=0.5 if span.has_error else 1.0
+        )
 
-ax.vlines(0, 0, num_peers, linewidth=0.5, colors=colors['brown'])
+        if span.has_error:
+            ax.plot([xmax], [y], marker='x', color=span_colors[span.operation], markersize=4)
+        if span.operation == 'send_message':
+            ax.plot([xmin], [y], marker='.', color=span_colors[span.operation], markersize=4)
 
-labels = []
-for peer_id in measurement.provider.peer_order:
-    distance = int(measurement.provider.peer_infos[peer_id].distance, base=16)
-    distance_norm = distance / (2 ** 256)
-    labels += ["{:s} | {:.2f} | {:s}".format(measurement.provider.peer_infos[peer_id].agent_version, distance_norm*100, peer_id[:16])]
+    # plot the vertical lines indicating causality
+    for peer_id in measurement.provider.peer_infos:
+        peer_info = measurement.provider.peer_infos[peer_id]
+        if peer_info.discovered_from == "":
+            continue
 
-labels.reverse()
+        origin = measurement.provider.plot_y_position(peer_info.discovered_from)
+        target = measurement.provider.plot_y_position(peer_info.id)
+        ax.arrow(
+            peer_info.rel_discovered_at,
+            origin,
+            0,
+            target - origin,
+            head_width=0.01,
+            head_length=0.5,
+            color="#ccc",
+            length_includes_head=True
+        )
 
-ax.set_yticklabels(
-    labels,
-    fontsize=8,
-    fontname='Monospace',
-    fontweight="bold")
-ax.set_yticks(range(1, num_peers + 1))
+    labels = []
+    for peer_id in measurement.provider.peer_order:
+        distance = int(measurement.provider.peer_infos[peer_id].distance, base=16)
+        distance_norm = distance / (2 ** 256)
+        labels += [
+            "{:s} | {:.2f} | {:s}".format(measurement.provider.peer_infos[peer_id].agent_version, distance_norm * 100,
+                                          peer_id[:16])]
+    labels.reverse()
 
-plt.legend(handles=[
-    mpatches.Patch(color=span_colors["dial"], label='Dial'),
-    mpatches.Patch(color=span_colors["send_request"], label='Find Node'),
-    mpatches.Patch(color=span_colors["send_message"], label='Add Provider'),
-    mpatches.Patch(color="#ccc", label='Discovered'),
-])
+    ax.set_yticklabels(
+        labels,
+        fontsize=8,
+        fontname='Monospace',
+        fontweight="bold")
+    ax.set_yticks(range(1, len(measurement.provider.peer_order) + 1))
 
-plt.title(
-    "Providing content with distance {:.2f}".format(int(measurement.provider.distance, base=16) / (2 ** 256) * 100))
+    plt.legend(handles=[
+        mpatches.Patch(color=span_colors["dial"], label='Dial'),
+        mpatches.Patch(color=span_colors["send_request"], label='Find Node'),
+        mpatches.Patch(color=span_colors["send_message"], label='Add Provider'),
+        mpatches.Patch(color="#ccc", label='Discovered'),
+    ])
 
-plt.xlabel("Time in s")
-plt.xlim(0)
-plt.tight_layout()
-plt.show()
+    plt.title(
+        "Providing content with distance {:.2f}".format(int(measurement.provider.distance, base=16) / (2 ** 256) * 100))
+
+    plt.xlabel("Time in s")
+    plt.xlim(0)
+    plt.tight_layout()
+    plt.show()
+
+
+if __name__ == '__main__':
+    plot("../out/2021-11-05T12:48_measurement_001.json")

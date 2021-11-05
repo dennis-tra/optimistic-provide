@@ -11,7 +11,7 @@ class Span:
     peer_id: str
     operation: str
     type: str
-    error: str
+    __error: str
 
     def __init__(self, rel_start: float, duration_s: float, start: datetime, end: datetime, peer_id: str,
                  operation: str, type: str, error: str) -> None:
@@ -22,7 +22,7 @@ class Span:
         self.peer_id = peer_id
         self.operation = operation
         self.type = type
-        self.error = error
+        self.__error = error
 
     @staticmethod
     def from_dict(obj: Any) -> 'Span':
@@ -46,5 +46,9 @@ class Span:
         result["PeerID"] = from_str(self.peer_id)
         result["Operation"] = from_str(self.operation)
         result["Type"] = from_str(self.type)
-        result["Error"] = from_str(self.error)
+        result["Error"] = from_str(self.__error)
         return result
+
+    @property
+    def has_error(self):
+        return not (self.__error == "" or "operation was canceled" in self.__error)

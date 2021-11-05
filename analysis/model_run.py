@@ -35,3 +35,6 @@ class Run:
         peer_infos = from_dict(PeerInfo.from_dict, obj.get("PeerInfos"))
         peer_order = from_list(from_str, obj.get("PeerOrder"))
         return Run(started_at, ended_at, local_id, distance, spans, peer_infos, peer_order)
+
+    def plot_y_position(self, peer_id) -> int:
+        return len(self.peer_order) - self.peer_order.index(peer_id)
