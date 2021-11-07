@@ -92,4 +92,4 @@ def plot(filename: str):
 
 
 if __name__ == '__main__':
-    plot("../out/2021-11-05T12:48_measurement_001.json")
+    plot("../out/2021-11-05T16:15_measurement_001.json")

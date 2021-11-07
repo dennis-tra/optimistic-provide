@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, List, Dict
 from model_peer_info import PeerInfo
 from model_utils import from_datetime, from_str, from_list, from_dict
@@ -38,3 +38,15 @@ class Run:
 
     def plot_y_position(self, peer_id) -> int:
         return len(self.peer_order) - self.peer_order.index(peer_id)
+
+    @property
+    def duration(self) -> timedelta:
+        return self.ended_at - self.started_at
+
+    @property
+    def providers(self) -> set[str]:
+        providers: set[str] = set()
+        for span in self.spans:
+            if span.type == "ADD_PROVIDER":
+                providers.add(span.peer_id)
+        return providers

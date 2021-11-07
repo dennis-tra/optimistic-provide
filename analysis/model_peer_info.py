@@ -40,3 +40,11 @@ class PeerInfo:
         result["DiscoveredAt"] = self.discovered_at.isoformat()
         result["DiscoveredFrom"] = from_str(self.discovered_from)
         return result
+
+    @property
+    def distance_fraction(self):
+        return int(self.distance, base=16) / (2 ** 256)
+
+    @property
+    def distance_pct(self):
+        return self.distance_fraction * 100
