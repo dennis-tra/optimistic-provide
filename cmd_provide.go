@@ -161,6 +161,6 @@ func StartMeasurement(c *cli.Context, provider *Provider, requesters map[peer.ID
 		ContentID:  content.cid.String(),
 		Provider:   pr.Data(content),
 		Requesters: requesterRunData,
-		InitRT:     false,
+		InitRT:     c.Bool("init-rt"),
 	}, nil
 }
