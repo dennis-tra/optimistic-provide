@@ -1,79 +1,12 @@
-# Tenma Probe
+# Optimistic Provide
 
-[![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg)](https://github.com/RichardLitt/standard-readme)
-[![readme tenma](https://img.shields.io/badge/readme-Tenma-blueviolet)](README.md)
 [![GitHub license](https://img.shields.io/github/license/dennis-tra/tenma-probe)](https://github.com/dennis-tra/tenma-probe/blob/main/LICENSE)
 
-[Tenma](https://en.wikipedia.org/wiki/Tenma) is a libp2p DHT performance measurement tool. As of now, it primarily measures the performance of providing content in the network.
+This repo contains a libp2p DHT performance measurement tool. As of now, it primarily measures the performance of providing content in the network.
 
-## Table of Contents
+Below you can find a proposal for an alternative approach to providing content.
 
-- [Project Status](#project-status)
-- [Usage](#usage)
-- [Install](#install)
-    - [Release download](#release-download) | [From source](#from-source)
-- [Development](#development)
-- [Deployment](#deployment)
-- [Maintainers](#maintainers)
-- [Contributing](#contributing)
-- [Support](#support)
-- [Other Projects](#other-projects)
-- [License](#license)
-- [Results](#results)
-
-## Project Status
-
-TODO
-
-## Usage
-
-TODO
-
-## Install
-
-### Release download
-
-There is no release yet.
-
-### From source
-
-TODO
-
-## Development
-
-TODO
-
-## Deployment
-
-TODO
-
-## Maintainers
-
-[@dennis-tra](https://github.com/dennis-tra).
-
-## Contributing
-
-Feel free to dive in! [Open an issue](https://github.com/dennis-tra/tenma-probe/issues/new) or submit PRs.
-
-## Support
-
-It would really make my day if you supported this project through [Buy Me A Coffee](https://www.buymeacoffee.com/dennistra).
-
-## Other Projects
-
-You may be interested in one of my other projects:
-
-- [`pcp`](https://github.com/dennis-tra/pcp) - Command line peer-to-peer data transfer tool based on [libp2p](https://github.com/libp2p/go-libp2p).
-- [`nebula-crawler`](https://github.com/dennis-tra/nebula-crawler) - A libp2p DHT crawler, monitor, and measurement tool that exposes timely information about DHT networks.
-- [`image-stego`](https://github.com/dennis-tra/image-stego) - A novel way to image manipulation detection. Steganography-based image integrity - Merkle tree nodes embedded into image chunks so that each chunk's integrity can be verified on its own.
-
-## License
-
-[Apache License Version 2.0](LICENSE) © Dennis Trautwein
-
----
-
-## Optimistic Provide
+## Proposal - Optimistic Provide
 
 ## Abstract
 
@@ -109,6 +42,75 @@ This repository also contains code to visualize the provide process. Here is an 
 
 ![](./plots/provide_process.png)
 
+This visualization is similar to [this Multi-Level DHT Report](https://drive.google.com/file/d/1OfFyi4VO3itNc3O-YoUqW1Q6D0Fp1Crz/view) page 17 (document) or page 21 (PDF).
+The left-hand side shows the agent version, the [normed XOR distance](#normed-xor-distance) in percent of the particular peer to the CID being provided, and the peer ID truncated to 16 characters.
+The title indicates the normed XOR distance of the providing peer to the CID being provided.
+Muted colors and `x` markers indicate failed operations.
+The peers are ordered by the time they were discovered after the provide operation started.
+
+## Proposal - Optimistic Provide
+
+The discrepancy between the time the provide operation took and the time it could have taken led to the idea of just storing provider records optimistically at peers.
+This would trade storing these records on potentially more than _beta_ peers but could yield a vast speed up.
+It also requires a priori knowledge about the current network size which can be estimated based on network observation of crawls like it was implemented in the [new experimental DHT mode](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.12.0).
+
+### Procedure
+
+When finding a new peer with Peer ID `P` in the process of providing content we calculate the distance to the CID `C` and derive the expected amount of peers `μ` that are closer to the CID than the peer with peer ID `P`.
+
+If we norm `P` and `C` to the range from `0` to `1` this can be calculated as:
+
+```
+μ = || P - C || * N
+```
+
+`N` is the current network size. The logic would be that if the expected value `μ` is less than _beta_ peers we store the provider record at this peer `P`.
+
+This threshold could also consider standard deviation etc. and could generally be tuned to minimize falsely selected peers (peers that are not in the set of the _beta_ closest peers).
+
+### Example
+
+The following graph shows the distribution of [normed XOR distances](#normed-xor-distance) of the peers that were selected to store the provider record to the CID that was provided.
+
+![](./plots/peer_distances.png)
+
+ The center of mass of this distribution is roughly at `0.1 %`.
+So If we find a peer that has a distance of `|| P - C || = 0.1 %` while the network has a size of `N = 7000` peers we would expect to find `7` peers that are closer than the one we just found. 
+
+`N = 7000` is a realistic assumption based on [our crawls](https://github.com/dennis-tra/nebula-crawler).
+
+### Simulation
+
+_**The following doesn't model the above distribution very well, yet**_
+
+Assumptions:
+
+- Peer IDs are uniformly distributed across the entire key space
+- The number of DHT server peers is `7000` (got this number from [our crawl results](https://github.com/dennis-tra/nebula-crawler)).
+
+```python
+import numpy as np
+
+NETWORK_SIZE = 7000
+MEASUREMENTS = 623
+BETA = 20
+distances_all = []
+peer_ids = np.random.uniform(0, 1, NETWORK_SIZE)
+for i in range(MEASUREMENTS):
+  cid = np.random.random()
+  distances = np.sort(np.abs(peer_ids - cid))
+
+  for dist in distances[:BETA]:
+    distances_all += [dist * 100]
+``` 
+
+![](./plots/peer_distance_sim_7000.png)
+
+The above probably has a faulty reasoning as the distribution matches the measurements a little closer with half the network size (3500):
+
+![](./plots/peer_distance_sim_3500.png)
+
+
 ## Methodology
 
 ### Measurement Setup
@@ -124,9 +126,23 @@ The measurements were conducted on the following machine:
 
 The following results show measurement data that was collected from 2021-11-05 to 2021-11-07.
 
-- Number of measurements `621`
+- Number of measurements `623`
 
 
 ### Normed XOR Distance
 
-TODO
+In the graphs you will find XOR distance values in the range from 0 to 1 or their corresponding percentage representation. These values are derived by dividing the 256-bit XOR distance by `2^256`. Since the maximum possible XOR distance between two values in the 256-bit key-space is `2^256`, the division by this maximum norms the resulting distance value into the range from 0 to 1. This is solely done to work with more handy numbers. As the distance can become quite small the graphs may also show the distance as a percentage from the 0 to 1 range.
+
+---
+
+## Maintainers
+
+[@dennis-tra](https://github.com/dennis-tra).
+
+## Contributing
+
+Feel free to dive in! [Open an issue](https://github.com/dennis-tra/tenma-probe/issues/new) or submit PRs.
+
+## License
+
+[Apache License Version 2.0](LICENSE) © Dennis Trautwein

@@ -52,6 +52,7 @@ def plot():
     plt.title(
         f"Selected Peers by XOR Target Distance (Measurements {len(measurements)}, ADD_PROVIDER RPCs {len(combined)})")
     plt.tight_layout()
+    plt.savefig("../plots/peer_distances.png")
     plt.show()
 
 
