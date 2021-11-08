@@ -6,7 +6,7 @@ This repo contains a libp2p DHT performance measurement tool. As of now, it prim
 
 Below you can find a proposal for an alternative approach to providing content.
 
-## Proposal - Optimistic Provide
+## 🚧 Work In Progress - Proposal - Optimistic Provide
 
 ## Abstract
 
