@@ -1,10 +1,11 @@
 # Optimistic Provide
 
-[![GitHub license](https://img.shields.io/github/license/dennis-tra/tenma-probe)](https://github.com/dennis-tra/tenma-probe/blob/main/LICENSE)
+[![GitHub license](https://img.shields.io/github/license/dennis-tra/optimistic-provide)](https://github.com/dennis-tra/optimistic-provide/blob/main/LICENSE)
 
-This repo contains a libp2p DHT performance measurement tool. As of now, it primarily measures the performance of providing content in the network.
+This repo contains:
 
-Below you can find a proposal for an alternative approach to providing content.
+1. A libp2p DHT performance measurement tool. As of now, it primarily measures the performance of providing content in the network.
+2. A proposal for an alternative approach to providing content.
 
 ## 🚧 Work In Progress - Proposal - Optimistic Provide
 
@@ -13,7 +14,8 @@ Below you can find a proposal for an alternative approach to providing content.
 The lifecycle of content in the IPFS network can be divided in three stages: publication, discovery and retrieval.
 In the past much work has focussed on improving content discovery while efficiently storing provider records at appropriate peers is similarly important as it needs to be repeated periodically.
 This document proposes an optimistic approach to storing provider records in the libp2p Kademlia DHT to significantly speed up the process 
-based on a priori information about the network size and accepting minimal too many provider records.
+based on a priori information about the network size. It comes with the trade-off of potentially storing more provider records than desired.
+I would argue that the speed-up gains justify this inefficiency.
 
 ## Motivation
 
@@ -21,15 +23,15 @@ When IPFS attempts to store a provider record in the DHT it tries to find the _b
 To find these peers IPFS sends `FIND_NODES` RPCs to the closest peers it has in its routing table and then repeats the process for the returned set of peers.
 There are two termination conditions for this process:
 
-1. Termination: The current _beta_ closest peers were queried for even closer peers but didn't yield closer ones.
-2. Starvation: All peers in the network were queried (if I interpret this condition correctly: `q.queryPeers.NumHeard() == 0 && q.queryPeers.NumWaiting() == 0`)
+1. **Termination**: The current _beta_ closest peers were queried for even closer peers but didn't yield closer ones.
+2. **Starvation**: All peers in the network were queried (if I interpret [this condition](https://github.com/libp2p/go-libp2p-kad-dht/blob/cd05807c54f3168f01a5a363b37aee5e38fee63d/query.go#L368) correctly)
 
-This can lead to huge delays if some of the 20 closest peers don't respond timely or are straight out not reachable.
-The following graph shows the provide latency distribution.
+This can lead to huge delays if some of the _beta_ closest peers don't respond timely or are straight out not reachable.
+The following graph shows the latency distribution of the whole provide-process.
 
 ![](./plots/provide_latencies.png)
 
-In other words, it shows the distribution of how long it takes for the `dht.Provide(ctx, content.cid, true)` call to return.
+In other words, it shows the distribution of how long it takes for the [`dht.Provide(ctx, content.cid, true)`](https://github.com/libp2p/go-libp2p-kad-dht/blob/0b7ac010657443bc0675b3bd61133fe04d61d25b/fullrt/dht.go#L752) call to return.
 At the top of the graph you can find the percentiles and total sample size. There is a huge spike at around 10s which is probably related to an exceeded context deadline - not sure though.
 
 If we on the other hand look at how long it took to find the peers that we eventually stored the provider records at, we see that it takes less than 1.6s for the vast majority of cases.
@@ -81,7 +83,7 @@ So If we find a peer that has a distance of `|| P - C || = 0.1 %` while the netw
 
 ### Simulation
 
-_**The following doesn't model the above distribution very well, yet**_
+_** 🚨 The following model doesn't approximate the above distribution very well**_
 
 Assumptions:
 
@@ -141,7 +143,7 @@ In the graphs you will find XOR distance values in the range from 0 to 1 or thei
 
 ## Contributing
 
-Feel free to dive in! [Open an issue](https://github.com/dennis-tra/tenma-probe/issues/new) or submit PRs.
+Feel free to dive in! [Open an issue](https://github.com/dennis-tra/optimistic-provide/issues/new) or submit PRs.
 
 ## License
 

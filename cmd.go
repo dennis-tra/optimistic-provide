@@ -32,13 +32,13 @@ func main() {
 	verTag := fmt.Sprintf("v%s+%s", RawVersion, ShortCommit)
 
 	app := &cli.App{
-		Name:      "tenma",
+		Name:      "optprov",
 		Usage:     "A libp2p DHT performance measurement tool.",
-		UsageText: "tenma [global options] command [command options] [arguments...]",
+		UsageText: "optprov [global options] command [command options] [arguments...]",
 		Authors: []*cli.Author{
 			{
 				Name:  "Dennis Trautwein",
-				Email: "tenma@dtrautwein.eu",
+				Email: "optimistic-provide@dtrautwein.eu",
 			},
 		},
 		Version: verTag,
@@ -47,25 +47,50 @@ func main() {
 			&cli.BoolFlag{
 				Name:    "debug",
 				Usage:   "Set this flag to enable debug logging",
-				EnvVars: []string{"TENMA_DEBUG"},
+				EnvVars: []string{"OPTIMISTIC_PROVIDE_DEBUG"},
 			},
 			&cli.IntFlag{
 				Name:        "log-level",
 				Usage:       "Set this flag to a value from 0 (least verbose) to 6 (most verbose). Overrides the --debug flag",
-				EnvVars:     []string{"TENMA_LOG_LEVEL"},
+				EnvVars:     []string{"OPTIMISTIC_PROVIDE_LOG_LEVEL"},
 				Value:       4,
 				DefaultText: "4",
 			},
 			&cli.StringSliceFlag{
 				Name:    "protocols",
 				Usage:   "Comma separated list of protocols that this crawler should look for",
-				EnvVars: []string{"TENMA_PROTOCOLS"},
+				EnvVars: []string{"OPTIMISTIC_PROVIDE_PROTOCOLS"},
+			},
+			&cli.IntFlag{
+				Name:        "requesters",
+				Usage:       "How many requesting libp2p hosts should be spawned",
+				EnvVars:     []string{"OPTIMISTIC_PROVIDE_REQUESTER_COUNT"},
+				DefaultText: "1",
+				Value:       1,
+			},
+			&cli.StringFlag{
+				Name:        "out",
+				Aliases:     []string{"o"},
+				Usage:       "Write measurement data to this directory",
+				EnvVars:     []string{"OPTIMISTIC_PROVIDE_OUT"},
+				DefaultText: "out",
+				Value:       "out",
+			},
+			&cli.BoolFlag{
+				Name:    "init-rt",
+				Usage:   "Whether to initialize the routing table of the provider and requesters.",
+				EnvVars: []string{"OPTIMISTIC_PROVIDE_INIT_ROUTING_TABLE"},
+			},
+			&cli.IntFlag{
+				Name:        "runs",
+				Usage:       "How many measurement runs should be performed",
+				EnvVars:     []string{"OPTIMISTIC_PROVIDE_RUN_COUNT"},
+				DefaultText: "1",
+				Value:       1,
 			},
 		},
+		Action:               RootAction,
 		EnableBashCompletion: true,
-		Commands: []*cli.Command{
-			ProvideCommand,
-		},
 	}
 
 	sigs := make(chan os.Signal, 1)

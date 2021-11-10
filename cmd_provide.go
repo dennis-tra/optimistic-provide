@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	_ "net/http/pprof"
 	"os"
 	"path"
 	"time"
@@ -15,45 +14,9 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// ProvideCommand contains the provide sub-command configuration.
-var ProvideCommand = &cli.Command{
-	Name:   "provide",
-	Usage:  "Starts a DHT measurement experiment by providing and requesting random content.",
-	Action: ProvideAction,
-	Flags: []cli.Flag{
-		&cli.IntFlag{
-			Name:        "requesters",
-			Usage:       "How many requesting libp2p hosts should be spawned",
-			EnvVars:     []string{"TENMA_PROVIDE_REQUESTER_COUNT"},
-			DefaultText: "1",
-			Value:       1,
-		},
-		&cli.StringFlag{
-			Name:        "out",
-			Aliases:     []string{"o"},
-			Usage:       "Write measurement data to this directory",
-			EnvVars:     []string{"TENMA_PROVIDE_OUT"},
-			DefaultText: "out",
-			Value:       "out",
-		},
-		&cli.BoolFlag{
-			Name:    "init-rt",
-			Usage:   "Whether to initialize the routing table of the provider and requesters.",
-			EnvVars: []string{"TENMA_PROVIDE_INIT_ROUTING_TABLE"},
-		},
-		&cli.IntFlag{
-			Name:        "runs",
-			Usage:       "How many measurement runs should be performed",
-			EnvVars:     []string{"TENMA_PROVIDE_RUN_COUNT"},
-			DefaultText: "1",
-			Value:       1,
-		},
-	},
-}
-
-// ProvideAction is the function that is called when running `tenma provide`.
-func ProvideAction(c *cli.Context) error {
-	log.Infoln("Starting Tenma DHT measurement...")
+// RootAction is the function that is called when running `optprov provide`.
+func RootAction(c *cli.Context) error {
+	log.Infoln("Starting DHT measurement...")
 
 	// Attempt to create the results directory
 	if err := os.Mkdir(c.String("out"), 0o751); !os.IsExist(err) {

@@ -1,4 +1,4 @@
-module github.com/dennis-tra/tenma-probe
+module github.com/dennis-tra/optimistic-provide
 
 go 1.16
 
