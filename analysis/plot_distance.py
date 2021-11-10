@@ -36,7 +36,8 @@ def plot():
         bins=np.arange(50) / 100,
         multiple="stack",
         hue="error",
-        legend=True)
+        legend=True,
+    )
     ax.set_ylabel("Count")
     ax.set_xlabel("Normed XOR Distance in %")
 
