@@ -1,4 +1,4 @@
-from model_measurement import Measurement
+from model_loader import ModelLoader
 
 
 def main():
@@ -6,14 +6,15 @@ def main():
     hydra_peers = 0
     seen = {}
 
-    measurement = Measurement.from_file("../out/2021-11-04T16:20_measurement_002.json")
-    for peer_info in measurement.provider.peer_infos.values():
-        if peer_info.id in seen:
-            continue
-        seen[peer_info.id] = True
-        all_peers += 1
-        if "hydra" in peer_info.agent_version:
-            hydra_peers += 1
+    measurements = ModelLoader.open("../data")
+    for measurement in measurements:
+        for peer_info in measurement.provider.peer_infos.values():
+            if peer_info.id in seen:
+                continue
+            seen[peer_info.id] = True
+            all_peers += 1
+            if "hydra" in peer_info.agent_version:
+                hydra_peers += 1
 
     print("Hydra Peers", hydra_peers)
     print("All Peers", all_peers)

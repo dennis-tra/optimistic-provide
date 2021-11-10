@@ -5,21 +5,11 @@ import seaborn as sns
 from model_loader import ModelLoader
 import matplotlib.pyplot as plt
 
-folder = "../results"
-
 
 def plot():
     sns.set_theme()
 
-    measurements = ModelLoader.open("../measurements")
-
-    # for measurement in measurements:
-    #     count = 0
-    #     for span in measurement.provider.spans:
-    #         if span.type == "ADD_PROVIDER":
-    #             count += 1
-    #     if count != 20:
-    #         print(measurement.started_at, count)
+    measurements = ModelLoader.open("../data")
 
     distances = []
     has_errors = []
@@ -36,7 +26,8 @@ def plot():
         "distances": distances,
         "error": has_errors
     })
-    fig, ax = plt.subplots(figsize=(15, 5))
+
+    fig, ax = plt.subplots(figsize=(15, 6))
 
     sns.histplot(
         ax=ax,
@@ -49,10 +40,10 @@ def plot():
     ax.set_ylabel("Count")
     ax.set_xlabel("Normed XOR Distance in %")
 
-    plt.title(
-        f"Selected Peers by XOR Target Distance (Measurements {len(measurements)}, ADD_PROVIDER RPCs {len(combined)})")
+    stats_str = f"Measurements {len(measurements)}; ADD_PROVIDER RPCs {len(combined)}"
+    plt.title(f"Selected Peers by XOR Target Distance to Provided CID ({stats_str})")
     plt.tight_layout()
-    plt.savefig("../plots/peer_distances.png")
+    plt.savefig("../plots/distance.png")
     plt.show()
 
 

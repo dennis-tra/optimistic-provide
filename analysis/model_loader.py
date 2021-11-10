@@ -15,14 +15,37 @@ class ModelLoader:
         a dump of the resulting data structure in that folder for
         future fast loading. If that "cached" pickeled version
         already exists it won't parse the folder and just load that.
+        It also filters the loaded measurements for measurement instances
+        that have 20 ADD_PROVIDER RPCs. See __filter_measurmenets for
+        a little more information.
         """
         parsed_path = os.path.join(folder, ModelLoader.parsed_filename)
         if os.path.isfile(parsed_path):
-            return ModelLoader.load(parsed_path)
+            return ModelLoader.__filter_measurements(ModelLoader.load(parsed_path))
 
         measurements = ModelLoader.parse(folder)
         ModelLoader.save(folder, measurements)
-        return measurements
+
+        return ModelLoader.__filter_measurements(measurements)
+
+    @staticmethod
+    def __filter_measurements(measurements: List[Measurement]) -> List[Measurement]:
+        """
+        I observed some errors in the measurement runs and that 8 out of the >1k measurement runs
+        didn't run 20 RPCs to store a provider record but less. I'm excluding them from the final
+        measurements as I assume (only assume!) that this is related to these errors.
+        """
+        filtered_measurements = []
+        for measurement in measurements:
+            count = 0
+            for span in measurement.provider.spans:
+                if span.type == "ADD_PROVIDER":
+                    count += 1
+            if count == 20:
+                filtered_measurements += [measurement]
+        print(f"Filtered {len(measurements) - len(filtered_measurements)} measurements")
+        return filtered_measurements
+
 
     @staticmethod
     def load(filename) -> List[Measurement]:
@@ -63,8 +86,3 @@ class ModelLoader:
                 print("Error loading " + filepath)
 
         return measurements
-
-
-if __name__ == '__main__':
-    measurements = ModelLoader.load("save.p")
-    print(measurements)

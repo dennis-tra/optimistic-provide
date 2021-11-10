@@ -1,41 +1,53 @@
-import json
-import os
-
+import seaborn as sns
 import numpy as np
 import matplotlib.pyplot as plt
+from typing import Tuple, List
+from matplotlib import ticker
 
-# Load measurement information
-from model_measurement import Measurement
-folder = "../results"
-discovered_times = []
-for fn in os.listdir(folder):
-    filepath = os.path.join(folder, fn)
-    if not os.path.isfile(filepath):
-        continue
+from model_loader import ModelLoader
 
-    measurement = Measurement.from_file(filepath)
 
-    selected_peers = []
-    provided_times = []
+def plot():
+    sns.set_theme()
 
-    first_provide = None
-    for span in measurement.provider.spans:
-        if span.operation != "send_message":
-            continue
-        selected_peers += [span.peer_id]
-        provided_times += [span.rel_start]
+    add_provider_delay = []
 
-    for idx, peer in enumerate(selected_peers):
-        provided_time = provided_times[idx]
-        peer_info = measurement.provider.peer_infos[peer]
-        if peer_info.discovered_from == "":
-            discovered_times += [provided_time]
-        else:
-            discovered_times += [provided_time - peer_info.rel_discovered_at]
+    measurements = ModelLoader.open("../data")
+    for measurement in measurements:
 
-plt.hist(discovered_times, bins=np.arange(100))
+        selected_peers: List[Tuple[str, float]] = []
 
-plt.xlabel("Discover Provide Delay in s")
-plt.ylabel("Count")
+        first_provide = None
+        for span in measurement.provider.spans:
+            if span.type != "ADD_PROVIDER":
+                continue
+            selected_peers += [(span.peer_id, span.rel_start)]
 
-plt.show()
+        for peer in selected_peers:
+            peer_info = measurement.provider.peer_infos[peer[0]]
+            if peer_info.discovered_from == "":
+                add_provider_delay += [peer[1]]
+            else:
+                add_provider_delay += [peer[1] - peer_info.rel_discovered_at]
+
+    fig, ax = plt.subplots(figsize=(15, 6))
+
+    p50 = "%.2f" % np.percentile(add_provider_delay, 50)
+    p90 = "%.2f" % np.percentile(add_provider_delay, 90)
+    p95 = "%.2f" % np.percentile(add_provider_delay, 95)
+
+    sns.histplot(ax=ax, x=add_provider_delay, bins=np.arange(0, 100))
+    ax.set_xlabel("Time in s")
+    ax.set_ylabel("Count")
+    ax.get_yaxis().set_major_formatter(ticker.FuncFormatter(lambda x, p: "%.1fk" % (x / 1000)))
+
+    ax.title.set_text(
+        f"Peer Discovery to ADD_PROVIDER RPC Delay (Sample Size {len(add_provider_delay)}), {p50}s (p50), {p90}s (p90), {p95}s (p95)")
+
+    plt.tight_layout()
+    plt.savefig("../plots/provide_delay.png")
+    plt.show()
+
+
+if __name__ == '__main__':
+    plot()
