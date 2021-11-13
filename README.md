@@ -5,60 +5,89 @@
 This repo contains:
 
 1. A libp2p DHT performance measurement tool. As of now, it primarily measures the performance of providing content in the network.
-2. A proposal for an alternative approach to providing content.
+2. A proposal for an alternative approach to content providing.
 
 ## 🚧 Work In Progress - Proposal - Optimistic Provide
 
 ## Abstract
 
 The lifecycle of content in the IPFS network can be divided in three stages: publication, discovery and retrieval.
-In the past much work has focussed on improving content discovery while efficiently storing provider records at appropriate peers is similarly important as it needs to be repeated periodically.
-This document proposes an optimistic approach to storing provider records in the libp2p Kademlia DHT to significantly speed up the process 
-based on a priori information about the network size. It comes with the trade-off of potentially storing more provider records than desired.
-I would argue that the speed-up gains justify this inefficiency.
+In the past much work has focussed on improving content discovery while efficiently storing provider records at appropriate peers is similarly important because it needs to be repeated periodically.
+This document proposes an optimistic approach to storing provider records in the libp2p Kademlia DHT to significantly speed up this process. It is based on a priori information about the network size. It comes with the trade-off of potentially storing more provider records than desired.
 
 ## Motivation
 
-When IPFS attempts to store a provider record in the DHT it tries to find the _beta_ (20) closest peers to the corresponding `CID` (XOR distance).
-To find these peers IPFS sends `FIND_NODES` RPCs to the closest peers it has in its routing table and then repeats the process for the returned set of peers.
+When IPFS attempts to store a provider record in the DHT it tries to find the 20 closest peers to the corresponding `CID` using the XOR distance.
+To find these peers IPFS sends `FIND_NODES` RPCs to the closest peers it has in its routing table and then repeats the process for the set of returned peers.
 There are two termination conditions for this process:
 
-1. **Termination**: The current _beta_ closest peers were queried for even closer peers but didn't yield closer ones.
+1. **Termination**: The 20 closest peers to the CID were queried for even closer peers but didn't yield closer ones.
 2. **Starvation**: All peers in the network were queried (if I interpret [this condition](https://github.com/libp2p/go-libp2p-kad-dht/blob/cd05807c54f3168f01a5a363b37aee5e38fee63d/query.go#L368) correctly)
 
-This can lead to huge delays if some of the _beta_ closest peers don't respond timely or are straight out not reachable.
-The following graph shows the latency distribution of the whole provide-process.
+This can lead to huge delays if some of the 20 closest peers don't respond timely or are straight out not reachable.
+The following graph shows the latency distribution of the whole provide-process for 1,269 distinct provide operations.
 
 ![](./plots/provide_latencies.png)
 
-In other words, it shows the distribution of how long it takes for the [`dht.Provide(ctx, content.cid, true)`](https://github.com/libp2p/go-libp2p-kad-dht/blob/0b7ac010657443bc0675b3bd61133fe04d61d25b/fullrt/dht.go#L752) call to return.
+In other words, it shows the distribution of how long it takes for the [`kaddht.Provide(ctx, CID, true)`](https://github.com/libp2p/go-libp2p-kad-dht/blob/0b7ac010657443bc0675b3bd61133fe04d61d25b/fullrt/dht.go#L752) call to return.
 At the top of the graph you can find the percentiles and total sample size. There is a huge spike at around 10s which is probably related to an exceeded context deadline - not sure though.
 
-If we on the other hand look at how long it took to find the peers that we eventually stored the provider records at, we see that it takes less than 1.6s for the vast majority of cases.
+If we on the other hand look at how long it took to find the peers that we eventually **attempted** stored the provider records at, we see that it takes less than 1.6s in the vast majority of cases.
 
-![](./plots/find_latencies.png)
+![](./plots/discover_latencies.png)
 
-The sample size corresponds to roughly `623 * 20` as in every `Provide`-run we attempt to save the provider record at _beta_ (20) peers. I'm not sure why the Sample Size is not exactly `623 * 20 = 12460`.
+Again, sample size and percentiles are given in the figure title. The sample size corresponds to `1269 * 20` as in every `Provide`-run we attempt to save the provider record at 20 peers.
 
-This repository also contains code to visualize the provide process. Here is an example:
+The same point can be made if we take a look at how many hops it took to find a peer that we eventually **attempted** to store the provider records at:
 
-![](./plots/provide_process.png)
+![](./plots/hop_distribution.png)
 
-This visualization is similar to [this Multi-Level DHT Report](https://drive.google.com/file/d/1OfFyi4VO3itNc3O-YoUqW1Q6D0Fp1Crz/view) page 17 (document) or page 21 (PDF).
-The left-hand side shows the agent version, the [normed XOR distance](#normed-xor-distance) in percent of the particular peer to the CID being provided, and the peer ID truncated to 16 characters.
-The title indicates the normed XOR distance of the providing peer to the CID being provided.
-Muted colors and `x` markers indicate failed operations.
-The peers are ordered by the time they were discovered after the provide operation started.
+Note the log scale of the `y`-axis.
+
+Over 98 % of the times an appropriate peer to store the provider record at was found in 3 hops or less.
+
+The following graph shows the above distribution depending on the [normed XOR distance](#normed-xor-distance) of the providing peer to the CID being provided.
+
+![](./plots/hop_distribution_by_distance.png)
+
+<details>
+<summary>View this graph as multiple plots</summary>
+![](./plots/hop_distribution_by_distance_multi_plot.png)
+</details>
+
+If the distance is small (0 - 10 %) most of the times it only takes one hop to discover an appropriate peer. As the distance increases the distribution shifts to more hops - though it's not as clear as I expected it to be.
+
+## Related Work
+
+The [IPFS Content Providing Proposal](https://github.com/protocol/web3-dev-team/blob/main/proposals/ipfs-content-providing.md) focusses on (1) improving the experience of users that want to advertise large amounts of CIDs and (2) improve the performance of advertising a single CID.
+
+> Currently go-ipfs users are able to utilize the public IPFS DHT to find who has advertised they have some CID in under 1.5s in 95+% of cases. However, the process of putting those advertisements into the DHT is slow (e.g. 1 minute) [...].
+
+These numbers are in line with the above measurements. One of the goals of this proposal is to
+
+> [m]ake IPFS public DHT puts take <3 seconds [...].
+
+To achieve this four techniques are proposed:
+
+> - Decreasing DHT message timeouts to more reasonable levels
+> - Not requiring the "followup" phase for puts
+> - Not requiring responses from all 20 peers before returning to the user
+> - Not requiring responses from the 3 closest peers before aborting the query (e.g. perhaps 5 of the closest 10)
+
+This propsoal suggests a fifth option for this list but won't address the bottleneck of advertising large amounts of CIDs.
 
 ## Proposal - Optimistic Provide
 
-The discrepancy between the time the provide operation took and the time it could have taken led to the idea of just storing provider records optimistically at peers.
-This would trade storing these records on potentially more than _beta_ peers but could yield a vast speed up.
-It also requires a priori knowledge about the current network size which can be estimated based on network observation of crawls like it was implemented in the [new experimental DHT mode](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.12.0).
+The discrepancy between the time the provide operations take and the time it could have taken led to the idea of just storing provider records optimistically at peers.
+This would trade storing these records on potentially more than 20 peers for decreasing the time content becomes available in the network.
+Further, it requires a priori information about the current network size.
+
+ <!-- which can be estimated based on network observation of crawls like it was implemented in the [new experimental DHT mode](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.12.0). -->
 
 ### Procedure
 
-When finding a new peer with Peer ID `P` in the process of providing content we calculate the distance to the CID `C` and derive the expected amount of peers `μ` that are closer to the CID than the peer with peer ID `P`.
+Let's imagine we want to provide content with the CID `C` and start querying our closest peers.
+When finding a new peer with Peer ID `P` we calculate the distance to the CID `C` and derive the expected amount of peers `μ` that are even closer to the CID (than the peer with peer ID `P`).
 
 If we norm `P` and `C` to the range from `0` to `1` this can be calculated as:
 
@@ -66,9 +95,13 @@ If we norm `P` and `C` to the range from `0` to `1` this can be calculated as:
 μ = || P - C || * N
 ```
 
-`N` is the current network size. The logic would be that if the expected value `μ` is less than _beta_ peers we store the provider record at this peer `P`.
+Where `N` is the current network size and `|| . ||` corresponds to the XOR distance metric.
 
-This threshold could also consider standard deviation etc. and could generally be tuned to minimize falsely selected peers (peers that are not in the set of the _beta_ closest peers).
+The logic would be that if the expected value `μ` is less than 20 peers we store the provider record at the peer `P`.
+
+<!-- https://en.wikipedia.org/wiki/Discrete_uniform_distribution -->
+
+This threshold could also consider standard deviation etc. and could generally be tuned to minimize falsely selected peers (peers that are not in the set of the 20 closest peers).
 
 ### Example
 
@@ -133,7 +166,19 @@ The following results show measurement data that was collected from 2021-11-05 t
 
 ### Normed XOR Distance
 
-In the graphs you will find XOR distance values in the range from 0 to 1 or their corresponding percentage representation. These values are derived by dividing the 256-bit XOR distance by `2^256`. Since the maximum possible XOR distance between two values in the 256-bit key-space is `2^256`, the division by this maximum norms the resulting distance value into the range from 0 to 1. This is solely done to work with more handy numbers. As the distance can become quite small the graphs may also show the distance as a percentage from the 0 to 1 range.
+In the graphs you will find XOR distance values in the range from 0 to 1 or their corresponding percentage representation. These values are derived by dividing the 256-bit XOR distance by `2^256 - 1`. Since the maximum possible XOR distance between two values in the 256-bit key-space is `2^256 - 1`, the division by this maximum norms the resulting distance value into the range from 0 to 1. This is solely done to work with more handy numbers. As the distance can become quite small the graphs may also show the distance as a percentage from that 0 to 1 range.
+
+
+### Process visualization
+This repository also contains code to visualize the provide process. Here is an example:
+
+![](./plots/provide_process.png)
+
+This visualization is similar to [this Multi-Level DHT Report](https://drive.google.com/file/d/1OfFyi4VO3itNc3O-YoUqW1Q6D0Fp1Crz/view) page 17 (document) or page 21 (PDF).
+The left-hand side shows the agent version, the [normed XOR distance](#normed-xor-distance) in percent of the particular peer to the CID being provided, and the peer ID truncated to 16 characters.
+The title indicates the normed XOR distance of the providing peer to the CID being provided.
+Muted colors and `x` markers indicate failed operations.
+The peers are ordered by the time they were discovered after the provide operation started.
 
 ---
 
