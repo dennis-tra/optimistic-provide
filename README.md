@@ -1,7 +1,6 @@
 # Optimistic Provide - Tool & Proposal
 
 [![GitHub license](https://img.shields.io/github/license/dennis-tra/optimistic-provide)](https://github.com/dennis-tra/optimistic-provide/blob/main/LICENSE)
-[![Timestamped - OriginStamp](https://img.shields.io/badge/Timestamped-OriginStamp-14588f)](https://originstamp.com)
 
 This repo contains:
 
