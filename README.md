@@ -159,7 +159,7 @@ In the graphs you will find XOR distance values in the range from 0 to 1 or thei
 
 This repository also contains code to visualize the provide process. Here is an example:
 
-![](./plots/provide_process.png)
+![Provide Process](./plots/provide_process.png)
 
 This visualization is similar to [this Multi-Level DHT Report](https://drive.google.com/file/d/1OfFyi4VO3itNc3O-YoUqW1Q6D0Fp1Crz/view) page 17 (document) or page 21 (PDF).
 The left-hand side shows the agent version, the [normed XOR distance](#normed-xor-distance) in percent of the particular peer to the CID being provided, and the peer ID truncated to 16 characters.

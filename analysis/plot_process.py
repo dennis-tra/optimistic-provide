@@ -11,15 +11,12 @@ span_colors = {
 }
 
 
-# ax.vlines(0, 0, num_peers, linewidth=0.5, colors=colors['brown'])
-
-
 def plot(filename: str):
     sns.set_theme(style="darkgrid")
 
     measurement = Measurement.from_file(filename)
 
-    fig, ax = plt.subplots(1, figsize=(15, 5))
+    fig, ax = plt.subplots(1, figsize=(15, 6))
 
     # Plot the horizontal spans for each peer
     for span in measurement.provider.spans:
@@ -88,8 +85,9 @@ def plot(filename: str):
     plt.xlabel("Time in s")
     plt.xlim(0)
     plt.tight_layout()
+    plt.savefig("../plots/provide_process.png")
     plt.show()
 
 
 if __name__ == '__main__':
-    plot("../measurements/2021-11-05T15:17_measurement_015.json")
+    plot("../data/2021-11-08T09:45_measurement_001.json")
