@@ -61,7 +61,7 @@ If the distance is small (0 - 10 %) most of the times it only takes one hop to d
 
 The [IPFS Content Providing Proposal](https://github.com/protocol/web3-dev-team/blob/main/proposals/ipfs-content-providing.md) focusses on (1) improving the experience of users that want to advertise large amounts of CIDs and (2) improve the performance of advertising a single CID.
 
-> Currently go-ipfs users are able to utilize the public IPFS DHT to find who has advertised they have some CID in under 1.5s in 95+% of cases. However, the process of putting those advertisements into the DHT is slow (e.g. 1 minute) [...].
+> Currently, go-ipfs users are able to utilize the public IPFS DHT to find who has advertised they have some CID in under 1.5s in 95+% of cases. However, the process of putting those advertisements into the DHT is slow (e.g. 1 minute) [...].
 
 These numbers are in line with the above measurements. One of the goals of that proposal is to
 
@@ -164,7 +164,9 @@ This repository also contains code to visualize the provide process. Here is an 
 This visualization is similar to [this Multi-Level DHT Report](https://drive.google.com/file/d/1OfFyi4VO3itNc3O-YoUqW1Q6D0Fp1Crz/view) page 17 (document) or page 21 (PDF).
 The left-hand side shows the agent version, the [normed XOR distance](#normed-xor-distance) in percent of the particular peer to the CID being provided, and the peer ID truncated to 16 characters.
 The title indicates the normed XOR distance of the providing peer to the CID being provided.
-Muted colors and `x` markers indicate failed operations.
+Muted colors and `x` markers indicate failed operations. While there are many `x` markers in the plot this is a little misleading.
+If there are several parallel dials to a peer on, e.g. different IP addresses, and one succeeds the other dials are aborted and marked as failed.
+This should be fixed in an updated visualization.
 The peers are ordered by the time they were discovered after the provide operation started.
 
 ---
