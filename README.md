@@ -7,15 +7,36 @@ This repo contains:
 1. A libp2p DHT performance measurement tool. As of now, it primarily measures the performance of providing content in the network.
 2. A proposal for an alternative approach to content providing.
 
+## Table of Contents
+
+- [Table of Contents](#table-of-contents)
+- [Proposal - Optimistic Provide](#proposal---optimistic-provide)
+  - [Abstract](#abstract)
+  - [Motivation](#motivation)
+  - [Related Work](#related-work)
+  - [Optimistic Provide](#optimistic-provide)
+    - [Procedure](#procedure)
+    - [Example](#example)
+    - [Network Size](#network-size)
+  - [Methodology](#methodology)
+    - [Setup](#setup)
+    - [Measurement Process](#measurement-process)
+  - [Normed XOR Distance](#normed-xor-distance)
+  - [Process visualization](#process-visualization)
+- [Maintainers](#maintainers)
+- [Contributing](#contributing)
+- [License](#license)
+
+
 ## Proposal - Optimistic Provide
 
-## Abstract
+### Abstract
 
 The lifecycle of content in the IPFS network can be divided in three stages: publication, discovery and retrieval.
 In the past much work has focussed on improving content discovery while efficiently storing provider records at appropriate peers is similarly important because it needs to be repeated periodically.
 This document proposes an optimistic approach to storing provider records in the libp2p Kademlia DHT to significantly speed up this process. It is based on a priori information about the network size. It comes with the trade-off of potentially storing more provider records than desired.
 
-## Motivation
+### Motivation
 
 When IPFS attempts to store a provider record in the DHT it tries to find the 20 closest peers to the corresponding `CID` using the XOR distance.
 To find these peers IPFS sends `FIND_NODES` RPCs to the closest peers it has in its routing table and then repeats the process for the set of returned peers.
@@ -48,7 +69,7 @@ Over 98 % of the times an appropriate peer to store the provider record at was f
 
 The following graph shows the above distribution depending on the [normed XOR distance](#normed-xor-distance) of the providing peer to the CID being provided.
 
-![](./plots/hop_distribution_by_distance.png)
+![Hop Distribution by Distance](./plots/hop_distribution_by_distance.png)
 
 <details>
 <summary>View this graph as multiple plots</summary>
@@ -57,7 +78,7 @@ The following graph shows the above distribution depending on the [normed XOR di
 
 If the distance is small (0 - 10 %) most of the times it only takes one hop to discover an appropriate peer. As the distance increases the distribution shifts to more hops - though it's not as clear as I expected it to be.
 
-## Related Work
+### Related Work
 
 The [IPFS Content Providing Proposal](https://github.com/protocol/web3-dev-team/blob/main/proposals/ipfs-content-providing.md) focusses on (1) improving the experience of users that want to advertise large amounts of CIDs and (2) improve the performance of advertising a single CID.
 
@@ -76,7 +97,7 @@ To achieve this four techniques are proposed:
 
 This propsoal suggests a fifth option for that list but won't address the bottleneck of advertising large amounts of CIDs. Though, you could argue that if content providing becomes faster that bottleneck is alleviated as well.
 
-## Optimistic Provide
+### Optimistic Provide
 
 The discrepancy between the time the provide operations take and the time it could have taken led to the idea of just storing provider records optimistically at peers.
 This would trade storing these records on potentially more than 20 peers for decreasing the time content becomes available in the network.
@@ -84,7 +105,7 @@ Further, it requires a priori information about the current network size.
 
  <!-- which can be estimated based on network observation of crawls like it was implemented in the [new experimental DHT mode](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.12.0). -->
 
-### Procedure
+#### Procedure
 
 Let's imagine we want to provide content with the CID `C` and start querying our closest peers.
 When finding a new peer with Peer ID `P` we calculate the distance to the CID `C` and derive the expected amount of peers `μ` that are even closer to the CID (than the peer with peer ID `P`).
@@ -103,7 +124,7 @@ The logic would be that if the expected value `μ` is less than 20 peers we stor
 
 This threshold could also consider standard deviation etc. and could generally be tuned to minimize falsely selected peers (peers that are not in the set of the 20 closest peers).
 
-### Example
+#### Example
 
 The following graph shows the distribution of [normed XOR distances](#normed-xor-distance) of the peers that were selected to store the provider record to the CID that was provided.
 
@@ -115,7 +136,7 @@ Therefore, we would store a provider record at that peer right away.
 
 > `N = 7000` is a realistic assumption based on [our crawls](https://github.com/dennis-tra/nebula-crawler).
 
-### Network Size
+#### Network Size
 
 Since the calculation above needs information about the current network size there is the question of how get to that information locally on every node. I could come up with three strategies:
 
@@ -123,9 +144,9 @@ Since the calculation above needs information about the current network size the
 2. Periodic full DHT crawls (was implemented in the [new experimental DHT client](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.12.0))
 3. Estimation based on peer-CID proximity of previous provide operations
 
-## Measurements
+### Methodology
 
-### Setup
+#### Setup
 
 The measurements were conducted on the following machine:
 
@@ -139,7 +160,7 @@ The measurements were conducted on the following machine:
 
 > To be transparent: There are 8 measurement instances that I have excluded from the analysis. They didn't have 20 ADD_PROVIDER RPCs after the provide procedure has finished. Since I saw some error messages about not enough file descriptors I suspected that this was related, and [I filtered those measurements](https://github.com/dennis-tra/optimistic-provide/blob/a8db5a07125729ae457ccdb73e3ec1fc044bcdba/analysis/model_loader.py#L32).
 
-### Methodology
+#### Measurement Process
 
 The measurement tool is a simple Go program that initializes one `provider` libp2p host and a variable number of `requester` libp2p hosts (in the measurements above five) **on a single machine**.
 Every libp2p host (provider and requesters) has a random identity in the Kademlia key space.
