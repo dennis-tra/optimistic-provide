@@ -12,6 +12,7 @@ def plot():
     measurements = ModelLoader.open("../data")
 
     distances = []
+    has_errors = []
     for measurement in measurements:
         for span in measurement.provider.spans:
             if span.type != "ADD_PROVIDER":
@@ -19,8 +20,12 @@ def plot():
 
             peer_info = measurement.provider.peer_infos[span.peer_id]
             distances += [peer_info.distance_pct]
+            has_errors += [span.has_error]
 
-    combined = pd.DataFrame({"distances": distances})
+    combined = pd.DataFrame({
+        "distances": distances,
+        "error": has_errors
+    })
 
     fig, ax = plt.subplots(figsize=(15, 6))
 
@@ -29,6 +34,9 @@ def plot():
         data=combined,
         x="distances",
         bins=np.arange(50) / 100,
+        multiple="stack",
+        hue="error",
+        legend=True,
     )
     ax.set_ylabel("Count")
     ax.set_xlabel("Normed XOR Distance in %")
@@ -37,7 +45,7 @@ def plot():
     plt.title(
         f"Selected Peers by XOR Target Distance to Provided CID ({stats_str})")
     plt.tight_layout()
-    plt.savefig("../plots/distance.png")
+    plt.savefig("../plots/distance_error.png")
     plt.show()
 
 
