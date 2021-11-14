@@ -7,6 +7,8 @@ This repo contains:
 1. A libp2p DHT performance measurement tool. As of now, it primarily measures the performance of providing content in the network.
 2. A proposal for an alternative approach to content providing.
 
+> **TL;DR:** For each peer, we come across during content publication, calculate the probability of an even closer one. If the likelihood is low, just store the provider record at that peer optimistically.
+
 ## Table of Contents
 
 - [Table of Contents](#table-of-contents)
@@ -32,14 +34,14 @@ This repo contains:
 
 ### Abstract
 
-The lifecycle of content in the IPFS network can be divided in three stages: publication, discovery and retrieval.
-In the past much work has focussed on improving content discovery while efficiently storing provider records at appropriate peers is similarly important because it needs to be repeated periodically.
-This document proposes an optimistic approach to storing provider records in the libp2p Kademlia DHT to significantly speed up this process. It is based on a priori information about the network size. It comes with the trade-off of potentially storing more provider records than desired.
+The lifecycle of content in the IPFS network can be divided into three stages: publication, discovery, and retrieval.
+In the past, much work has focussed on improving content discovery while efficiently storing provider records at appropriate peers is similarly important because it needs to be repeated periodically.
+This document proposes an optimistic approach to storing provider records in the libp2p Kademlia DHT to speed up this process significantly. It is based on a priori information about the network size. It comes with the trade-off of potentially storing more provider records than desired.
 
 ### Motivation
 
 When IPFS attempts to store a provider record in the DHT it tries to find the 20 closest peers to the corresponding `CID` using the XOR distance.
-To find these peers IPFS sends `FIND_NODES` RPCs to the closest peers it has in its routing table and then repeats the process for the set of returned peers.
+To find these peers, IPFS sends `FIND_NODES` RPCs to the closest peers in its routing table and then repeats the process for the set of returned peers.
 There are two termination conditions for this process:
 
 1. **Termination**: The 20 closest peers to the CID were queried for even closer peers but didn't yield closer ones.
@@ -163,14 +165,14 @@ The measurements were conducted on the following machine:
 #### Measurement Process
 
 The measurement tool is a simple Go program that initializes one `provider` libp2p host and a variable number of `requester` libp2p hosts (in the measurements above five) **on a single machine**.
-Every libp2p host (provider and requesters) has a random identity in the Kademlia key space.
-When starting a measurement the libp2p hosts get initialized and their routing tables get refreshed.
-After that is done, 1024kB of random data gets generated, its CID get calculated and the `provider` host starts advertising that CID in the network.
+Every libp2p host (provider and requesters) has a random identity in the Kademlia keyspace.
+When starting a measurement, the libp2p hosts get initialized, and their routing tables get refreshed.
+After that is done, 1024kB of random data gets generated, its CID gets calculated, and the `provider` host starts advertising that CID in the network.
 
-The libp2p hosts were initialized with thin wrappers around the default `tcp` and `websocket` transports as well as the `messageSenderImpl` which handles the DHT RPC back and forth.
+The libp2p hosts were initialized with thin wrappers around the default `tcp` and `websocket` transports as well as the `messageSenderImpl`, which handles the DHT RPC back and forth.
 This is done to intercept the `dial` and `RPC` events to track them later on.
 
-After the provide procedure has finished, the `requester` hosts get instructed to query the network for the CID that was just provided. Again, the `dial` and `RPC` events are tracked. Since the `requester` hosts are also randomly distributed in the key space it should give a reasonable approximation for the content retrieval performance. This data is not yet analysed, though.
+After the provide procedure has finished, the `requester` hosts get instructed to query the network for the CID that was just provided. Again, the `dial` and `RPC` events are tracked. Since the `requester` hosts are also randomly distributed in the key space it should give a reasonable approximation for the content retrieval performance. This data is not yet analyzed, though.
 
 ### Normed XOR Distance
 
