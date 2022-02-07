@@ -56,7 +56,7 @@ func NewHost(ctx context.Context, optsFunc func(peer.ID, chan Span) libp2p.Optio
 	})
 
 	var dht *kaddht.IpfsDHT
-	h, err := libp2p.New(ctx,
+	h, err := libp2p.New(
 		libp2p.Identity(key),
 		libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
 			dht, err = kaddht.New(ctx, h)

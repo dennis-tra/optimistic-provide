@@ -1,0 +1,11 @@
+output   = "db"
+wipe     = true
+
+[psql]
+dbname = "optprov"
+host = "localhost"
+port = 5432
+user = "optprov"
+pass = "password"
+sslmode = "disable"
+blacklist = ["schema_migrations"]

@@ -6,7 +6,6 @@ import (
 
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/transport"
-	tptu "github.com/libp2p/go-libp2p-transport-upgrader"
 	"github.com/libp2p/go-tcp-transport"
 	websocket "github.com/libp2p/go-ws-transport"
 	ma "github.com/multiformats/go-multiaddr"
@@ -25,12 +24,13 @@ type TCPTransport struct {
 	trpt *tcp.TcpTransport
 }
 
-func NewTCPTransport(local peer.ID, ec chan<- Span) func(*tptu.Upgrader) *TCPTransport {
-	return func(u *tptu.Upgrader) *TCPTransport {
+func NewTCPTransport(local peer.ID, ec chan<- Span) func(transport.Upgrader) *TCPTransport {
+	return func(u transport.Upgrader) *TCPTransport {
+		x, _ := tcp.NewTCPTransport(u, nil)
 		return &TCPTransport{
 			local: local,
 			sc:    ec,
-			trpt:  tcp.NewTCPTransport(u),
+			trpt:  x,
 		}
 	}
 }
@@ -75,12 +75,12 @@ type WSTransport struct {
 	trpt *websocket.WebsocketTransport
 }
 
-func NewWSTransport(local peer.ID, ec chan<- Span) func(u *tptu.Upgrader) *WSTransport {
-	return func(u *tptu.Upgrader) *WSTransport {
+func NewWSTransport(local peer.ID, ec chan<- Span) func(u transport.Upgrader) *WSTransport {
+	return func(u transport.Upgrader) *WSTransport {
 		return &WSTransport{
 			local: local,
 			sc:    ec,
-			trpt:  websocket.New(u),
+			trpt:  websocket.New(u, nil),
 		}
 	}
 }
