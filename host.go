@@ -12,7 +12,6 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/routing"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
-	pb "github.com/libp2p/go-libp2p-kad-dht/pb"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -37,23 +36,23 @@ func NewHost(ctx context.Context, optsFunc func(peer.ID, chan Span) libp2p.Optio
 	if err != nil {
 		return nil, errors.Wrap(err, "id from public key")
 	}
-
-	ms := &messageSenderImpl{
-		protocols: kaddht.DefaultProtocols,
-		strmap:    make(map[peer.ID]*peerMessageSender),
-		local:     localID,
-		sc:        ec,
-	}
-	pm, err := pb.NewProtocolMessenger(ms)
-	if err != nil {
-		return nil, err
-	}
-
-	// When kaddht tries to instantiate a new protocol messenger hand it our implementation. There is no option to
-	// exchange the protocol messenger or message sender implementation.
-	monkey.Patch(pb.NewProtocolMessenger, func(msgSender pb.MessageSender, opts ...pb.ProtocolMessengerOption) (*pb.ProtocolMessenger, error) {
-		return pm, nil
-	})
+	//
+	//ms := &messageSenderImpl{
+	//	protocols: kaddht.DefaultProtocols,
+	//	strmap:    make(map[peer.ID]*peerMessageSender),
+	//	local:     localID,
+	//	sc:        ec,
+	//}
+	//pm, err := pb.NewProtocolMessenger(ms)
+	//if err != nil {
+	//	return nil, err
+	//}
+	//
+	//// When kaddht tries to instantiate a new protocol messenger hand it our implementation. There is no option to
+	//// exchange the protocol messenger or message sender implementation.
+	//monkey.Patch(pb.NewProtocolMessenger, func(msgSender pb.MessageSender, opts ...pb.ProtocolMessengerOption) (*pb.ProtocolMessenger, error) {
+	//	return pm, nil
+	//})
 
 	var dht *kaddht.IpfsDHT
 	h, err := libp2p.New(
@@ -68,9 +67,9 @@ func NewHost(ctx context.Context, optsFunc func(peer.ID, chan Span) libp2p.Optio
 		return nil, errors.Wrap(err, "new libp2p host")
 	}
 
-	// Set the remaining information
-	// TODO: race condition if the above init already tries to access these fields?
-	ms.host = h
+	//// Set the remaining information
+	//// TODO: race condition if the above init already tries to access these fields?
+	//ms.host = h
 
 	// Remove monkey patched function.
 	monkey.UnpatchAll()

@@ -1,0 +1,6 @@
+BEGIN;
+
+DROP TABLE IF EXISTS peers;
+DROP FUNCTION IF EXISTS upsert_peer;
+
+END;
