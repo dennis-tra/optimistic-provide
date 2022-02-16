@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/maxmind"
+	manet "github.com/multiformats/go-multiaddr/net"
 
 	ma "github.com/multiformats/go-multiaddr"
 
@@ -102,25 +103,51 @@ func (c *Client) upsertPeer(exec boil.ContextExecutor, pid peer.ID, av string, p
 }
 
 func (c *Client) UpsertMultiAddress(ctx context.Context, exec boil.ContextExecutor, maddr ma.Multiaddr) (*models.MultiAddress, error) {
+	isPublic := manet.IsPublicAddr(maddr)
+
 	infos, err := c.mmclient.MaddrInfo(ctx, maddr)
 	if err != nil {
 		return nil, errors.Wrap(err, "resolve maddr infos")
 	}
 
+	countries := []string{}
+	continents := []string{}
+	asns := []int{}
+
 	ipAddressIDs := []int64{}
 	for address, info := range infos {
-		dbIPAddress, err := c.UpsertIPAddress(exec, address, info)
+		dbIPAddress, err := c.UpsertIPAddress(ctx, exec, address, info, isPublic)
 		if err != nil {
 			return nil, errors.Wrap(err, "upsert ip address")
 		}
 		ipAddressIDs = append(ipAddressIDs, int64(dbIPAddress.ID))
+
+		if info.Country != "" {
+			countries = append(countries, info.Country)
+		}
+
+		if info.Continent != "" {
+			continents = append(continents, info.Continent)
+		}
+
+		if info.ASN != 0 {
+			asns = append(asns, int(info.ASN))
+		}
 	}
 
 	dbMaddr := &models.MultiAddress{
 		Maddr: maddr.String(),
 	}
 
-	rows, err := queries.Raw("SELECT upsert_multi_address($1, $2)", maddr.String(), types.Int64Array(ipAddressIDs)).Query(exec)
+	query := queries.Raw("SELECT upsert_multi_address($1, $2, $3, $4, $5, $6)",
+		maddr.String(),
+		null.StringFromPtr(uniqueStr(countries)),
+		null.StringFromPtr(uniqueStr(continents)),
+		null.IntFromPtr(uniqueInt(asns)),
+		isPublic,
+		types.Int64Array(ipAddressIDs),
+	)
+	rows, err := query.Query(exec)
 	if err != nil {
 		return nil, err
 	}
@@ -140,23 +167,50 @@ func (c *Client) UpsertMultiAddress(ctx context.Context, exec boil.ContextExecut
 	return dbMaddr, err
 }
 
-func (c *Client) UpsertIPAddress(exec boil.ContextExecutor, address string, info *maxmind.AddrInfo) (*models.IPAddress, error) {
+func (c *Client) UpsertIPAddress(ctx context.Context, exec boil.ContextExecutor, address string, info *maxmind.AddrInfo, isPublic bool) (*models.IPAddress, error) {
 	dbAddress := &models.IPAddress{
 		Address:   address,
 		Country:   null.NewString(info.Country, info.Country != ""),
 		Continent: null.NewString(info.Continent, info.Continent != ""),
 		Asn:       null.NewInt(int(info.ASN), info.ASN != 0),
+		IsPublic:  isPublic,
 	}
 
-	rows, err := queries.Raw("SELECT upsert_ip_address($1, $2, $3, $4)", dbAddress.Address, dbAddress.Country, dbAddress.Continent, dbAddress.Asn).Query(exec)
-	if err != nil {
-		return nil, err
+	return dbAddress, dbAddress.Upsert(ctx, exec, true, []string{models.IPAddressColumns.Address}, boil.Whitelist(models.IPAddressColumns.UpdatedAt), boil.Infer())
+}
+
+func uniqueInt(input []int) *int {
+	u := make([]int, 0, len(input))
+	m := make(map[int]bool)
+
+	for _, val := range input {
+		if _, ok := m[val]; !ok {
+			m[val] = true
+			u = append(u, val)
+		}
 	}
-	if !rows.Next() {
-		return nil, rows.Err()
+
+	if len(u) == 1 {
+		return &u[0]
 	}
-	if err = rows.Scan(&dbAddress.ID); err != nil {
-		return nil, err
+
+	return nil
+}
+
+func uniqueStr(input []string) *string {
+	u := make([]string, 0, len(input))
+	m := make(map[string]bool)
+
+	for _, val := range input {
+		if _, ok := m[val]; !ok {
+			m[val] = true
+			u = append(u, val)
+		}
 	}
-	return dbAddress, rows.Close()
+
+	if len(u) == 1 {
+		return &u[0]
+	}
+
+	return nil
 }

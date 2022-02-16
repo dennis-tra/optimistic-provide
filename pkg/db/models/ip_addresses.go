@@ -29,6 +29,7 @@ type IPAddress struct {
 	Country   null.String `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
 	Continent null.String `boil:"continent" json:"continent,omitempty" toml:"continent" yaml:"continent,omitempty"`
 	Asn       null.Int    `boil:"asn" json:"asn,omitempty" toml:"asn" yaml:"asn,omitempty"`
+	IsPublic  bool        `boil:"is_public" json:"is_public" toml:"is_public" yaml:"is_public"`
 	UpdatedAt time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	CreatedAt time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 
@@ -42,6 +43,7 @@ var IPAddressColumns = struct {
 	Country   string
 	Continent string
 	Asn       string
+	IsPublic  string
 	UpdatedAt string
 	CreatedAt string
 }{
@@ -50,6 +52,7 @@ var IPAddressColumns = struct {
 	Country:   "country",
 	Continent: "continent",
 	Asn:       "asn",
+	IsPublic:  "is_public",
 	UpdatedAt: "updated_at",
 	CreatedAt: "created_at",
 }
@@ -60,6 +63,7 @@ var IPAddressTableColumns = struct {
 	Country   string
 	Continent string
 	Asn       string
+	IsPublic  string
 	UpdatedAt string
 	CreatedAt string
 }{
@@ -68,6 +72,7 @@ var IPAddressTableColumns = struct {
 	Country:   "ip_addresses.country",
 	Continent: "ip_addresses.continent",
 	Asn:       "ip_addresses.asn",
+	IsPublic:  "ip_addresses.is_public",
 	UpdatedAt: "ip_addresses.updated_at",
 	CreatedAt: "ip_addresses.created_at",
 }
@@ -97,12 +102,22 @@ func (w whereHelpernull_Int) GTE(x null.Int) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
+type whereHelperbool struct{ field string }
+
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
+
 var IPAddressWhere = struct {
 	ID        whereHelperint
 	Address   whereHelperstring
 	Country   whereHelpernull_String
 	Continent whereHelpernull_String
 	Asn       whereHelpernull_Int
+	IsPublic  whereHelperbool
 	UpdatedAt whereHelpertime_Time
 	CreatedAt whereHelpertime_Time
 }{
@@ -111,6 +126,7 @@ var IPAddressWhere = struct {
 	Country:   whereHelpernull_String{field: "\"ip_addresses\".\"country\""},
 	Continent: whereHelpernull_String{field: "\"ip_addresses\".\"continent\""},
 	Asn:       whereHelpernull_Int{field: "\"ip_addresses\".\"asn\""},
+	IsPublic:  whereHelperbool{field: "\"ip_addresses\".\"is_public\""},
 	UpdatedAt: whereHelpertime_Time{field: "\"ip_addresses\".\"updated_at\""},
 	CreatedAt: whereHelpertime_Time{field: "\"ip_addresses\".\"created_at\""},
 }
@@ -136,8 +152,8 @@ func (*ipAddressR) NewStruct() *ipAddressR {
 type ipAddressL struct{}
 
 var (
-	ipAddressAllColumns            = []string{"id", "address", "country", "continent", "asn", "updated_at", "created_at"}
-	ipAddressColumnsWithoutDefault = []string{"address", "country", "continent", "asn", "updated_at", "created_at"}
+	ipAddressAllColumns            = []string{"id", "address", "country", "continent", "asn", "is_public", "updated_at", "created_at"}
+	ipAddressColumnsWithoutDefault = []string{"address", "country", "continent", "asn", "is_public", "updated_at", "created_at"}
 	ipAddressColumnsWithDefault    = []string{"id"}
 	ipAddressPrimaryKeyColumns     = []string{"id"}
 )
@@ -479,7 +495,7 @@ func (ipAddressL) LoadMultiAddresses(ctx context.Context, e boil.ContextExecutor
 	}
 
 	query := NewQuery(
-		qm.Select("\"multi_addresses\".id, \"multi_addresses\".maddr, \"multi_addresses\".updated_at, \"multi_addresses\".created_at, \"a\".\"ip_address_id\""),
+		qm.Select("\"multi_addresses\".id, \"multi_addresses\".maddr, \"multi_addresses\".country, \"multi_addresses\".continent, \"multi_addresses\".asn, \"multi_addresses\".is_public, \"multi_addresses\".ip_address_count, \"multi_addresses\".updated_at, \"multi_addresses\".created_at, \"a\".\"ip_address_id\""),
 		qm.From("\"multi_addresses\""),
 		qm.InnerJoin("\"multi_addresses_x_ip_addresses\" as \"a\" on \"multi_addresses\".\"id\" = \"a\".\"multi_address_id\""),
 		qm.WhereIn("\"a\".\"ip_address_id\" in ?", args...),
@@ -500,7 +516,7 @@ func (ipAddressL) LoadMultiAddresses(ctx context.Context, e boil.ContextExecutor
 		one := new(MultiAddress)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.Maddr, &one.UpdatedAt, &one.CreatedAt, &localJoinCol)
+		err = results.Scan(&one.ID, &one.Maddr, &one.Country, &one.Continent, &one.Asn, &one.IsPublic, &one.IPAddressCount, &one.UpdatedAt, &one.CreatedAt, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for multi_addresses")
 		}

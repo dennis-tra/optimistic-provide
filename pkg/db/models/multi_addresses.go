@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -23,51 +24,109 @@ import (
 
 // MultiAddress is an object representing the database table.
 type MultiAddress struct {
-	ID        int       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Maddr     string    `boil:"maddr" json:"maddr" toml:"maddr" yaml:"maddr"`
-	UpdatedAt time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	CreatedAt time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ID             int         `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Maddr          string      `boil:"maddr" json:"maddr" toml:"maddr" yaml:"maddr"`
+	Country        null.String `boil:"country" json:"country,omitempty" toml:"country" yaml:"country,omitempty"`
+	Continent      null.String `boil:"continent" json:"continent,omitempty" toml:"continent" yaml:"continent,omitempty"`
+	Asn            null.Int    `boil:"asn" json:"asn,omitempty" toml:"asn" yaml:"asn,omitempty"`
+	IsPublic       null.Bool   `boil:"is_public" json:"is_public,omitempty" toml:"is_public" yaml:"is_public,omitempty"`
+	IPAddressCount null.Int    `boil:"ip_address_count" json:"ip_address_count,omitempty" toml:"ip_address_count" yaml:"ip_address_count,omitempty"`
+	UpdatedAt      time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 
 	R *multiAddressR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L multiAddressL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var MultiAddressColumns = struct {
-	ID        string
-	Maddr     string
-	UpdatedAt string
-	CreatedAt string
+	ID             string
+	Maddr          string
+	Country        string
+	Continent      string
+	Asn            string
+	IsPublic       string
+	IPAddressCount string
+	UpdatedAt      string
+	CreatedAt      string
 }{
-	ID:        "id",
-	Maddr:     "maddr",
-	UpdatedAt: "updated_at",
-	CreatedAt: "created_at",
+	ID:             "id",
+	Maddr:          "maddr",
+	Country:        "country",
+	Continent:      "continent",
+	Asn:            "asn",
+	IsPublic:       "is_public",
+	IPAddressCount: "ip_address_count",
+	UpdatedAt:      "updated_at",
+	CreatedAt:      "created_at",
 }
 
 var MultiAddressTableColumns = struct {
-	ID        string
-	Maddr     string
-	UpdatedAt string
-	CreatedAt string
+	ID             string
+	Maddr          string
+	Country        string
+	Continent      string
+	Asn            string
+	IsPublic       string
+	IPAddressCount string
+	UpdatedAt      string
+	CreatedAt      string
 }{
-	ID:        "multi_addresses.id",
-	Maddr:     "multi_addresses.maddr",
-	UpdatedAt: "multi_addresses.updated_at",
-	CreatedAt: "multi_addresses.created_at",
+	ID:             "multi_addresses.id",
+	Maddr:          "multi_addresses.maddr",
+	Country:        "multi_addresses.country",
+	Continent:      "multi_addresses.continent",
+	Asn:            "multi_addresses.asn",
+	IsPublic:       "multi_addresses.is_public",
+	IPAddressCount: "multi_addresses.ip_address_count",
+	UpdatedAt:      "multi_addresses.updated_at",
+	CreatedAt:      "multi_addresses.created_at",
 }
 
 // Generated where
 
+type whereHelpernull_Bool struct{ field string }
+
+func (w whereHelpernull_Bool) EQ(x null.Bool) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Bool) NEQ(x null.Bool) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Bool) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Bool) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Bool) LT(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Bool) LTE(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Bool) GT(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Bool) GTE(x null.Bool) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var MultiAddressWhere = struct {
-	ID        whereHelperint
-	Maddr     whereHelperstring
-	UpdatedAt whereHelpertime_Time
-	CreatedAt whereHelpertime_Time
+	ID             whereHelperint
+	Maddr          whereHelperstring
+	Country        whereHelpernull_String
+	Continent      whereHelpernull_String
+	Asn            whereHelpernull_Int
+	IsPublic       whereHelpernull_Bool
+	IPAddressCount whereHelpernull_Int
+	UpdatedAt      whereHelpertime_Time
+	CreatedAt      whereHelpertime_Time
 }{
-	ID:        whereHelperint{field: "\"multi_addresses\".\"id\""},
-	Maddr:     whereHelperstring{field: "\"multi_addresses\".\"maddr\""},
-	UpdatedAt: whereHelpertime_Time{field: "\"multi_addresses\".\"updated_at\""},
-	CreatedAt: whereHelpertime_Time{field: "\"multi_addresses\".\"created_at\""},
+	ID:             whereHelperint{field: "\"multi_addresses\".\"id\""},
+	Maddr:          whereHelperstring{field: "\"multi_addresses\".\"maddr\""},
+	Country:        whereHelpernull_String{field: "\"multi_addresses\".\"country\""},
+	Continent:      whereHelpernull_String{field: "\"multi_addresses\".\"continent\""},
+	Asn:            whereHelpernull_Int{field: "\"multi_addresses\".\"asn\""},
+	IsPublic:       whereHelpernull_Bool{field: "\"multi_addresses\".\"is_public\""},
+	IPAddressCount: whereHelpernull_Int{field: "\"multi_addresses\".\"ip_address_count\""},
+	UpdatedAt:      whereHelpertime_Time{field: "\"multi_addresses\".\"updated_at\""},
+	CreatedAt:      whereHelpertime_Time{field: "\"multi_addresses\".\"created_at\""},
 }
 
 // MultiAddressRels is where relationship names are stored.
@@ -94,8 +153,8 @@ func (*multiAddressR) NewStruct() *multiAddressR {
 type multiAddressL struct{}
 
 var (
-	multiAddressAllColumns            = []string{"id", "maddr", "updated_at", "created_at"}
-	multiAddressColumnsWithoutDefault = []string{"maddr", "updated_at", "created_at"}
+	multiAddressAllColumns            = []string{"id", "maddr", "country", "continent", "asn", "is_public", "ip_address_count", "updated_at", "created_at"}
+	multiAddressColumnsWithoutDefault = []string{"maddr", "country", "continent", "asn", "is_public", "ip_address_count", "updated_at", "created_at"}
 	multiAddressColumnsWithDefault    = []string{"id"}
 	multiAddressPrimaryKeyColumns     = []string{"id"}
 )
@@ -556,7 +615,7 @@ func (multiAddressL) LoadIPAddresses(ctx context.Context, e boil.ContextExecutor
 	}
 
 	query := NewQuery(
-		qm.Select("\"ip_addresses\".id, \"ip_addresses\".address, \"ip_addresses\".country, \"ip_addresses\".continent, \"ip_addresses\".asn, \"ip_addresses\".updated_at, \"ip_addresses\".created_at, \"a\".\"multi_address_id\""),
+		qm.Select("\"ip_addresses\".id, \"ip_addresses\".address, \"ip_addresses\".country, \"ip_addresses\".continent, \"ip_addresses\".asn, \"ip_addresses\".is_public, \"ip_addresses\".updated_at, \"ip_addresses\".created_at, \"a\".\"multi_address_id\""),
 		qm.From("\"ip_addresses\""),
 		qm.InnerJoin("\"multi_addresses_x_ip_addresses\" as \"a\" on \"ip_addresses\".\"id\" = \"a\".\"ip_address_id\""),
 		qm.WhereIn("\"a\".\"multi_address_id\" in ?", args...),
@@ -577,7 +636,7 @@ func (multiAddressL) LoadIPAddresses(ctx context.Context, e boil.ContextExecutor
 		one := new(IPAddress)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.Address, &one.Country, &one.Continent, &one.Asn, &one.UpdatedAt, &one.CreatedAt, &localJoinCol)
+		err = results.Scan(&one.ID, &one.Address, &one.Country, &one.Continent, &one.Asn, &one.IsPublic, &one.UpdatedAt, &one.CreatedAt, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for ip_addresses")
 		}
