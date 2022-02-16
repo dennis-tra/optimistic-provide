@@ -10,7 +10,7 @@ CREATE TABLE peers
     updated_at    TIMESTAMPTZ NOT NULL,
     created_at    TIMESTAMPTZ NOT NULL,
 
-    UNIQUE (multi_hash),
+    CONSTRAINT uq_peers_multi_hash UNIQUE (multi_hash),
 
     PRIMARY KEY (id)
 );

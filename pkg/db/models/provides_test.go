@@ -494,6 +494,159 @@ func testProvidesInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testProvideToManyDials(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c Dial
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, true, provideColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Provide struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, dialDBTypes, false, dialColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, dialDBTypes, false, dialColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.ProvideID = a.ID
+	c.ProvideID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.Dials().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.ProvideID == b.ProvideID {
+			bFound = true
+		}
+		if v.ProvideID == c.ProvideID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := ProvideSlice{&a}
+	if err = a.L.LoadDials(ctx, tx, false, (*[]*Provide)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Dials); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.Dials = nil
+	if err = a.L.LoadDials(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Dials); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testProvideToManyAddOpDials(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e Dial
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Dial{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, dialDBTypes, false, strmangle.SetComplement(dialPrimaryKeyColumns, dialColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Dial{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddDials(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.ProvideID {
+			t.Error("foreign key was wrong value", a.ID, first.ProvideID)
+		}
+		if a.ID != second.ProvideID {
+			t.Error("foreign key was wrong value", a.ID, second.ProvideID)
+		}
+
+		if first.R.Provide != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Provide != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.Dials[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Dials[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Dials().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testProvideToOnePeerUsingProvider(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -677,7 +830,7 @@ func testProvidesSelect(t *testing.T) {
 }
 
 var (
-	provideDBTypes = map[string]string{`ID`: `integer`, `ProviderID`: `integer`, `ContentID`: `text`, `InitialRoutingTableID`: `integer`, `FinalRoutingTableID`: `integer`, `StartedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `CreatedAt`: `timestamp with time zone`}
+	provideDBTypes = map[string]string{`ID`: `integer`, `ProviderID`: `integer`, `ContentID`: `text`, `InitialRoutingTableID`: `integer`, `FinalRoutingTableID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `Error`: `text`, `UpdatedAt`: `timestamp with time zone`, `CreatedAt`: `timestamp with time zone`}
 	_              = bytes.MinRead
 )
 

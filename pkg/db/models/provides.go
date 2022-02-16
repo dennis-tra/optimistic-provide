@@ -24,14 +24,16 @@ import (
 
 // Provide is an object representing the database table.
 type Provide struct {
-	ID                    int       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	ProviderID            int       `boil:"provider_id" json:"provider_id" toml:"provider_id" yaml:"provider_id"`
-	ContentID             string    `boil:"content_id" json:"content_id" toml:"content_id" yaml:"content_id"`
-	InitialRoutingTableID int       `boil:"initial_routing_table_id" json:"initial_routing_table_id" toml:"initial_routing_table_id" yaml:"initial_routing_table_id"`
-	FinalRoutingTableID   null.Int  `boil:"final_routing_table_id" json:"final_routing_table_id,omitempty" toml:"final_routing_table_id" yaml:"final_routing_table_id,omitempty"`
-	StartedAt             time.Time `boil:"started_at" json:"started_at" toml:"started_at" yaml:"started_at"`
-	UpdatedAt             time.Time `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
-	CreatedAt             time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ID                    int         `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ProviderID            int         `boil:"provider_id" json:"provider_id" toml:"provider_id" yaml:"provider_id"`
+	ContentID             string      `boil:"content_id" json:"content_id" toml:"content_id" yaml:"content_id"`
+	InitialRoutingTableID int         `boil:"initial_routing_table_id" json:"initial_routing_table_id" toml:"initial_routing_table_id" yaml:"initial_routing_table_id"`
+	FinalRoutingTableID   null.Int    `boil:"final_routing_table_id" json:"final_routing_table_id,omitempty" toml:"final_routing_table_id" yaml:"final_routing_table_id,omitempty"`
+	StartedAt             time.Time   `boil:"started_at" json:"started_at" toml:"started_at" yaml:"started_at"`
+	EndedAt               time.Time   `boil:"ended_at" json:"ended_at" toml:"ended_at" yaml:"ended_at"`
+	Error                 null.String `boil:"error" json:"error,omitempty" toml:"error" yaml:"error,omitempty"`
+	UpdatedAt             time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
+	CreatedAt             time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 
 	R *provideR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L provideL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -44,6 +46,8 @@ var ProvideColumns = struct {
 	InitialRoutingTableID string
 	FinalRoutingTableID   string
 	StartedAt             string
+	EndedAt               string
+	Error                 string
 	UpdatedAt             string
 	CreatedAt             string
 }{
@@ -53,6 +57,8 @@ var ProvideColumns = struct {
 	InitialRoutingTableID: "initial_routing_table_id",
 	FinalRoutingTableID:   "final_routing_table_id",
 	StartedAt:             "started_at",
+	EndedAt:               "ended_at",
+	Error:                 "error",
 	UpdatedAt:             "updated_at",
 	CreatedAt:             "created_at",
 }
@@ -64,6 +70,8 @@ var ProvideTableColumns = struct {
 	InitialRoutingTableID string
 	FinalRoutingTableID   string
 	StartedAt             string
+	EndedAt               string
+	Error                 string
 	UpdatedAt             string
 	CreatedAt             string
 }{
@@ -73,34 +81,13 @@ var ProvideTableColumns = struct {
 	InitialRoutingTableID: "provides.initial_routing_table_id",
 	FinalRoutingTableID:   "provides.final_routing_table_id",
 	StartedAt:             "provides.started_at",
+	EndedAt:               "provides.ended_at",
+	Error:                 "provides.error",
 	UpdatedAt:             "provides.updated_at",
 	CreatedAt:             "provides.created_at",
 }
 
 // Generated where
-
-type whereHelpernull_Int struct{ field string }
-
-func (w whereHelpernull_Int) EQ(x null.Int) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Int) NEQ(x null.Int) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Int) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Int) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Int) LT(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Int) LTE(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Int) GT(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Int) GTE(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
 
 var ProvideWhere = struct {
 	ID                    whereHelperint
@@ -109,6 +96,8 @@ var ProvideWhere = struct {
 	InitialRoutingTableID whereHelperint
 	FinalRoutingTableID   whereHelpernull_Int
 	StartedAt             whereHelpertime_Time
+	EndedAt               whereHelpertime_Time
+	Error                 whereHelpernull_String
 	UpdatedAt             whereHelpertime_Time
 	CreatedAt             whereHelpertime_Time
 }{
@@ -118,6 +107,8 @@ var ProvideWhere = struct {
 	InitialRoutingTableID: whereHelperint{field: "\"provides\".\"initial_routing_table_id\""},
 	FinalRoutingTableID:   whereHelpernull_Int{field: "\"provides\".\"final_routing_table_id\""},
 	StartedAt:             whereHelpertime_Time{field: "\"provides\".\"started_at\""},
+	EndedAt:               whereHelpertime_Time{field: "\"provides\".\"ended_at\""},
+	Error:                 whereHelpernull_String{field: "\"provides\".\"error\""},
 	UpdatedAt:             whereHelpertime_Time{field: "\"provides\".\"updated_at\""},
 	CreatedAt:             whereHelpertime_Time{field: "\"provides\".\"created_at\""},
 }
@@ -125,13 +116,16 @@ var ProvideWhere = struct {
 // ProvideRels is where relationship names are stored.
 var ProvideRels = struct {
 	Provider string
+	Dials    string
 }{
 	Provider: "Provider",
+	Dials:    "Dials",
 }
 
 // provideR is where relationships are stored.
 type provideR struct {
-	Provider *Peer `boil:"Provider" json:"Provider" toml:"Provider" yaml:"Provider"`
+	Provider *Peer     `boil:"Provider" json:"Provider" toml:"Provider" yaml:"Provider"`
+	Dials    DialSlice `boil:"Dials" json:"Dials" toml:"Dials" yaml:"Dials"`
 }
 
 // NewStruct creates a new relationship struct
@@ -143,8 +137,8 @@ func (*provideR) NewStruct() *provideR {
 type provideL struct{}
 
 var (
-	provideAllColumns            = []string{"id", "provider_id", "content_id", "initial_routing_table_id", "final_routing_table_id", "started_at", "updated_at", "created_at"}
-	provideColumnsWithoutDefault = []string{"provider_id", "content_id", "initial_routing_table_id", "final_routing_table_id", "started_at", "updated_at", "created_at"}
+	provideAllColumns            = []string{"id", "provider_id", "content_id", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "updated_at", "created_at"}
+	provideColumnsWithoutDefault = []string{"provider_id", "content_id", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "updated_at", "created_at"}
 	provideColumnsWithDefault    = []string{"id"}
 	providePrimaryKeyColumns     = []string{"id"}
 )
@@ -438,6 +432,27 @@ func (o *Provide) Provider(mods ...qm.QueryMod) peerQuery {
 	return query
 }
 
+// Dials retrieves all the dial's Dials with an executor.
+func (o *Provide) Dials(mods ...qm.QueryMod) dialQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"dials\".\"provide_id\"=?", o.ID),
+	)
+
+	query := Dials(queryMods...)
+	queries.SetFrom(query.Query, "\"dials\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"dials\".*"})
+	}
+
+	return query
+}
+
 // LoadProvider allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (provideL) LoadProvider(ctx context.Context, e boil.ContextExecutor, singular bool, maybeProvide interface{}, mods queries.Applicator) error {
@@ -542,6 +557,104 @@ func (provideL) LoadProvider(ctx context.Context, e boil.ContextExecutor, singul
 	return nil
 }
 
+// LoadDials allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (provideL) LoadDials(ctx context.Context, e boil.ContextExecutor, singular bool, maybeProvide interface{}, mods queries.Applicator) error {
+	var slice []*Provide
+	var object *Provide
+
+	if singular {
+		object = maybeProvide.(*Provide)
+	} else {
+		slice = *maybeProvide.(*[]*Provide)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &provideR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &provideR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`dials`),
+		qm.WhereIn(`dials.provide_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load dials")
+	}
+
+	var resultSlice []*Dial
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice dials")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on dials")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for dials")
+	}
+
+	if len(dialAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.Dials = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &dialR{}
+			}
+			foreign.R.Provide = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.ProvideID {
+				local.R.Dials = append(local.R.Dials, foreign)
+				if foreign.R == nil {
+					foreign.R = &dialR{}
+				}
+				foreign.R.Provide = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetProvider of the provide to the related item.
 // Sets o.R.Provider to related.
 // Adds o to related.R.ProviderProvides.
@@ -586,6 +699,59 @@ func (o *Provide) SetProvider(ctx context.Context, exec boil.ContextExecutor, in
 		related.R.ProviderProvides = append(related.R.ProviderProvides, o)
 	}
 
+	return nil
+}
+
+// AddDials adds the given related objects to the existing relationships
+// of the provide, optionally inserting them as new records.
+// Appends related to o.R.Dials.
+// Sets related.R.Provide appropriately.
+func (o *Provide) AddDials(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Dial) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.ProvideID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"dials\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"provide_id"}),
+				strmangle.WhereClause("\"", "\"", 2, dialPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.ProvideID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &provideR{
+			Dials: related,
+		}
+	} else {
+		o.R.Dials = append(o.R.Dials, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &dialR{
+				Provide: o,
+			}
+		} else {
+			rel.R.Provide = o
+		}
+	}
 	return nil
 }
 

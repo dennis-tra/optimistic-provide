@@ -13,6 +13,10 @@ CREATE TABLE provides
     final_routing_table_id   INT,
     -- Application level timestamp when this provide operation started
     started_at               TIMESTAMPTZ NOT NULL,
+    -- Application level timestamp when this provide operation ended
+    ended_at                 TIMESTAMPTZ NOT NULL,
+    -- The returned error of the provide operation
+    error                    TEXT,
 
     -- database timestamps
     updated_at               TIMESTAMPTZ NOT NULL,

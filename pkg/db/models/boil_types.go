@@ -50,3 +50,11 @@ func makeCacheKey(cols boil.Columns, nzDefaults []string) string {
 	strmangle.PutBuffer(buf)
 	return str
 }
+
+// Enum values for dial_transport
+const (
+	DialTransportTCP  = "tcp"
+	DialTransportWS   = "ws"
+	DialTransportQuic = "quic"
+	DialTransportUDP  = "udp"
+)

@@ -4,15 +4,23 @@
 package models
 
 var TableNames = struct {
-	PeerLogs              string
-	Peers                 string
-	Provides              string
-	RoutingTableEntries   string
-	RoutingTableSnapshots string
+	Dials                      string
+	IPAddresses                string
+	MultiAddresses             string
+	MultiAddressesXIPAddresses string
+	PeerLogs                   string
+	Peers                      string
+	Provides                   string
+	RoutingTableEntries        string
+	RoutingTableSnapshots      string
 }{
-	PeerLogs:              "peer_logs",
-	Peers:                 "peers",
-	Provides:              "provides",
-	RoutingTableEntries:   "routing_table_entries",
-	RoutingTableSnapshots: "routing_table_snapshots",
+	Dials:                      "dials",
+	IPAddresses:                "ip_addresses",
+	MultiAddresses:             "multi_addresses",
+	MultiAddressesXIPAddresses: "multi_addresses_x_ip_addresses",
+	PeerLogs:                   "peer_logs",
+	Peers:                      "peers",
+	Provides:                   "provides",
+	RoutingTableEntries:        "routing_table_entries",
+	RoutingTableSnapshots:      "routing_table_snapshots",
 }

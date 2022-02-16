@@ -70,29 +70,6 @@ var PeerTableColumns = struct {
 
 // Generated where
 
-type whereHelpernull_String struct{ field string }
-
-func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 type whereHelpertypes_StringArray struct{ field string }
 
 func (w whereHelpertypes_StringArray) EQ(x types.StringArray) qm.QueryMod {
@@ -136,11 +113,15 @@ var PeerWhere = struct {
 
 // PeerRels is where relationship names are stored.
 var PeerRels = struct {
+	LocalDials            string
+	RemoteDials           string
 	PeerLogs              string
 	ProviderProvides      string
 	RoutingTableEntries   string
 	RoutingTableSnapshots string
 }{
+	LocalDials:            "LocalDials",
+	RemoteDials:           "RemoteDials",
 	PeerLogs:              "PeerLogs",
 	ProviderProvides:      "ProviderProvides",
 	RoutingTableEntries:   "RoutingTableEntries",
@@ -149,6 +130,8 @@ var PeerRels = struct {
 
 // peerR is where relationships are stored.
 type peerR struct {
+	LocalDials            DialSlice                 `boil:"LocalDials" json:"LocalDials" toml:"LocalDials" yaml:"LocalDials"`
+	RemoteDials           DialSlice                 `boil:"RemoteDials" json:"RemoteDials" toml:"RemoteDials" yaml:"RemoteDials"`
 	PeerLogs              PeerLogSlice              `boil:"PeerLogs" json:"PeerLogs" toml:"PeerLogs" yaml:"PeerLogs"`
 	ProviderProvides      ProvideSlice              `boil:"ProviderProvides" json:"ProviderProvides" toml:"ProviderProvides" yaml:"ProviderProvides"`
 	RoutingTableEntries   RoutingTableEntrySlice    `boil:"RoutingTableEntries" json:"RoutingTableEntries" toml:"RoutingTableEntries" yaml:"RoutingTableEntries"`
@@ -445,6 +428,48 @@ func (q peerQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool,
 	return count > 0, nil
 }
 
+// LocalDials retrieves all the dial's Dials with an executor via local_id column.
+func (o *Peer) LocalDials(mods ...qm.QueryMod) dialQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"dials\".\"local_id\"=?", o.ID),
+	)
+
+	query := Dials(queryMods...)
+	queries.SetFrom(query.Query, "\"dials\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"dials\".*"})
+	}
+
+	return query
+}
+
+// RemoteDials retrieves all the dial's Dials with an executor via remote_id column.
+func (o *Peer) RemoteDials(mods ...qm.QueryMod) dialQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"dials\".\"remote_id\"=?", o.ID),
+	)
+
+	query := Dials(queryMods...)
+	queries.SetFrom(query.Query, "\"dials\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"dials\".*"})
+	}
+
+	return query
+}
+
 // PeerLogs retrieves all the peer_log's PeerLogs with an executor.
 func (o *Peer) PeerLogs(mods ...qm.QueryMod) peerLogQuery {
 	var queryMods []qm.QueryMod
@@ -527,6 +552,202 @@ func (o *Peer) RoutingTableSnapshots(mods ...qm.QueryMod) routingTableSnapshotQu
 	}
 
 	return query
+}
+
+// LoadLocalDials allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (peerL) LoadLocalDials(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
+	var slice []*Peer
+	var object *Peer
+
+	if singular {
+		object = maybePeer.(*Peer)
+	} else {
+		slice = *maybePeer.(*[]*Peer)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &peerR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &peerR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`dials`),
+		qm.WhereIn(`dials.local_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load dials")
+	}
+
+	var resultSlice []*Dial
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice dials")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on dials")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for dials")
+	}
+
+	if len(dialAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.LocalDials = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &dialR{}
+			}
+			foreign.R.Local = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.LocalID {
+				local.R.LocalDials = append(local.R.LocalDials, foreign)
+				if foreign.R == nil {
+					foreign.R = &dialR{}
+				}
+				foreign.R.Local = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadRemoteDials allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (peerL) LoadRemoteDials(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
+	var slice []*Peer
+	var object *Peer
+
+	if singular {
+		object = maybePeer.(*Peer)
+	} else {
+		slice = *maybePeer.(*[]*Peer)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &peerR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &peerR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`dials`),
+		qm.WhereIn(`dials.remote_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load dials")
+	}
+
+	var resultSlice []*Dial
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice dials")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on dials")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for dials")
+	}
+
+	if len(dialAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.RemoteDials = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &dialR{}
+			}
+			foreign.R.Remote = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.RemoteID {
+				local.R.RemoteDials = append(local.R.RemoteDials, foreign)
+				if foreign.R == nil {
+					foreign.R = &dialR{}
+				}
+				foreign.R.Remote = local
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadPeerLogs allows an eager lookup of values, cached into the
@@ -918,6 +1139,112 @@ func (peerL) LoadRoutingTableSnapshots(ctx context.Context, e boil.ContextExecut
 		}
 	}
 
+	return nil
+}
+
+// AddLocalDials adds the given related objects to the existing relationships
+// of the peer, optionally inserting them as new records.
+// Appends related to o.R.LocalDials.
+// Sets related.R.Local appropriately.
+func (o *Peer) AddLocalDials(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Dial) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.LocalID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"dials\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"local_id"}),
+				strmangle.WhereClause("\"", "\"", 2, dialPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.LocalID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &peerR{
+			LocalDials: related,
+		}
+	} else {
+		o.R.LocalDials = append(o.R.LocalDials, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &dialR{
+				Local: o,
+			}
+		} else {
+			rel.R.Local = o
+		}
+	}
+	return nil
+}
+
+// AddRemoteDials adds the given related objects to the existing relationships
+// of the peer, optionally inserting them as new records.
+// Appends related to o.R.RemoteDials.
+// Sets related.R.Remote appropriately.
+func (o *Peer) AddRemoteDials(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Dial) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.RemoteID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"dials\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"remote_id"}),
+				strmangle.WhereClause("\"", "\"", 2, dialPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.RemoteID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &peerR{
+			RemoteDials: related,
+		}
+	} else {
+		o.R.RemoteDials = append(o.R.RemoteDials, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &dialR{
+				Remote: o,
+			}
+		} else {
+			rel.R.Remote = o
+		}
+	}
 	return nil
 }
 

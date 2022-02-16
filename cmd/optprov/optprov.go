@@ -12,7 +12,7 @@ import (
 
 	"github.com/dennis-tra/optimistic-provide/pkg/db"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/server"
+	"github.com/dennis-tra/optimistic-provide/pkg/api"
 	logging "github.com/ipfs/go-log"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
@@ -171,13 +171,20 @@ func Before(c *cli.Context) error {
 func RootAction(c *cli.Context) error {
 	log.Info("Starting DHT measurement server")
 
-	dbc, err := db.NewClient(c.String("db-host"), c.String("db-port"), c.String("db-name"), c.String("db-user"), c.String("db-password"), c.String("db-sslmode"))
+	dbc, err := db.NewClient(
+		c.String("db-host"),
+		c.String("db-port"),
+		c.String("db-name"),
+		c.String("db-user"),
+		c.String("db-password"),
+		c.String("db-sslmode"),
+	)
 	if err != nil {
 		return errors.Wrap(err, "new db client")
 	}
 
 	// Start API server
-	srv := server.Start(c.Context, c.String("host"), c.String("port"), dbc)
+	srv := api.Start(c.Context, c.String("host"), c.String("port"), dbc)
 
 	// Listen for the interrupt signal.
 	<-c.Context.Done()
