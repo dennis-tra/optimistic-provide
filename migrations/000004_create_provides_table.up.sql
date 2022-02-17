@@ -17,6 +17,8 @@ CREATE TABLE provides
     ended_at                 TIMESTAMPTZ,
     -- The returned error of the provide operation
     error                    TEXT,
+    -- Application level timestamp when this provide plus all persistence operations have finished
+    done_at                 TIMESTAMPTZ,
 
     -- database timestamps
     updated_at               TIMESTAMPTZ NOT NULL,

@@ -4,14 +4,12 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/api/entities"
-
-	"github.com/dennis-tra/optimistic-provide/pkg/dht"
-
 	"github.com/gin-gonic/gin"
 	"github.com/libp2p/go-libp2p-core/peer"
 
+	"github.com/dennis-tra/optimistic-provide/pkg/api/entities"
 	"github.com/dennis-tra/optimistic-provide/pkg/api/render"
+	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 	"github.com/dennis-tra/optimistic-provide/pkg/service"
 )
 

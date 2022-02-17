@@ -51,12 +51,14 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 	peerController := controller.NewPeerController(ctx, peerService)
 	hostController := controller.NewHostController(ctx, hostService)
 	provideController := controller.NewProvideController(ctx, provideService)
+	routingTableController := controller.NewRoutingTableController(ctx, rtService, hostService, rtRepo)
 
 	v1 := router.Group("/v1")
 	{
 		routes.NewPeerRoute(peerController, v1).Setup()
 		routes.NewHostRoute(hostController, v1).Setup()
 		routes.NewProvideRoute(provideController, v1).Setup()
+		routes.NewRoutingTableRoute(routingTableController, v1).Setup()
 	}
 
 	srv := &http.Server{

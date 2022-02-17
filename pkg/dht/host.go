@@ -21,22 +21,22 @@ import (
 var log = logging.Logger("optprov")
 
 type Host struct {
-	DBPeer       *models.Peer            `json:"-"`
-	PeerID       peer.ID                 `json:"multi_hash"`
-	Host         host.Host               `json:"-"`
-	DHT          *kaddht.IpfsDHT         `json:"-"`
-	Bootstrapped *time.Time              `json:"bootstrapped_at"`
-	CreatedAt    time.Time               `json:"created_at"`
-	Transports   []*wrap.Notifier        `json:"-"`
-	MsgSender    *wrap.MessageSenderImpl `json:"-"`
+	DBPeer       *models.Peer
+	PeerID       peer.ID
+	Host         host.Host
+	DHT          *kaddht.IpfsDHT
+	Bootstrapped *time.Time
+	CreatedAt    time.Time
+	Transports   []*wrap.Notifier
+	MsgSender    *wrap.MessageSenderImpl
 
-	RoutingTableRefresh RoutingTableRefresh `json:"routing_table_refresh"`
+	RoutingTableRefresh RoutingTableRefresh
 }
 
 type RoutingTableRefresh struct {
-	StartedAt *time.Time `json:"started_at"`
-	EndedAt   *time.Time `json:"ended_at"`
-	Error     *string    `json:"error"`
+	StartedAt *time.Time
+	EndedAt   *time.Time
+	Error     *string
 }
 
 func New(ctx context.Context) (*Host, error) {

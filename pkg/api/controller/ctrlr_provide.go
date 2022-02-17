@@ -5,13 +5,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/api/render"
-
-	"github.com/dennis-tra/optimistic-provide/pkg/api/entities"
-
 	"github.com/gin-gonic/gin"
 	"github.com/libp2p/go-libp2p-core/peer"
 
+	"github.com/dennis-tra/optimistic-provide/pkg/api/entities"
+	"github.com/dennis-tra/optimistic-provide/pkg/api/render"
 	"github.com/dennis-tra/optimistic-provide/pkg/db"
 	"github.com/dennis-tra/optimistic-provide/pkg/service"
 )
@@ -19,8 +17,7 @@ import (
 type ProvideController struct {
 	ctx context.Context
 	dbc *db.Client
-
-	ps service.ProvideService
+	ps  service.ProvideService
 }
 
 func NewProvideController(ctx context.Context, ps service.ProvideService) *ProvideController {
