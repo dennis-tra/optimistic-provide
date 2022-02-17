@@ -21,14 +21,14 @@ import (
 var log = logging.Logger("optprov")
 
 type Host struct {
-	DBPeer       *models.Peer     `json:"-"`
-	PeerID       peer.ID          `json:"multi_hash"`
-	Host         host.Host        `json:"-"`
-	DHT          *kaddht.IpfsDHT  `json:"-"`
-	Bootstrapped *time.Time       `json:"bootstrapped_at"`
-	CreatedAt    time.Time        `json:"created_at"`
-	Transports   []*wrap.Notifier `json:"-"`
-	MsgSender    *wrap.MessageSenderImpl
+	DBPeer       *models.Peer            `json:"-"`
+	PeerID       peer.ID                 `json:"multi_hash"`
+	Host         host.Host               `json:"-"`
+	DHT          *kaddht.IpfsDHT         `json:"-"`
+	Bootstrapped *time.Time              `json:"bootstrapped_at"`
+	CreatedAt    time.Time               `json:"created_at"`
+	Transports   []*wrap.Notifier        `json:"-"`
+	MsgSender    *wrap.MessageSenderImpl `json:"-"`
 
 	RoutingTableRefresh RoutingTableRefresh `json:"routing_table_refresh"`
 }

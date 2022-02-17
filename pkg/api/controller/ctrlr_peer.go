@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/api/render"
-	"github.com/libp2p/go-libp2p-core/peer"
-
 	"github.com/dennis-tra/optimistic-provide/pkg/service"
 	"github.com/gin-gonic/gin"
 )
@@ -25,21 +23,15 @@ func NewPeerController(ctx context.Context, svc service.PeerService) *PeerContro
 }
 
 func (pc *PeerController) Get(c *gin.Context) {
-	pidStr, ok := c.Params.Get("peerID")
-	if !ok {
-		render.BadRequest(c, nil, "peer ID not found in query")
-		return
-	}
-
-	pid, err := peer.Decode(pidStr)
-	if err != nil {
-		render.BadRequest(c, err, "could not decode peer ID")
+	pid, rerr := getHostID(c)
+	if rerr != nil {
+		render.Err(c, rerr)
 		return
 	}
 
 	dbPeer, err := pc.svc.Find(c.Request.Context(), pid)
 	if err != nil {
-		render.InternalServerError(c, err, "could not find peer ID")
+		render.ErrInternal(c, "could not find peer ID", err)
 		return
 	}
 

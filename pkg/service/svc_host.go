@@ -105,6 +105,7 @@ func (hs *Host) RefreshRoutingTableAsync(ctx context.Context, p peer.ID) error {
 	if !found {
 		return errors.New("peer not found")
 	}
+
 	go h.RefreshRoutingTable(ctx)
 
 	return nil

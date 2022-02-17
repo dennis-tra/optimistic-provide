@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/dennis-tra/optimistic-provide/pkg/api/entities"
+
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +15,7 @@ import (
 	"github.com/dennis-tra/optimistic-provide/pkg/service"
 )
 
-// HostController holds the API logic for all routes in /hosts
+// HostController holds the API logic for all routes under /hosts
 type HostController struct {
 	ctx context.Context
 	hs  service.HostService
@@ -31,91 +33,86 @@ func NewHostController(ctx context.Context, hs service.HostService) *HostControl
 func (hc *HostController) Create(c *gin.Context) {
 	h, err := hc.hs.Create(hc.ctx)
 	if err != nil {
-		render.InternalServerError(c, err, "Could not start libp2p host")
+		render.ErrInternal(c, "Could not create libp2p host", err)
 		return
 	}
 
-	render.OK(c, h)
+	render.OK(c, &entities.HostResponse{
+		HostID:         h.PeerID.String(),
+		BootstrappedAt: nil,
+		CreatedAt:      h.CreatedAt,
+	})
 }
 
+// List lists returns all running libp2p hosts.
 func (hc *HostController) List(c *gin.Context) {
-	render.OK(c, hc.hs.Hosts())
+	hosts := map[string]*entities.HostResponse{}
+	for _, h := range hc.hs.Hosts() {
+		hosts[h.PeerID.String()] = &entities.HostResponse{
+			HostID:         h.PeerID.String(),
+			BootstrappedAt: h.Bootstrapped,
+			CreatedAt:      h.CreatedAt,
+		}
+	}
+	render.OK(c, hosts)
 }
 
 func (hc *HostController) Get(c *gin.Context) {
-	h, code := hc.getHost(c)
-	if code != 0 {
-		c.Status(code)
+	h, err := hc.getHost(c)
+	if err != nil {
+		render.Err(c, err)
 		return
 	}
 
-	render.OK(c, h)
+	render.OK(c, &entities.HostResponse{
+		HostID:         h.PeerID.String(),
+		BootstrappedAt: h.Bootstrapped,
+		CreatedAt:      h.CreatedAt,
+	})
 }
 
 func (hc *HostController) Stop(c *gin.Context) {
-	peerID, code := hc.getPeerID(c)
-	if code != 0 {
-		c.Status(code)
+	peerID, err := getHostID(c)
+	if err != nil {
+		render.Err(c, err)
 		return
 	}
 
 	if err := hc.hs.Stop(peerID); err != nil {
-		c.Status(http.StatusInternalServerError)
+		render.ErrInternal(c, "Could not stop libp2p host", err)
 		return
 	}
 	c.Status(http.StatusOK)
 }
 
 func (hc *HostController) Bootstrap(c *gin.Context) {
-	h, code := hc.getHost(c)
-	if code != 0 {
-		c.Status(code)
+	h, err := hc.getHost(c)
+	if err != nil {
+		render.Err(c, err)
 		return
 	}
 
 	if err := h.Bootstrap(hc.ctx); err != nil {
-		render.InternalServerError(c, err, "Bootstrapping failed")
+		render.ErrInternal(c, "Could not bootstrap host", err)
 		return
 	}
 
-	render.OK(c, h)
-}
-
-func (hc *HostController) getPeerID(c *gin.Context) (peer.ID, int) {
-	param, ok := c.Params.Get("peerID")
-	if !ok {
-		return "", http.StatusInternalServerError
-	}
-
-	peerID, err := peer.Decode(param)
-	if err != nil {
-		return "", http.StatusBadRequest
-	}
-	return peerID, 0
-}
-
-func (hc *HostController) getHost(c *gin.Context) (*dht.Host, int) {
-	peerID, code := hc.getPeerID(c)
-	if code != 0 {
-		return nil, code
-	}
-
-	h, found := hc.hs.Host(peerID)
-	if !found {
-		return nil, http.StatusNotFound
-	}
-	return h, 0
+	render.OK(c, &entities.HostResponse{
+		HostID:         h.PeerID.String(),
+		BootstrappedAt: h.Bootstrapped,
+		CreatedAt:      h.CreatedAt,
+	})
 }
 
 func (hc *HostController) RefreshRoutingTable(c *gin.Context) {
-	peerID, code := hc.getPeerID(c)
-	if code != 0 {
-		c.Status(code)
+	peerID, err := getHostID(c)
+	if err != nil {
+		render.Err(c, err)
 		return
 	}
 
 	if err := hc.hs.RefreshRoutingTableAsync(hc.ctx, peerID); err != nil {
-		render.InternalServerError(c, err, "")
+		render.ErrInternal(c, "Could not refresh routing table", err)
 		return
 	}
 
@@ -123,17 +120,45 @@ func (hc *HostController) RefreshRoutingTable(c *gin.Context) {
 }
 
 func (hc *HostController) SaveRoutingTable(c *gin.Context) {
-	peerID, code := hc.getPeerID(c)
-	if code != 0 {
-		c.Status(code)
+	peerID, rerr := getHostID(c)
+	if rerr != nil {
+		render.Err(c, rerr)
 		return
 	}
 
 	rts, err := hc.hs.SaveRoutingTable(hc.ctx, peerID)
 	if err != nil {
-		render.InternalServerError(c, err, "Saving routing table failed")
+		render.ErrInternal(c, "Saving routing table failed", err)
 		return
 	}
 
 	render.OK(c, rts)
+}
+
+func getHostID(c *gin.Context) (peer.ID, *render.Error) {
+	param, ok := c.Params.Get("hostID")
+	if !ok {
+		return "", render.NewErrInternalServerError(render.ErrorCodeGetPeerFromPath, "Could not get host multi hash from endpoint path", nil)
+	}
+
+	peerID, err := peer.Decode(param)
+	if err != nil {
+		return "", render.NewErrBadRequest(render.ErrorCodeMalformedPeerID, "Could not decode host peer ID: "+param, err)
+	}
+
+	return peerID, nil
+}
+
+func (hc *HostController) getHost(c *gin.Context) (*dht.Host, *render.Error) {
+	peerID, err := getHostID(c)
+	if err != nil {
+		return nil, err
+	}
+
+	h, found := hc.hs.Host(peerID)
+	if !found {
+		return nil, render.NewErrNotFound(render.ErrorCodeHostNotFound, "Host with ID "+peerID.String()+" was not found.", nil)
+	}
+
+	return h, nil
 }

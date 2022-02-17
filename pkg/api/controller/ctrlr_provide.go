@@ -5,6 +5,10 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dennis-tra/optimistic-provide/pkg/api/render"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/api/entities"
+
 	"github.com/gin-gonic/gin"
 	"github.com/libp2p/go-libp2p-core/peer"
 
@@ -26,29 +30,17 @@ func NewProvideController(ctx context.Context, ps service.ProvideService) *Provi
 	}
 }
 
-type CreateProvideRequest struct {
-	HostID string `json:"hostId"`
-}
-
-type CreateProvideResponse struct {
-	ProviderID            string    `json:"providerId"`
-	ProvideID             int       `json:"provideId"`
-	ContentID             string    `json:"contentId"`
-	InitialRoutingTableID int       `json:"initialRoutingTableId"`
-	StartedAt             time.Time `json:"startedAt"`
-}
-
 func (pc *ProvideController) Create(c *gin.Context) {
 	// TODO: check pending provide
-	req := CreateProvideRequest{}
+	req := entities.ProvideCreateRequest{}
 	if err := c.BindJSON(&req); err != nil {
-		c.Status(http.StatusBadRequest)
+		render.NewErrBadRequest(render.ErrorCodeMalformedJSON, "Could not parse JSON body", err)
 		return
 	}
 
 	hostID, err := peer.Decode(req.HostID)
 	if err != nil {
-		c.Status(http.StatusBadRequest)
+		render.Err(c, render.NewErrBadRequest(render.ErrorCodeMalformedPeerID, "Could not decode peer ID: "+req.HostID, err))
 		return
 	}
 
@@ -57,9 +49,10 @@ func (pc *ProvideController) Create(c *gin.Context) {
 		c.Status(http.StatusNotFound)
 		return
 	}
-	resp := CreateProvideResponse{
-		ProviderID:            hostID.String(),
+
+	resp := entities.ProvideResponse{
 		ProvideID:             provide.ID,
+		HostID:                hostID.String(),
 		ContentID:             provide.ContentID,
 		InitialRoutingTableID: provide.InitialRoutingTableID,
 		StartedAt:             time.Now(),

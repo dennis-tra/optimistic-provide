@@ -23,10 +23,10 @@ func (p HostRoute) Setup() {
 	{
 		hosts.POST("/", p.ctrlr.Create)
 		hosts.GET("/", p.ctrlr.List)
-		hosts.GET("/:peerID", p.ctrlr.Get)
-		hosts.DELETE("/:peerID", p.ctrlr.Stop)
-		hosts.POST("/:peerID/bootstrap", p.ctrlr.Bootstrap)
-		hosts.POST("/:peerID/dht/refresh", p.ctrlr.RefreshRoutingTable)
-		hosts.POST("/:peerID/dht/save", p.ctrlr.SaveRoutingTable)
+		hosts.GET("/:hostID", p.ctrlr.Get)
+		hosts.DELETE("/:hostID", p.ctrlr.Stop)
+		hosts.POST("/:hostID/bootstrap", p.ctrlr.Bootstrap)
+		hosts.POST("/:hostID/dht/refresh", p.ctrlr.RefreshRoutingTable)
+		hosts.POST("/:hostID/dht/save", p.ctrlr.SaveRoutingTable)
 	}
 }
