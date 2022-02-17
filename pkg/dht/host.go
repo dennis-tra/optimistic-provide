@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/db/models"
-
 	logging "github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
@@ -16,6 +14,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/lib"
+	"github.com/dennis-tra/optimistic-provide/pkg/models"
 	"github.com/dennis-tra/optimistic-provide/pkg/wrap"
 )
 

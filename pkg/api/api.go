@@ -6,40 +6,56 @@ import (
 
 	"github.com/gin-gonic/gin"
 	logging "github.com/ipfs/go-log"
+	"github.com/pkg/errors"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/controller"
+	"github.com/dennis-tra/optimistic-provide/pkg/api/controller"
+	"github.com/dennis-tra/optimistic-provide/pkg/api/routes"
+	"github.com/dennis-tra/optimistic-provide/pkg/config"
 	"github.com/dennis-tra/optimistic-provide/pkg/db"
-	"github.com/dennis-tra/optimistic-provide/pkg/services"
+	"github.com/dennis-tra/optimistic-provide/pkg/repo"
+	"github.com/dennis-tra/optimistic-provide/pkg/service"
 )
 
 var log = logging.Logger("optprov")
 
-// Start starts the REST API to control libp2p hosts.
-func Start(ctx context.Context, host string, port string, dbc *db.Client) *http.Server {
+// Run starts the REST API to control libp2p hosts.
+func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 	router := gin.Default()
 
-	rts := services.NewRoutingTableService(dbc)
-	hs := services.NewHostService(dbc)
-	ps := services.NewProvideService(dbc)
+	dbclient, err := db.NewClient(cfg)
+	if err != nil {
+		return nil, errors.Wrap(err, "new db client")
+	}
 
-	hostctl := controller.NewHostController(ctx, dbc, rts, hs)
-	provctl := controller.NewProvideController(ctx, dbc, ps, rts, hs)
+	peerRepo := repo.NewPeerRepo(dbclient)
+	rtRepo := repo.NewRoutingTableRepo(dbclient)
+	provideRepo := repo.NewProvideRepo(dbclient)
+	maRepo := repo.NewMultiAddressRepo(dbclient)
+	iaRepo := repo.NewIPAddressRepo(dbclient)
+	dialRepo := repo.NewDialRepo(dbclient)
+	connRepo := repo.NewConnectionRepo(dbclient)
+
+	peerService := service.NewPeerService(peerRepo)
+	rtService := service.NewRoutingTableService(peerService, rtRepo)
+	hostService := service.NewHostService(peerService, rtService)
+	maService := service.NewMultiAddressService(maRepo, iaRepo)
+	dialService := service.NewDialService(dialRepo)
+	connService := service.NewConnectionService(connRepo)
+	provideService := service.NewProvideService(peerService, hostService, rtService, maService, provideRepo)
+
+	peerController := controller.NewPeerController(ctx, peerService)
+	hostController := controller.NewHostController(ctx, hostService)
+	provideController := controller.NewProvideController(ctx, provideService)
 
 	v1 := router.Group("/v1")
 	{
-		v1.POST("/hosts", hostctl.Create)
-		v1.GET("/hosts", hostctl.List)
-		v1.GET("/hosts/:peerID", hostctl.Get)
-		v1.DELETE("/hosts/:peerID", hostctl.Stop)
-		v1.POST("/hosts/:peerID/bootstrap", hostctl.Bootstrap)
-		v1.POST("/hosts/:peerID/dht/refresh", hostctl.RefreshRoutingTable)
-		v1.POST("/hosts/:peerID/dht/save", hostctl.SaveRoutingTable)
-
-		v1.POST("/provides", provctl.Create)
+		routes.NewPeerRoute(peerController, v1).Setup()
+		routes.NewHostRoute(hostController, v1).Setup()
+		routes.NewProvideRoute(provideController, v1).Setup()
 	}
 
 	srv := &http.Server{
-		Addr:    host + ":" + port,
+		Addr:    cfg.HTTP.Host + ":" + cfg.HTTP.Port,
 		Handler: router,
 	}
 
@@ -51,5 +67,5 @@ func Start(ctx context.Context, host string, port string, dbc *db.Client) *http.
 		}
 	}()
 
-	return srv
+	return srv, nil
 }

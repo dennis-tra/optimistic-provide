@@ -1,4 +1,4 @@
-package services
+package service
 
 import (
 	"time"
@@ -21,4 +21,11 @@ type ConnectionSpan struct {
 	Maddr        ma.Multiaddr
 	Start        time.Time
 	End          time.Time
+}
+
+type QuerySpan struct {
+	RemotePeerID peer.ID
+	Start        time.Time
+	End          time.Time
+	Error        error
 }

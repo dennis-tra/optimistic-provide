@@ -12,6 +12,7 @@ import "testing"
 // It does NOT run each operation group in parallel.
 // Separating the tests thusly grants avoidance of Postgres deadlocks.
 func TestParent(t *testing.T) {
+	t.Run("Connections", testConnections)
 	t.Run("Dials", testDials)
 	t.Run("IPAddresses", testIPAddresses)
 	t.Run("MultiAddresses", testMultiAddresses)
@@ -23,6 +24,7 @@ func TestParent(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
+	t.Run("Connections", testConnectionsDelete)
 	t.Run("Dials", testDialsDelete)
 	t.Run("IPAddresses", testIPAddressesDelete)
 	t.Run("MultiAddresses", testMultiAddressesDelete)
@@ -34,6 +36,7 @@ func TestDelete(t *testing.T) {
 }
 
 func TestQueryDeleteAll(t *testing.T) {
+	t.Run("Connections", testConnectionsQueryDeleteAll)
 	t.Run("Dials", testDialsQueryDeleteAll)
 	t.Run("IPAddresses", testIPAddressesQueryDeleteAll)
 	t.Run("MultiAddresses", testMultiAddressesQueryDeleteAll)
@@ -45,6 +48,7 @@ func TestQueryDeleteAll(t *testing.T) {
 }
 
 func TestSliceDeleteAll(t *testing.T) {
+	t.Run("Connections", testConnectionsSliceDeleteAll)
 	t.Run("Dials", testDialsSliceDeleteAll)
 	t.Run("IPAddresses", testIPAddressesSliceDeleteAll)
 	t.Run("MultiAddresses", testMultiAddressesSliceDeleteAll)
@@ -56,6 +60,7 @@ func TestSliceDeleteAll(t *testing.T) {
 }
 
 func TestExists(t *testing.T) {
+	t.Run("Connections", testConnectionsExists)
 	t.Run("Dials", testDialsExists)
 	t.Run("IPAddresses", testIPAddressesExists)
 	t.Run("MultiAddresses", testMultiAddressesExists)
@@ -67,6 +72,7 @@ func TestExists(t *testing.T) {
 }
 
 func TestFind(t *testing.T) {
+	t.Run("Connections", testConnectionsFind)
 	t.Run("Dials", testDialsFind)
 	t.Run("IPAddresses", testIPAddressesFind)
 	t.Run("MultiAddresses", testMultiAddressesFind)
@@ -78,6 +84,7 @@ func TestFind(t *testing.T) {
 }
 
 func TestBind(t *testing.T) {
+	t.Run("Connections", testConnectionsBind)
 	t.Run("Dials", testDialsBind)
 	t.Run("IPAddresses", testIPAddressesBind)
 	t.Run("MultiAddresses", testMultiAddressesBind)
@@ -89,6 +96,7 @@ func TestBind(t *testing.T) {
 }
 
 func TestOne(t *testing.T) {
+	t.Run("Connections", testConnectionsOne)
 	t.Run("Dials", testDialsOne)
 	t.Run("IPAddresses", testIPAddressesOne)
 	t.Run("MultiAddresses", testMultiAddressesOne)
@@ -100,6 +108,7 @@ func TestOne(t *testing.T) {
 }
 
 func TestAll(t *testing.T) {
+	t.Run("Connections", testConnectionsAll)
 	t.Run("Dials", testDialsAll)
 	t.Run("IPAddresses", testIPAddressesAll)
 	t.Run("MultiAddresses", testMultiAddressesAll)
@@ -111,6 +120,7 @@ func TestAll(t *testing.T) {
 }
 
 func TestCount(t *testing.T) {
+	t.Run("Connections", testConnectionsCount)
 	t.Run("Dials", testDialsCount)
 	t.Run("IPAddresses", testIPAddressesCount)
 	t.Run("MultiAddresses", testMultiAddressesCount)
@@ -122,6 +132,7 @@ func TestCount(t *testing.T) {
 }
 
 func TestHooks(t *testing.T) {
+	t.Run("Connections", testConnectionsHooks)
 	t.Run("Dials", testDialsHooks)
 	t.Run("IPAddresses", testIPAddressesHooks)
 	t.Run("MultiAddresses", testMultiAddressesHooks)
@@ -133,6 +144,8 @@ func TestHooks(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
+	t.Run("Connections", testConnectionsInsert)
+	t.Run("Connections", testConnectionsInsertWhitelist)
 	t.Run("Dials", testDialsInsert)
 	t.Run("Dials", testDialsInsertWhitelist)
 	t.Run("IPAddresses", testIPAddressesInsert)
@@ -154,6 +167,10 @@ func TestInsert(t *testing.T) {
 // TestToOne tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToOne(t *testing.T) {
+	t.Run("ConnectionToPeerUsingLocal", testConnectionToOnePeerUsingLocal)
+	t.Run("ConnectionToMultiAddressUsingMultiAddress", testConnectionToOneMultiAddressUsingMultiAddress)
+	t.Run("ConnectionToProvideUsingProvide", testConnectionToOneProvideUsingProvide)
+	t.Run("ConnectionToPeerUsingRemote", testConnectionToOnePeerUsingRemote)
 	t.Run("DialToPeerUsingLocal", testDialToOnePeerUsingLocal)
 	t.Run("DialToMultiAddressUsingMultiAddress", testDialToOneMultiAddressUsingMultiAddress)
 	t.Run("DialToProvideUsingProvide", testDialToOneProvideUsingProvide)
@@ -173,14 +190,18 @@ func TestOneToOne(t *testing.T) {}
 // or deadlocks can occur.
 func TestToMany(t *testing.T) {
 	t.Run("IPAddressToMultiAddresses", testIPAddressToManyMultiAddresses)
+	t.Run("MultiAddressToConnections", testMultiAddressToManyConnections)
 	t.Run("MultiAddressToDials", testMultiAddressToManyDials)
 	t.Run("MultiAddressToIPAddresses", testMultiAddressToManyIPAddresses)
+	t.Run("PeerToLocalConnections", testPeerToManyLocalConnections)
+	t.Run("PeerToRemoteConnections", testPeerToManyRemoteConnections)
 	t.Run("PeerToLocalDials", testPeerToManyLocalDials)
 	t.Run("PeerToRemoteDials", testPeerToManyRemoteDials)
 	t.Run("PeerToPeerLogs", testPeerToManyPeerLogs)
 	t.Run("PeerToProviderProvides", testPeerToManyProviderProvides)
 	t.Run("PeerToRoutingTableEntries", testPeerToManyRoutingTableEntries)
 	t.Run("PeerToRoutingTableSnapshots", testPeerToManyRoutingTableSnapshots)
+	t.Run("ProvideToConnections", testProvideToManyConnections)
 	t.Run("ProvideToDials", testProvideToManyDials)
 	t.Run("RoutingTableSnapshotToRoutingTableEntries", testRoutingTableSnapshotToManyRoutingTableEntries)
 }
@@ -188,6 +209,10 @@ func TestToMany(t *testing.T) {
 // TestToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
 func TestToOneSet(t *testing.T) {
+	t.Run("ConnectionToPeerUsingLocalConnections", testConnectionToOneSetOpPeerUsingLocal)
+	t.Run("ConnectionToMultiAddressUsingConnections", testConnectionToOneSetOpMultiAddressUsingMultiAddress)
+	t.Run("ConnectionToProvideUsingConnections", testConnectionToOneSetOpProvideUsingProvide)
+	t.Run("ConnectionToPeerUsingRemoteConnections", testConnectionToOneSetOpPeerUsingRemote)
 	t.Run("DialToPeerUsingLocalDials", testDialToOneSetOpPeerUsingLocal)
 	t.Run("DialToMultiAddressUsingDials", testDialToOneSetOpMultiAddressUsingMultiAddress)
 	t.Run("DialToProvideUsingDials", testDialToOneSetOpProvideUsingProvide)
@@ -215,14 +240,18 @@ func TestOneToOneRemove(t *testing.T) {}
 // or deadlocks can occur.
 func TestToManyAdd(t *testing.T) {
 	t.Run("IPAddressToMultiAddresses", testIPAddressToManyAddOpMultiAddresses)
+	t.Run("MultiAddressToConnections", testMultiAddressToManyAddOpConnections)
 	t.Run("MultiAddressToDials", testMultiAddressToManyAddOpDials)
 	t.Run("MultiAddressToIPAddresses", testMultiAddressToManyAddOpIPAddresses)
+	t.Run("PeerToLocalConnections", testPeerToManyAddOpLocalConnections)
+	t.Run("PeerToRemoteConnections", testPeerToManyAddOpRemoteConnections)
 	t.Run("PeerToLocalDials", testPeerToManyAddOpLocalDials)
 	t.Run("PeerToRemoteDials", testPeerToManyAddOpRemoteDials)
 	t.Run("PeerToPeerLogs", testPeerToManyAddOpPeerLogs)
 	t.Run("PeerToProviderProvides", testPeerToManyAddOpProviderProvides)
 	t.Run("PeerToRoutingTableEntries", testPeerToManyAddOpRoutingTableEntries)
 	t.Run("PeerToRoutingTableSnapshots", testPeerToManyAddOpRoutingTableSnapshots)
+	t.Run("ProvideToConnections", testProvideToManyAddOpConnections)
 	t.Run("ProvideToDials", testProvideToManyAddOpDials)
 	t.Run("RoutingTableSnapshotToRoutingTableEntries", testRoutingTableSnapshotToManyAddOpRoutingTableEntries)
 }
@@ -242,6 +271,7 @@ func TestToManyRemove(t *testing.T) {
 }
 
 func TestReload(t *testing.T) {
+	t.Run("Connections", testConnectionsReload)
 	t.Run("Dials", testDialsReload)
 	t.Run("IPAddresses", testIPAddressesReload)
 	t.Run("MultiAddresses", testMultiAddressesReload)
@@ -253,6 +283,7 @@ func TestReload(t *testing.T) {
 }
 
 func TestReloadAll(t *testing.T) {
+	t.Run("Connections", testConnectionsReloadAll)
 	t.Run("Dials", testDialsReloadAll)
 	t.Run("IPAddresses", testIPAddressesReloadAll)
 	t.Run("MultiAddresses", testMultiAddressesReloadAll)
@@ -264,6 +295,7 @@ func TestReloadAll(t *testing.T) {
 }
 
 func TestSelect(t *testing.T) {
+	t.Run("Connections", testConnectionsSelect)
 	t.Run("Dials", testDialsSelect)
 	t.Run("IPAddresses", testIPAddressesSelect)
 	t.Run("MultiAddresses", testMultiAddressesSelect)
@@ -275,6 +307,7 @@ func TestSelect(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
+	t.Run("Connections", testConnectionsUpdate)
 	t.Run("Dials", testDialsUpdate)
 	t.Run("IPAddresses", testIPAddressesUpdate)
 	t.Run("MultiAddresses", testMultiAddressesUpdate)
@@ -286,6 +319,7 @@ func TestUpdate(t *testing.T) {
 }
 
 func TestSliceUpdateAll(t *testing.T) {
+	t.Run("Connections", testConnectionsSliceUpdateAll)
 	t.Run("Dials", testDialsSliceUpdateAll)
 	t.Run("IPAddresses", testIPAddressesSliceUpdateAll)
 	t.Run("MultiAddresses", testMultiAddressesSliceUpdateAll)

@@ -1,7 +1,8 @@
-package services
+package service
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -25,6 +26,12 @@ type ProvideState struct {
 
 	connectionsLk sync.RWMutex
 	connections   []*ConnectionSpan
+
+	queriesStartedLk sync.RWMutex
+	queriesStarted   map[peer.ID]time.Time
+
+	queriesLk sync.RWMutex
+	queries   []*QuerySpan
 }
 
 func (ps *ProvideState) Register(ctx context.Context) (context.Context, context.CancelFunc) {
@@ -58,16 +65,48 @@ func (ps *ProvideState) consumeQueryEvents(queryEvents <-chan *routing.QueryEven
 	for event := range queryEvents {
 		switch event.Type {
 		case routing.DialingPeer:
-			log.Infow("DialingPeer", "peerID", event.ID.Pretty())
 			ps.connectionsStartedLk.Lock()
 			ps.connectionsStarted[event.ID] = time.Now()
 			ps.connectionsStartedLk.Unlock()
 		case routing.SendingQuery:
-			log.Infow("SendingQuery", "peerID", event.ID.Pretty())
+			ps.queriesStartedLk.Lock()
+			ps.queriesStarted[event.ID] = time.Now()
+			ps.queriesStartedLk.Unlock()
 		case routing.PeerResponse:
-			log.Infow("PeerResponse", "peerID", event.ID.Pretty())
+			ps.queriesStartedLk.Lock()
+			started, ok := ps.queriesStarted[event.ID]
+			if !ok {
+				ps.queriesStartedLk.Unlock()
+				continue
+			}
+			delete(ps.queriesStarted, event.ID)
+			ps.queriesStartedLk.Unlock()
+
+			ps.queriesLk.Lock()
+			ps.queries = append(ps.queries, &QuerySpan{
+				RemotePeerID: event.ID,
+				Start:        started,
+				End:          time.Now(),
+			})
+			ps.queriesLk.Unlock()
 		case routing.QueryError:
-			log.Infow("QueryError", "peerID", event.ID.Pretty())
+			ps.queriesStartedLk.Lock()
+			started, ok := ps.queriesStarted[event.ID]
+			if !ok {
+				ps.queriesStartedLk.Unlock()
+				continue
+			}
+			delete(ps.queriesStarted, event.ID)
+			ps.queriesStartedLk.Unlock()
+
+			ps.queriesLk.Lock()
+			ps.queries = append(ps.queries, &QuerySpan{
+				RemotePeerID: event.ID,
+				Start:        started,
+				End:          time.Now(),
+				Error:        fmt.Errorf(event.Extra),
+			})
+			ps.queriesLk.Unlock()
 		}
 	}
 }

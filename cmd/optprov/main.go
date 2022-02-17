@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/db"
+	"github.com/dennis-tra/optimistic-provide/pkg/config"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/api"
 	logging "github.com/ipfs/go-log"
@@ -33,9 +33,6 @@ var (
 )
 
 func main() {
-	// ShortCommit version tag
-	verTag := fmt.Sprintf("v%s+%s", RawVersion, ShortCommit)
-
 	app := &cli.App{
 		Name:      "optprov",
 		Usage:     "A libp2p DHT performance measurement tool.",
@@ -46,9 +43,14 @@ func main() {
 				Email: "optimistic-provide@dtrautwein.eu",
 			},
 		},
-		Version: verTag,
-		Before:  Before,
+		Version: fmt.Sprintf("v%s+%s", RawVersion, ShortCommit),
 		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:    "config",
+				Aliases: []string{"c"},
+				Usage:   "Load configuration from `FILE`",
+				EnvVars: []string{"OPTIMISTIC_PROVIDE_CONFIG_FILE"},
+			},
 			&cli.StringFlag{
 				Name:        "log-level",
 				Usage:       "Set this flag to a value from 0 (least verbose) to 6 (most verbose). Overrides the --debug flag",
@@ -142,49 +144,23 @@ func main() {
 	}
 }
 
-// Before is executed before any subcommands are run, but after the context is ready
-// If a non-nil error is returned, no subcommands are run.
-func Before(c *cli.Context) error {
-	logLevel := "info"
-	if c.IsSet("log-level") {
-		logLevel = c.String("log-level")
-	}
-
-	if err := logging.SetLogLevel("optprov", logLevel); err != nil {
-		return errors.Wrap(err, "set optprov log level")
-	}
-	if err := logging.SetLogLevel("dht", logLevel); err != nil {
-		return errors.Wrap(err, "set DHT log level")
-	}
-
-	go func() {
-		pprofAddr := c.String("pprof-host") + ":" + c.String("pprof-port")
-		log.Debugw("Starting profiling endpoint at", pprofAddr)
-		if err := http.ListenAndServe(pprofAddr, nil); err != nil {
-			log.Errorw("Error serving pprof", err)
-		}
-	}()
-	return nil
-}
-
 // RootAction is the function that is called when running `optprov provide`.
 func RootAction(c *cli.Context) error {
 	log.Info("Starting DHT measurement server")
 
-	dbc, err := db.NewClient(
-		c.String("db-host"),
-		c.String("db-port"),
-		c.String("db-name"),
-		c.String("db-user"),
-		c.String("db-password"),
-		c.String("db-sslmode"),
-	)
+	cfg, err := config.NewConfig(c)
 	if err != nil {
-		return errors.Wrap(err, "new db client")
+		return errors.Wrap(err, "new config")
 	}
 
-	// Start API server
-	srv := api.Start(c.Context, c.String("host"), c.String("port"), dbc)
+	if err = initLogging(cfg); err != nil {
+		return errors.Wrap(err, "init logging")
+	}
+
+	initPProf(cfg)
+
+	// Run API server
+	srv := api.Run(c.Context, cfg)
 
 	// Listen for the interrupt signal.
 	<-c.Context.Done()
@@ -201,4 +177,25 @@ func RootAction(c *cli.Context) error {
 
 	log.Info("Server exiting")
 	return nil
+}
+
+func initLogging(cfg *config.Config) error {
+	if err := logging.SetLogLevel("optprov", cfg.App.LogLevel); err != nil {
+		return errors.Wrap(err, "set optprov log level")
+	}
+	if err := logging.SetLogLevel("dht", cfg.App.LogLevel); err != nil {
+		return errors.Wrap(err, "set DHT log level")
+	}
+
+	return nil
+}
+
+func initPProf(cfg *config.Config) {
+	go func() {
+		pprofAddr := cfg.PProf.Host + ":" + cfg.PProf.Port
+		log.Debugw("Starting profiling endpoint at", pprofAddr)
+		if err := http.ListenAndServe(pprofAddr, nil); err != nil {
+			log.Errorw("Error serving pprof", err)
+		}
+	}()
 }

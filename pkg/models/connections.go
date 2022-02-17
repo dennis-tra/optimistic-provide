@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
-	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -22,64 +21,54 @@ import (
 	"github.com/volatiletech/strmangle"
 )
 
-// Dial is an object representing the database table.
-type Dial struct {
-	ID             int         `boil:"id" json:"id" toml:"id" yaml:"id"`
-	ProvideID      int         `boil:"provide_id" json:"provide_id" toml:"provide_id" yaml:"provide_id"`
-	LocalID        int         `boil:"local_id" json:"local_id" toml:"local_id" yaml:"local_id"`
-	RemoteID       int         `boil:"remote_id" json:"remote_id" toml:"remote_id" yaml:"remote_id"`
-	Transport      string      `boil:"transport" json:"transport" toml:"transport" yaml:"transport"`
-	MultiAddressID int         `boil:"multi_address_id" json:"multi_address_id" toml:"multi_address_id" yaml:"multi_address_id"`
-	StartedAt      time.Time   `boil:"started_at" json:"started_at" toml:"started_at" yaml:"started_at"`
-	EndedAt        time.Time   `boil:"ended_at" json:"ended_at" toml:"ended_at" yaml:"ended_at"`
-	Error          null.String `boil:"error" json:"error,omitempty" toml:"error" yaml:"error,omitempty"`
+// Connection is an object representing the database table.
+type Connection struct {
+	ID             int       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ProvideID      int       `boil:"provide_id" json:"provide_id" toml:"provide_id" yaml:"provide_id"`
+	LocalID        int       `boil:"local_id" json:"local_id" toml:"local_id" yaml:"local_id"`
+	RemoteID       int       `boil:"remote_id" json:"remote_id" toml:"remote_id" yaml:"remote_id"`
+	MultiAddressID int       `boil:"multi_address_id" json:"multi_address_id" toml:"multi_address_id" yaml:"multi_address_id"`
+	StartedAt      time.Time `boil:"started_at" json:"started_at" toml:"started_at" yaml:"started_at"`
+	EndedAt        time.Time `boil:"ended_at" json:"ended_at" toml:"ended_at" yaml:"ended_at"`
 
-	R *dialR `boil:"-" json:"-" toml:"-" yaml:"-"`
-	L dialL  `boil:"-" json:"-" toml:"-" yaml:"-"`
+	R *connectionR `boil:"-" json:"-" toml:"-" yaml:"-"`
+	L connectionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
-var DialColumns = struct {
+var ConnectionColumns = struct {
 	ID             string
 	ProvideID      string
 	LocalID        string
 	RemoteID       string
-	Transport      string
 	MultiAddressID string
 	StartedAt      string
 	EndedAt        string
-	Error          string
 }{
 	ID:             "id",
 	ProvideID:      "provide_id",
 	LocalID:        "local_id",
 	RemoteID:       "remote_id",
-	Transport:      "transport",
 	MultiAddressID: "multi_address_id",
 	StartedAt:      "started_at",
 	EndedAt:        "ended_at",
-	Error:          "error",
 }
 
-var DialTableColumns = struct {
+var ConnectionTableColumns = struct {
 	ID             string
 	ProvideID      string
 	LocalID        string
 	RemoteID       string
-	Transport      string
 	MultiAddressID string
 	StartedAt      string
 	EndedAt        string
-	Error          string
 }{
-	ID:             "dials.id",
-	ProvideID:      "dials.provide_id",
-	LocalID:        "dials.local_id",
-	RemoteID:       "dials.remote_id",
-	Transport:      "dials.transport",
-	MultiAddressID: "dials.multi_address_id",
-	StartedAt:      "dials.started_at",
-	EndedAt:        "dials.ended_at",
-	Error:          "dials.error",
+	ID:             "connections.id",
+	ProvideID:      "connections.provide_id",
+	LocalID:        "connections.local_id",
+	RemoteID:       "connections.remote_id",
+	MultiAddressID: "connections.multi_address_id",
+	StartedAt:      "connections.started_at",
+	EndedAt:        "connections.ended_at",
 }
 
 // Generated where
@@ -100,29 +89,6 @@ func (w whereHelperint) IN(slice []int) qm.QueryMod {
 	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
 }
 func (w whereHelperint) NIN(slice []int) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
-}
-
-type whereHelperstring struct{ field string }
-
-func (w whereHelperstring) EQ(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperstring) NEQ(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperstring) LT(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperstring) LTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperstring) GT(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperstring) GTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-func (w whereHelperstring) IN(slice []string) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
 	values := make([]interface{}, 0, len(slice))
 	for _, value := range slice {
 		values = append(values, value)
@@ -151,53 +117,26 @@ func (w whereHelpertime_Time) GTE(x time.Time) qm.QueryMod {
 	return qmhelper.Where(w.field, qmhelper.GTE, x)
 }
 
-type whereHelpernull_String struct{ field string }
-
-func (w whereHelpernull_String) EQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_String) NEQ(x null.String) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_String) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_String) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_String) LT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_String) LTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_String) GT(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
-var DialWhere = struct {
+var ConnectionWhere = struct {
 	ID             whereHelperint
 	ProvideID      whereHelperint
 	LocalID        whereHelperint
 	RemoteID       whereHelperint
-	Transport      whereHelperstring
 	MultiAddressID whereHelperint
 	StartedAt      whereHelpertime_Time
 	EndedAt        whereHelpertime_Time
-	Error          whereHelpernull_String
 }{
-	ID:             whereHelperint{field: "\"dials\".\"id\""},
-	ProvideID:      whereHelperint{field: "\"dials\".\"provide_id\""},
-	LocalID:        whereHelperint{field: "\"dials\".\"local_id\""},
-	RemoteID:       whereHelperint{field: "\"dials\".\"remote_id\""},
-	Transport:      whereHelperstring{field: "\"dials\".\"transport\""},
-	MultiAddressID: whereHelperint{field: "\"dials\".\"multi_address_id\""},
-	StartedAt:      whereHelpertime_Time{field: "\"dials\".\"started_at\""},
-	EndedAt:        whereHelpertime_Time{field: "\"dials\".\"ended_at\""},
-	Error:          whereHelpernull_String{field: "\"dials\".\"error\""},
+	ID:             whereHelperint{field: "\"connections\".\"id\""},
+	ProvideID:      whereHelperint{field: "\"connections\".\"provide_id\""},
+	LocalID:        whereHelperint{field: "\"connections\".\"local_id\""},
+	RemoteID:       whereHelperint{field: "\"connections\".\"remote_id\""},
+	MultiAddressID: whereHelperint{field: "\"connections\".\"multi_address_id\""},
+	StartedAt:      whereHelpertime_Time{field: "\"connections\".\"started_at\""},
+	EndedAt:        whereHelpertime_Time{field: "\"connections\".\"ended_at\""},
 }
 
-// DialRels is where relationship names are stored.
-var DialRels = struct {
+// ConnectionRels is where relationship names are stored.
+var ConnectionRels = struct {
 	Local        string
 	MultiAddress string
 	Provide      string
@@ -209,8 +148,8 @@ var DialRels = struct {
 	Remote:       "Remote",
 }
 
-// dialR is where relationships are stored.
-type dialR struct {
+// connectionR is where relationships are stored.
+type connectionR struct {
 	Local        *Peer         `boil:"Local" json:"Local" toml:"Local" yaml:"Local"`
 	MultiAddress *MultiAddress `boil:"MultiAddress" json:"MultiAddress" toml:"MultiAddress" yaml:"MultiAddress"`
 	Provide      *Provide      `boil:"Provide" json:"Provide" toml:"Provide" yaml:"Provide"`
@@ -218,43 +157,43 @@ type dialR struct {
 }
 
 // NewStruct creates a new relationship struct
-func (*dialR) NewStruct() *dialR {
-	return &dialR{}
+func (*connectionR) NewStruct() *connectionR {
+	return &connectionR{}
 }
 
-// dialL is where Load methods for each relationship are stored.
-type dialL struct{}
+// connectionL is where Load methods for each relationship are stored.
+type connectionL struct{}
 
 var (
-	dialAllColumns            = []string{"id", "provide_id", "local_id", "remote_id", "transport", "multi_address_id", "started_at", "ended_at", "error"}
-	dialColumnsWithoutDefault = []string{"provide_id", "local_id", "remote_id", "transport", "multi_address_id", "started_at", "ended_at", "error"}
-	dialColumnsWithDefault    = []string{"id"}
-	dialPrimaryKeyColumns     = []string{"id"}
+	connectionAllColumns            = []string{"id", "provide_id", "local_id", "remote_id", "multi_address_id", "started_at", "ended_at"}
+	connectionColumnsWithoutDefault = []string{"provide_id", "local_id", "remote_id", "multi_address_id", "started_at", "ended_at"}
+	connectionColumnsWithDefault    = []string{"id"}
+	connectionPrimaryKeyColumns     = []string{"id"}
 )
 
 type (
-	// DialSlice is an alias for a slice of pointers to Dial.
-	// This should almost always be used instead of []Dial.
-	DialSlice []*Dial
-	// DialHook is the signature for custom Dial hook methods
-	DialHook func(context.Context, boil.ContextExecutor, *Dial) error
+	// ConnectionSlice is an alias for a slice of pointers to Connection.
+	// This should almost always be used instead of []Connection.
+	ConnectionSlice []*Connection
+	// ConnectionHook is the signature for custom Connection hook methods
+	ConnectionHook func(context.Context, boil.ContextExecutor, *Connection) error
 
-	dialQuery struct {
+	connectionQuery struct {
 		*queries.Query
 	}
 )
 
 // Cache for insert, update and upsert
 var (
-	dialType                 = reflect.TypeOf(&Dial{})
-	dialMapping              = queries.MakeStructMapping(dialType)
-	dialPrimaryKeyMapping, _ = queries.BindMapping(dialType, dialMapping, dialPrimaryKeyColumns)
-	dialInsertCacheMut       sync.RWMutex
-	dialInsertCache          = make(map[string]insertCache)
-	dialUpdateCacheMut       sync.RWMutex
-	dialUpdateCache          = make(map[string]updateCache)
-	dialUpsertCacheMut       sync.RWMutex
-	dialUpsertCache          = make(map[string]insertCache)
+	connectionType                 = reflect.TypeOf(&Connection{})
+	connectionMapping              = queries.MakeStructMapping(connectionType)
+	connectionPrimaryKeyMapping, _ = queries.BindMapping(connectionType, connectionMapping, connectionPrimaryKeyColumns)
+	connectionInsertCacheMut       sync.RWMutex
+	connectionInsertCache          = make(map[string]insertCache)
+	connectionUpdateCacheMut       sync.RWMutex
+	connectionUpdateCache          = make(map[string]updateCache)
+	connectionUpsertCacheMut       sync.RWMutex
+	connectionUpsertCache          = make(map[string]insertCache)
 )
 
 var (
@@ -265,24 +204,24 @@ var (
 	_ = qmhelper.Where
 )
 
-var dialBeforeInsertHooks []DialHook
-var dialBeforeUpdateHooks []DialHook
-var dialBeforeDeleteHooks []DialHook
-var dialBeforeUpsertHooks []DialHook
+var connectionBeforeInsertHooks []ConnectionHook
+var connectionBeforeUpdateHooks []ConnectionHook
+var connectionBeforeDeleteHooks []ConnectionHook
+var connectionBeforeUpsertHooks []ConnectionHook
 
-var dialAfterInsertHooks []DialHook
-var dialAfterSelectHooks []DialHook
-var dialAfterUpdateHooks []DialHook
-var dialAfterDeleteHooks []DialHook
-var dialAfterUpsertHooks []DialHook
+var connectionAfterInsertHooks []ConnectionHook
+var connectionAfterSelectHooks []ConnectionHook
+var connectionAfterUpdateHooks []ConnectionHook
+var connectionAfterDeleteHooks []ConnectionHook
+var connectionAfterUpsertHooks []ConnectionHook
 
 // doBeforeInsertHooks executes all "before insert" hooks.
-func (o *Dial) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+func (o *Connection) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
 	if boil.HooksAreSkipped(ctx) {
 		return nil
 	}
 
-	for _, hook := range dialBeforeInsertHooks {
+	for _, hook := range connectionBeforeInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
 		}
@@ -292,12 +231,12 @@ func (o *Dial) doBeforeInsertHooks(ctx context.Context, exec boil.ContextExecuto
 }
 
 // doBeforeUpdateHooks executes all "before Update" hooks.
-func (o *Dial) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+func (o *Connection) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
 	if boil.HooksAreSkipped(ctx) {
 		return nil
 	}
 
-	for _, hook := range dialBeforeUpdateHooks {
+	for _, hook := range connectionBeforeUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
 		}
@@ -307,12 +246,12 @@ func (o *Dial) doBeforeUpdateHooks(ctx context.Context, exec boil.ContextExecuto
 }
 
 // doBeforeDeleteHooks executes all "before Delete" hooks.
-func (o *Dial) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+func (o *Connection) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
 	if boil.HooksAreSkipped(ctx) {
 		return nil
 	}
 
-	for _, hook := range dialBeforeDeleteHooks {
+	for _, hook := range connectionBeforeDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
 		}
@@ -322,12 +261,12 @@ func (o *Dial) doBeforeDeleteHooks(ctx context.Context, exec boil.ContextExecuto
 }
 
 // doBeforeUpsertHooks executes all "before Upsert" hooks.
-func (o *Dial) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+func (o *Connection) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
 	if boil.HooksAreSkipped(ctx) {
 		return nil
 	}
 
-	for _, hook := range dialBeforeUpsertHooks {
+	for _, hook := range connectionBeforeUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
 		}
@@ -337,12 +276,12 @@ func (o *Dial) doBeforeUpsertHooks(ctx context.Context, exec boil.ContextExecuto
 }
 
 // doAfterInsertHooks executes all "after Insert" hooks.
-func (o *Dial) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+func (o *Connection) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
 	if boil.HooksAreSkipped(ctx) {
 		return nil
 	}
 
-	for _, hook := range dialAfterInsertHooks {
+	for _, hook := range connectionAfterInsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
 		}
@@ -352,12 +291,12 @@ func (o *Dial) doAfterInsertHooks(ctx context.Context, exec boil.ContextExecutor
 }
 
 // doAfterSelectHooks executes all "after Select" hooks.
-func (o *Dial) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+func (o *Connection) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
 	if boil.HooksAreSkipped(ctx) {
 		return nil
 	}
 
-	for _, hook := range dialAfterSelectHooks {
+	for _, hook := range connectionAfterSelectHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
 		}
@@ -367,12 +306,12 @@ func (o *Dial) doAfterSelectHooks(ctx context.Context, exec boil.ContextExecutor
 }
 
 // doAfterUpdateHooks executes all "after Update" hooks.
-func (o *Dial) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+func (o *Connection) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
 	if boil.HooksAreSkipped(ctx) {
 		return nil
 	}
 
-	for _, hook := range dialAfterUpdateHooks {
+	for _, hook := range connectionAfterUpdateHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
 		}
@@ -382,12 +321,12 @@ func (o *Dial) doAfterUpdateHooks(ctx context.Context, exec boil.ContextExecutor
 }
 
 // doAfterDeleteHooks executes all "after Delete" hooks.
-func (o *Dial) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+func (o *Connection) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
 	if boil.HooksAreSkipped(ctx) {
 		return nil
 	}
 
-	for _, hook := range dialAfterDeleteHooks {
+	for _, hook := range connectionAfterDeleteHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
 		}
@@ -397,12 +336,12 @@ func (o *Dial) doAfterDeleteHooks(ctx context.Context, exec boil.ContextExecutor
 }
 
 // doAfterUpsertHooks executes all "after Upsert" hooks.
-func (o *Dial) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
+func (o *Connection) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor) (err error) {
 	if boil.HooksAreSkipped(ctx) {
 		return nil
 	}
 
-	for _, hook := range dialAfterUpsertHooks {
+	for _, hook := range connectionAfterUpsertHooks {
 		if err := hook(ctx, exec, o); err != nil {
 			return err
 		}
@@ -411,33 +350,33 @@ func (o *Dial) doAfterUpsertHooks(ctx context.Context, exec boil.ContextExecutor
 	return nil
 }
 
-// AddDialHook registers your hook function for all future operations.
-func AddDialHook(hookPoint boil.HookPoint, dialHook DialHook) {
+// AddConnectionHook registers your hook function for all future operations.
+func AddConnectionHook(hookPoint boil.HookPoint, connectionHook ConnectionHook) {
 	switch hookPoint {
 	case boil.BeforeInsertHook:
-		dialBeforeInsertHooks = append(dialBeforeInsertHooks, dialHook)
+		connectionBeforeInsertHooks = append(connectionBeforeInsertHooks, connectionHook)
 	case boil.BeforeUpdateHook:
-		dialBeforeUpdateHooks = append(dialBeforeUpdateHooks, dialHook)
+		connectionBeforeUpdateHooks = append(connectionBeforeUpdateHooks, connectionHook)
 	case boil.BeforeDeleteHook:
-		dialBeforeDeleteHooks = append(dialBeforeDeleteHooks, dialHook)
+		connectionBeforeDeleteHooks = append(connectionBeforeDeleteHooks, connectionHook)
 	case boil.BeforeUpsertHook:
-		dialBeforeUpsertHooks = append(dialBeforeUpsertHooks, dialHook)
+		connectionBeforeUpsertHooks = append(connectionBeforeUpsertHooks, connectionHook)
 	case boil.AfterInsertHook:
-		dialAfterInsertHooks = append(dialAfterInsertHooks, dialHook)
+		connectionAfterInsertHooks = append(connectionAfterInsertHooks, connectionHook)
 	case boil.AfterSelectHook:
-		dialAfterSelectHooks = append(dialAfterSelectHooks, dialHook)
+		connectionAfterSelectHooks = append(connectionAfterSelectHooks, connectionHook)
 	case boil.AfterUpdateHook:
-		dialAfterUpdateHooks = append(dialAfterUpdateHooks, dialHook)
+		connectionAfterUpdateHooks = append(connectionAfterUpdateHooks, connectionHook)
 	case boil.AfterDeleteHook:
-		dialAfterDeleteHooks = append(dialAfterDeleteHooks, dialHook)
+		connectionAfterDeleteHooks = append(connectionAfterDeleteHooks, connectionHook)
 	case boil.AfterUpsertHook:
-		dialAfterUpsertHooks = append(dialAfterUpsertHooks, dialHook)
+		connectionAfterUpsertHooks = append(connectionAfterUpsertHooks, connectionHook)
 	}
 }
 
-// One returns a single dial record from the query.
-func (q dialQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Dial, error) {
-	o := &Dial{}
+// One returns a single connection record from the query.
+func (q connectionQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Connection, error) {
+	o := &Connection{}
 
 	queries.SetLimit(q.Query, 1)
 
@@ -446,7 +385,7 @@ func (q dialQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Dial, e
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: failed to execute a one query for dials")
+		return nil, errors.Wrap(err, "models: failed to execute a one query for connections")
 	}
 
 	if err := o.doAfterSelectHooks(ctx, exec); err != nil {
@@ -456,16 +395,16 @@ func (q dialQuery) One(ctx context.Context, exec boil.ContextExecutor) (*Dial, e
 	return o, nil
 }
 
-// All returns all Dial records from the query.
-func (q dialQuery) All(ctx context.Context, exec boil.ContextExecutor) (DialSlice, error) {
-	var o []*Dial
+// All returns all Connection records from the query.
+func (q connectionQuery) All(ctx context.Context, exec boil.ContextExecutor) (ConnectionSlice, error) {
+	var o []*Connection
 
 	err := q.Bind(ctx, exec, &o)
 	if err != nil {
-		return nil, errors.Wrap(err, "models: failed to assign all query results to Dial slice")
+		return nil, errors.Wrap(err, "models: failed to assign all query results to Connection slice")
 	}
 
-	if len(dialAfterSelectHooks) != 0 {
+	if len(connectionAfterSelectHooks) != 0 {
 		for _, obj := range o {
 			if err := obj.doAfterSelectHooks(ctx, exec); err != nil {
 				return o, err
@@ -476,8 +415,8 @@ func (q dialQuery) All(ctx context.Context, exec boil.ContextExecutor) (DialSlic
 	return o, nil
 }
 
-// Count returns the count of all Dial records in the query.
-func (q dialQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
+// Count returns the count of all Connection records in the query.
+func (q connectionQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
@@ -485,14 +424,14 @@ func (q dialQuery) Count(ctx context.Context, exec boil.ContextExecutor) (int64,
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to count dials rows")
+		return 0, errors.Wrap(err, "models: failed to count connections rows")
 	}
 
 	return count, nil
 }
 
 // Exists checks if the row exists in the table.
-func (q dialQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
+func (q connectionQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
 	var count int64
 
 	queries.SetSelect(q.Query, nil)
@@ -501,14 +440,14 @@ func (q dialQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool,
 
 	err := q.Query.QueryRowContext(ctx, exec).Scan(&count)
 	if err != nil {
-		return false, errors.Wrap(err, "models: failed to check if dials exists")
+		return false, errors.Wrap(err, "models: failed to check if connections exists")
 	}
 
 	return count > 0, nil
 }
 
 // Local pointed to by the foreign key.
-func (o *Dial) Local(mods ...qm.QueryMod) peerQuery {
+func (o *Connection) Local(mods ...qm.QueryMod) peerQuery {
 	queryMods := []qm.QueryMod{
 		qm.Where("\"id\" = ?", o.LocalID),
 	}
@@ -522,7 +461,7 @@ func (o *Dial) Local(mods ...qm.QueryMod) peerQuery {
 }
 
 // MultiAddress pointed to by the foreign key.
-func (o *Dial) MultiAddress(mods ...qm.QueryMod) multiAddressQuery {
+func (o *Connection) MultiAddress(mods ...qm.QueryMod) multiAddressQuery {
 	queryMods := []qm.QueryMod{
 		qm.Where("\"id\" = ?", o.MultiAddressID),
 	}
@@ -536,7 +475,7 @@ func (o *Dial) MultiAddress(mods ...qm.QueryMod) multiAddressQuery {
 }
 
 // Provide pointed to by the foreign key.
-func (o *Dial) Provide(mods ...qm.QueryMod) provideQuery {
+func (o *Connection) Provide(mods ...qm.QueryMod) provideQuery {
 	queryMods := []qm.QueryMod{
 		qm.Where("\"id\" = ?", o.ProvideID),
 	}
@@ -550,7 +489,7 @@ func (o *Dial) Provide(mods ...qm.QueryMod) provideQuery {
 }
 
 // Remote pointed to by the foreign key.
-func (o *Dial) Remote(mods ...qm.QueryMod) peerQuery {
+func (o *Connection) Remote(mods ...qm.QueryMod) peerQuery {
 	queryMods := []qm.QueryMod{
 		qm.Where("\"id\" = ?", o.RemoteID),
 	}
@@ -565,20 +504,20 @@ func (o *Dial) Remote(mods ...qm.QueryMod) peerQuery {
 
 // LoadLocal allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
-func (dialL) LoadLocal(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDial interface{}, mods queries.Applicator) error {
-	var slice []*Dial
-	var object *Dial
+func (connectionL) LoadLocal(ctx context.Context, e boil.ContextExecutor, singular bool, maybeConnection interface{}, mods queries.Applicator) error {
+	var slice []*Connection
+	var object *Connection
 
 	if singular {
-		object = maybeDial.(*Dial)
+		object = maybeConnection.(*Connection)
 	} else {
-		slice = *maybeDial.(*[]*Dial)
+		slice = *maybeConnection.(*[]*Connection)
 	}
 
 	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
-			object.R = &dialR{}
+			object.R = &connectionR{}
 		}
 		args = append(args, object.LocalID)
 
@@ -586,7 +525,7 @@ func (dialL) LoadLocal(ctx context.Context, e boil.ContextExecutor, singular boo
 	Outer:
 		for _, obj := range slice {
 			if obj.R == nil {
-				obj.R = &dialR{}
+				obj.R = &connectionR{}
 			}
 
 			for _, a := range args {
@@ -629,7 +568,7 @@ func (dialL) LoadLocal(ctx context.Context, e boil.ContextExecutor, singular boo
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for peers")
 	}
 
-	if len(dialAfterSelectHooks) != 0 {
+	if len(connectionAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -647,7 +586,7 @@ func (dialL) LoadLocal(ctx context.Context, e boil.ContextExecutor, singular boo
 		if foreign.R == nil {
 			foreign.R = &peerR{}
 		}
-		foreign.R.LocalDials = append(foreign.R.LocalDials, object)
+		foreign.R.LocalConnections = append(foreign.R.LocalConnections, object)
 		return nil
 	}
 
@@ -658,7 +597,7 @@ func (dialL) LoadLocal(ctx context.Context, e boil.ContextExecutor, singular boo
 				if foreign.R == nil {
 					foreign.R = &peerR{}
 				}
-				foreign.R.LocalDials = append(foreign.R.LocalDials, local)
+				foreign.R.LocalConnections = append(foreign.R.LocalConnections, local)
 				break
 			}
 		}
@@ -669,20 +608,20 @@ func (dialL) LoadLocal(ctx context.Context, e boil.ContextExecutor, singular boo
 
 // LoadMultiAddress allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
-func (dialL) LoadMultiAddress(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDial interface{}, mods queries.Applicator) error {
-	var slice []*Dial
-	var object *Dial
+func (connectionL) LoadMultiAddress(ctx context.Context, e boil.ContextExecutor, singular bool, maybeConnection interface{}, mods queries.Applicator) error {
+	var slice []*Connection
+	var object *Connection
 
 	if singular {
-		object = maybeDial.(*Dial)
+		object = maybeConnection.(*Connection)
 	} else {
-		slice = *maybeDial.(*[]*Dial)
+		slice = *maybeConnection.(*[]*Connection)
 	}
 
 	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
-			object.R = &dialR{}
+			object.R = &connectionR{}
 		}
 		args = append(args, object.MultiAddressID)
 
@@ -690,7 +629,7 @@ func (dialL) LoadMultiAddress(ctx context.Context, e boil.ContextExecutor, singu
 	Outer:
 		for _, obj := range slice {
 			if obj.R == nil {
-				obj.R = &dialR{}
+				obj.R = &connectionR{}
 			}
 
 			for _, a := range args {
@@ -733,7 +672,7 @@ func (dialL) LoadMultiAddress(ctx context.Context, e boil.ContextExecutor, singu
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for multi_addresses")
 	}
 
-	if len(dialAfterSelectHooks) != 0 {
+	if len(connectionAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -751,7 +690,7 @@ func (dialL) LoadMultiAddress(ctx context.Context, e boil.ContextExecutor, singu
 		if foreign.R == nil {
 			foreign.R = &multiAddressR{}
 		}
-		foreign.R.Dials = append(foreign.R.Dials, object)
+		foreign.R.Connections = append(foreign.R.Connections, object)
 		return nil
 	}
 
@@ -762,7 +701,7 @@ func (dialL) LoadMultiAddress(ctx context.Context, e boil.ContextExecutor, singu
 				if foreign.R == nil {
 					foreign.R = &multiAddressR{}
 				}
-				foreign.R.Dials = append(foreign.R.Dials, local)
+				foreign.R.Connections = append(foreign.R.Connections, local)
 				break
 			}
 		}
@@ -773,20 +712,20 @@ func (dialL) LoadMultiAddress(ctx context.Context, e boil.ContextExecutor, singu
 
 // LoadProvide allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
-func (dialL) LoadProvide(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDial interface{}, mods queries.Applicator) error {
-	var slice []*Dial
-	var object *Dial
+func (connectionL) LoadProvide(ctx context.Context, e boil.ContextExecutor, singular bool, maybeConnection interface{}, mods queries.Applicator) error {
+	var slice []*Connection
+	var object *Connection
 
 	if singular {
-		object = maybeDial.(*Dial)
+		object = maybeConnection.(*Connection)
 	} else {
-		slice = *maybeDial.(*[]*Dial)
+		slice = *maybeConnection.(*[]*Connection)
 	}
 
 	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
-			object.R = &dialR{}
+			object.R = &connectionR{}
 		}
 		args = append(args, object.ProvideID)
 
@@ -794,7 +733,7 @@ func (dialL) LoadProvide(ctx context.Context, e boil.ContextExecutor, singular b
 	Outer:
 		for _, obj := range slice {
 			if obj.R == nil {
-				obj.R = &dialR{}
+				obj.R = &connectionR{}
 			}
 
 			for _, a := range args {
@@ -837,7 +776,7 @@ func (dialL) LoadProvide(ctx context.Context, e boil.ContextExecutor, singular b
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for provides")
 	}
 
-	if len(dialAfterSelectHooks) != 0 {
+	if len(connectionAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -855,7 +794,7 @@ func (dialL) LoadProvide(ctx context.Context, e boil.ContextExecutor, singular b
 		if foreign.R == nil {
 			foreign.R = &provideR{}
 		}
-		foreign.R.Dials = append(foreign.R.Dials, object)
+		foreign.R.Connections = append(foreign.R.Connections, object)
 		return nil
 	}
 
@@ -866,7 +805,7 @@ func (dialL) LoadProvide(ctx context.Context, e boil.ContextExecutor, singular b
 				if foreign.R == nil {
 					foreign.R = &provideR{}
 				}
-				foreign.R.Dials = append(foreign.R.Dials, local)
+				foreign.R.Connections = append(foreign.R.Connections, local)
 				break
 			}
 		}
@@ -877,20 +816,20 @@ func (dialL) LoadProvide(ctx context.Context, e boil.ContextExecutor, singular b
 
 // LoadRemote allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
-func (dialL) LoadRemote(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDial interface{}, mods queries.Applicator) error {
-	var slice []*Dial
-	var object *Dial
+func (connectionL) LoadRemote(ctx context.Context, e boil.ContextExecutor, singular bool, maybeConnection interface{}, mods queries.Applicator) error {
+	var slice []*Connection
+	var object *Connection
 
 	if singular {
-		object = maybeDial.(*Dial)
+		object = maybeConnection.(*Connection)
 	} else {
-		slice = *maybeDial.(*[]*Dial)
+		slice = *maybeConnection.(*[]*Connection)
 	}
 
 	args := make([]interface{}, 0, 1)
 	if singular {
 		if object.R == nil {
-			object.R = &dialR{}
+			object.R = &connectionR{}
 		}
 		args = append(args, object.RemoteID)
 
@@ -898,7 +837,7 @@ func (dialL) LoadRemote(ctx context.Context, e boil.ContextExecutor, singular bo
 	Outer:
 		for _, obj := range slice {
 			if obj.R == nil {
-				obj.R = &dialR{}
+				obj.R = &connectionR{}
 			}
 
 			for _, a := range args {
@@ -941,7 +880,7 @@ func (dialL) LoadRemote(ctx context.Context, e boil.ContextExecutor, singular bo
 		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for peers")
 	}
 
-	if len(dialAfterSelectHooks) != 0 {
+	if len(connectionAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -959,7 +898,7 @@ func (dialL) LoadRemote(ctx context.Context, e boil.ContextExecutor, singular bo
 		if foreign.R == nil {
 			foreign.R = &peerR{}
 		}
-		foreign.R.RemoteDials = append(foreign.R.RemoteDials, object)
+		foreign.R.RemoteConnections = append(foreign.R.RemoteConnections, object)
 		return nil
 	}
 
@@ -970,7 +909,7 @@ func (dialL) LoadRemote(ctx context.Context, e boil.ContextExecutor, singular bo
 				if foreign.R == nil {
 					foreign.R = &peerR{}
 				}
-				foreign.R.RemoteDials = append(foreign.R.RemoteDials, local)
+				foreign.R.RemoteConnections = append(foreign.R.RemoteConnections, local)
 				break
 			}
 		}
@@ -979,10 +918,10 @@ func (dialL) LoadRemote(ctx context.Context, e boil.ContextExecutor, singular bo
 	return nil
 }
 
-// SetLocal of the dial to the related item.
+// SetLocal of the connection to the related item.
 // Sets o.R.Local to related.
-// Adds o to related.R.LocalDials.
-func (o *Dial) SetLocal(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Peer) error {
+// Adds o to related.R.LocalConnections.
+func (o *Connection) SetLocal(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Peer) error {
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
@@ -991,9 +930,9 @@ func (o *Dial) SetLocal(ctx context.Context, exec boil.ContextExecutor, insert b
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE \"dials\" SET %s WHERE %s",
+		"UPDATE \"connections\" SET %s WHERE %s",
 		strmangle.SetParamNames("\"", "\"", 1, []string{"local_id"}),
-		strmangle.WhereClause("\"", "\"", 2, dialPrimaryKeyColumns),
+		strmangle.WhereClause("\"", "\"", 2, connectionPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
 
@@ -1008,7 +947,7 @@ func (o *Dial) SetLocal(ctx context.Context, exec boil.ContextExecutor, insert b
 
 	o.LocalID = related.ID
 	if o.R == nil {
-		o.R = &dialR{
+		o.R = &connectionR{
 			Local: related,
 		}
 	} else {
@@ -1017,19 +956,19 @@ func (o *Dial) SetLocal(ctx context.Context, exec boil.ContextExecutor, insert b
 
 	if related.R == nil {
 		related.R = &peerR{
-			LocalDials: DialSlice{o},
+			LocalConnections: ConnectionSlice{o},
 		}
 	} else {
-		related.R.LocalDials = append(related.R.LocalDials, o)
+		related.R.LocalConnections = append(related.R.LocalConnections, o)
 	}
 
 	return nil
 }
 
-// SetMultiAddress of the dial to the related item.
+// SetMultiAddress of the connection to the related item.
 // Sets o.R.MultiAddress to related.
-// Adds o to related.R.Dials.
-func (o *Dial) SetMultiAddress(ctx context.Context, exec boil.ContextExecutor, insert bool, related *MultiAddress) error {
+// Adds o to related.R.Connections.
+func (o *Connection) SetMultiAddress(ctx context.Context, exec boil.ContextExecutor, insert bool, related *MultiAddress) error {
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
@@ -1038,9 +977,9 @@ func (o *Dial) SetMultiAddress(ctx context.Context, exec boil.ContextExecutor, i
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE \"dials\" SET %s WHERE %s",
+		"UPDATE \"connections\" SET %s WHERE %s",
 		strmangle.SetParamNames("\"", "\"", 1, []string{"multi_address_id"}),
-		strmangle.WhereClause("\"", "\"", 2, dialPrimaryKeyColumns),
+		strmangle.WhereClause("\"", "\"", 2, connectionPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
 
@@ -1055,7 +994,7 @@ func (o *Dial) SetMultiAddress(ctx context.Context, exec boil.ContextExecutor, i
 
 	o.MultiAddressID = related.ID
 	if o.R == nil {
-		o.R = &dialR{
+		o.R = &connectionR{
 			MultiAddress: related,
 		}
 	} else {
@@ -1064,19 +1003,19 @@ func (o *Dial) SetMultiAddress(ctx context.Context, exec boil.ContextExecutor, i
 
 	if related.R == nil {
 		related.R = &multiAddressR{
-			Dials: DialSlice{o},
+			Connections: ConnectionSlice{o},
 		}
 	} else {
-		related.R.Dials = append(related.R.Dials, o)
+		related.R.Connections = append(related.R.Connections, o)
 	}
 
 	return nil
 }
 
-// SetProvide of the dial to the related item.
+// SetProvide of the connection to the related item.
 // Sets o.R.Provide to related.
-// Adds o to related.R.Dials.
-func (o *Dial) SetProvide(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Provide) error {
+// Adds o to related.R.Connections.
+func (o *Connection) SetProvide(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Provide) error {
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
@@ -1085,9 +1024,9 @@ func (o *Dial) SetProvide(ctx context.Context, exec boil.ContextExecutor, insert
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE \"dials\" SET %s WHERE %s",
+		"UPDATE \"connections\" SET %s WHERE %s",
 		strmangle.SetParamNames("\"", "\"", 1, []string{"provide_id"}),
-		strmangle.WhereClause("\"", "\"", 2, dialPrimaryKeyColumns),
+		strmangle.WhereClause("\"", "\"", 2, connectionPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
 
@@ -1102,7 +1041,7 @@ func (o *Dial) SetProvide(ctx context.Context, exec boil.ContextExecutor, insert
 
 	o.ProvideID = related.ID
 	if o.R == nil {
-		o.R = &dialR{
+		o.R = &connectionR{
 			Provide: related,
 		}
 	} else {
@@ -1111,19 +1050,19 @@ func (o *Dial) SetProvide(ctx context.Context, exec boil.ContextExecutor, insert
 
 	if related.R == nil {
 		related.R = &provideR{
-			Dials: DialSlice{o},
+			Connections: ConnectionSlice{o},
 		}
 	} else {
-		related.R.Dials = append(related.R.Dials, o)
+		related.R.Connections = append(related.R.Connections, o)
 	}
 
 	return nil
 }
 
-// SetRemote of the dial to the related item.
+// SetRemote of the connection to the related item.
 // Sets o.R.Remote to related.
-// Adds o to related.R.RemoteDials.
-func (o *Dial) SetRemote(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Peer) error {
+// Adds o to related.R.RemoteConnections.
+func (o *Connection) SetRemote(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Peer) error {
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
@@ -1132,9 +1071,9 @@ func (o *Dial) SetRemote(ctx context.Context, exec boil.ContextExecutor, insert 
 	}
 
 	updateQuery := fmt.Sprintf(
-		"UPDATE \"dials\" SET %s WHERE %s",
+		"UPDATE \"connections\" SET %s WHERE %s",
 		strmangle.SetParamNames("\"", "\"", 1, []string{"remote_id"}),
-		strmangle.WhereClause("\"", "\"", 2, dialPrimaryKeyColumns),
+		strmangle.WhereClause("\"", "\"", 2, connectionPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
 
@@ -1149,7 +1088,7 @@ func (o *Dial) SetRemote(ctx context.Context, exec boil.ContextExecutor, insert 
 
 	o.RemoteID = related.ID
 	if o.R == nil {
-		o.R = &dialR{
+		o.R = &connectionR{
 			Remote: related,
 		}
 	} else {
@@ -1158,56 +1097,56 @@ func (o *Dial) SetRemote(ctx context.Context, exec boil.ContextExecutor, insert 
 
 	if related.R == nil {
 		related.R = &peerR{
-			RemoteDials: DialSlice{o},
+			RemoteConnections: ConnectionSlice{o},
 		}
 	} else {
-		related.R.RemoteDials = append(related.R.RemoteDials, o)
+		related.R.RemoteConnections = append(related.R.RemoteConnections, o)
 	}
 
 	return nil
 }
 
-// Dials retrieves all the records using an executor.
-func Dials(mods ...qm.QueryMod) dialQuery {
-	mods = append(mods, qm.From("\"dials\""))
-	return dialQuery{NewQuery(mods...)}
+// Connections retrieves all the records using an executor.
+func Connections(mods ...qm.QueryMod) connectionQuery {
+	mods = append(mods, qm.From("\"connections\""))
+	return connectionQuery{NewQuery(mods...)}
 }
 
-// FindDial retrieves a single record by ID with an executor.
+// FindConnection retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindDial(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*Dial, error) {
-	dialObj := &Dial{}
+func FindConnection(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*Connection, error) {
+	connectionObj := &Connection{}
 
 	sel := "*"
 	if len(selectCols) > 0 {
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"dials\" where \"id\"=$1", sel,
+		"select %s from \"connections\" where \"id\"=$1", sel,
 	)
 
 	q := queries.Raw(query, iD)
 
-	err := q.Bind(ctx, exec, dialObj)
+	err := q.Bind(ctx, exec, connectionObj)
 	if err != nil {
 		if errors.Cause(err) == sql.ErrNoRows {
 			return nil, sql.ErrNoRows
 		}
-		return nil, errors.Wrap(err, "models: unable to select from dials")
+		return nil, errors.Wrap(err, "models: unable to select from connections")
 	}
 
-	if err = dialObj.doAfterSelectHooks(ctx, exec); err != nil {
-		return dialObj, err
+	if err = connectionObj.doAfterSelectHooks(ctx, exec); err != nil {
+		return connectionObj, err
 	}
 
-	return dialObj, nil
+	return connectionObj, nil
 }
 
 // Insert a single record using an executor.
 // See boil.Columns.InsertColumnSet documentation to understand column list inference for inserts.
-func (o *Dial) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
+func (o *Connection) Insert(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) error {
 	if o == nil {
-		return errors.New("models: no dials provided for insertion")
+		return errors.New("models: no connections provided for insertion")
 	}
 
 	var err error
@@ -1216,33 +1155,33 @@ func (o *Dial) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 		return err
 	}
 
-	nzDefaults := queries.NonZeroDefaultSet(dialColumnsWithDefault, o)
+	nzDefaults := queries.NonZeroDefaultSet(connectionColumnsWithDefault, o)
 
 	key := makeCacheKey(columns, nzDefaults)
-	dialInsertCacheMut.RLock()
-	cache, cached := dialInsertCache[key]
-	dialInsertCacheMut.RUnlock()
+	connectionInsertCacheMut.RLock()
+	cache, cached := connectionInsertCache[key]
+	connectionInsertCacheMut.RUnlock()
 
 	if !cached {
 		wl, returnColumns := columns.InsertColumnSet(
-			dialAllColumns,
-			dialColumnsWithDefault,
-			dialColumnsWithoutDefault,
+			connectionAllColumns,
+			connectionColumnsWithDefault,
+			connectionColumnsWithoutDefault,
 			nzDefaults,
 		)
 
-		cache.valueMapping, err = queries.BindMapping(dialType, dialMapping, wl)
+		cache.valueMapping, err = queries.BindMapping(connectionType, connectionMapping, wl)
 		if err != nil {
 			return err
 		}
-		cache.retMapping, err = queries.BindMapping(dialType, dialMapping, returnColumns)
+		cache.retMapping, err = queries.BindMapping(connectionType, connectionMapping, returnColumns)
 		if err != nil {
 			return err
 		}
 		if len(wl) != 0 {
-			cache.query = fmt.Sprintf("INSERT INTO \"dials\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
+			cache.query = fmt.Sprintf("INSERT INTO \"connections\" (\"%s\") %%sVALUES (%s)%%s", strings.Join(wl, "\",\""), strmangle.Placeholders(dialect.UseIndexPlaceholders, len(wl), 1, 1))
 		} else {
-			cache.query = "INSERT INTO \"dials\" %sDEFAULT VALUES%s"
+			cache.query = "INSERT INTO \"connections\" %sDEFAULT VALUES%s"
 		}
 
 		var queryOutput, queryReturning string
@@ -1270,49 +1209,49 @@ func (o *Dial) Insert(ctx context.Context, exec boil.ContextExecutor, columns bo
 	}
 
 	if err != nil {
-		return errors.Wrap(err, "models: unable to insert into dials")
+		return errors.Wrap(err, "models: unable to insert into connections")
 	}
 
 	if !cached {
-		dialInsertCacheMut.Lock()
-		dialInsertCache[key] = cache
-		dialInsertCacheMut.Unlock()
+		connectionInsertCacheMut.Lock()
+		connectionInsertCache[key] = cache
+		connectionInsertCacheMut.Unlock()
 	}
 
 	return o.doAfterInsertHooks(ctx, exec)
 }
 
-// Update uses an executor to update the Dial.
+// Update uses an executor to update the Connection.
 // See boil.Columns.UpdateColumnSet documentation to understand column list inference for updates.
 // Update does not automatically update the record in case of default values. Use .Reload() to refresh the records.
-func (o *Dial) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
+func (o *Connection) Update(ctx context.Context, exec boil.ContextExecutor, columns boil.Columns) (int64, error) {
 	var err error
 	if err = o.doBeforeUpdateHooks(ctx, exec); err != nil {
 		return 0, err
 	}
 	key := makeCacheKey(columns, nil)
-	dialUpdateCacheMut.RLock()
-	cache, cached := dialUpdateCache[key]
-	dialUpdateCacheMut.RUnlock()
+	connectionUpdateCacheMut.RLock()
+	cache, cached := connectionUpdateCache[key]
+	connectionUpdateCacheMut.RUnlock()
 
 	if !cached {
 		wl := columns.UpdateColumnSet(
-			dialAllColumns,
-			dialPrimaryKeyColumns,
+			connectionAllColumns,
+			connectionPrimaryKeyColumns,
 		)
 
 		if !columns.IsWhitelist() {
 			wl = strmangle.SetComplement(wl, []string{"created_at"})
 		}
 		if len(wl) == 0 {
-			return 0, errors.New("models: unable to update dials, could not build whitelist")
+			return 0, errors.New("models: unable to update connections, could not build whitelist")
 		}
 
-		cache.query = fmt.Sprintf("UPDATE \"dials\" SET %s WHERE %s",
+		cache.query = fmt.Sprintf("UPDATE \"connections\" SET %s WHERE %s",
 			strmangle.SetParamNames("\"", "\"", 1, wl),
-			strmangle.WhereClause("\"", "\"", len(wl)+1, dialPrimaryKeyColumns),
+			strmangle.WhereClause("\"", "\"", len(wl)+1, connectionPrimaryKeyColumns),
 		)
-		cache.valueMapping, err = queries.BindMapping(dialType, dialMapping, append(wl, dialPrimaryKeyColumns...))
+		cache.valueMapping, err = queries.BindMapping(connectionType, connectionMapping, append(wl, connectionPrimaryKeyColumns...))
 		if err != nil {
 			return 0, err
 		}
@@ -1328,42 +1267,42 @@ func (o *Dial) Update(ctx context.Context, exec boil.ContextExecutor, columns bo
 	var result sql.Result
 	result, err = exec.ExecContext(ctx, cache.query, values...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update dials row")
+		return 0, errors.Wrap(err, "models: unable to update connections row")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by update for dials")
+		return 0, errors.Wrap(err, "models: failed to get rows affected by update for connections")
 	}
 
 	if !cached {
-		dialUpdateCacheMut.Lock()
-		dialUpdateCache[key] = cache
-		dialUpdateCacheMut.Unlock()
+		connectionUpdateCacheMut.Lock()
+		connectionUpdateCache[key] = cache
+		connectionUpdateCacheMut.Unlock()
 	}
 
 	return rowsAff, o.doAfterUpdateHooks(ctx, exec)
 }
 
 // UpdateAll updates all rows with the specified column values.
-func (q dialQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
+func (q connectionQuery) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	queries.SetUpdate(q.Query, cols)
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all for dials")
+		return 0, errors.Wrap(err, "models: unable to update all for connections")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for dials")
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected for connections")
 	}
 
 	return rowsAff, nil
 }
 
 // UpdateAll updates all rows with the specified column values, using an executor.
-func (o DialSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
+func (o ConnectionSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, cols M) (int64, error) {
 	ln := int64(len(o))
 	if ln == 0 {
 		return 0, nil
@@ -1385,13 +1324,13 @@ func (o DialSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, col
 
 	// Append all of the primary key values for each column
 	for _, obj := range o {
-		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), dialPrimaryKeyMapping)
+		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), connectionPrimaryKeyMapping)
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := fmt.Sprintf("UPDATE \"dials\" SET %s WHERE %s",
+	sql := fmt.Sprintf("UPDATE \"connections\" SET %s WHERE %s",
 		strmangle.SetParamNames("\"", "\"", 1, colNames),
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, dialPrimaryKeyColumns, len(o)))
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), len(colNames)+1, connectionPrimaryKeyColumns, len(o)))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1400,28 +1339,28 @@ func (o DialSlice) UpdateAll(ctx context.Context, exec boil.ContextExecutor, col
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to update all in dial slice")
+		return 0, errors.Wrap(err, "models: unable to update all in connection slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all dial")
+		return 0, errors.Wrap(err, "models: unable to retrieve rows affected all in update all connection")
 	}
 	return rowsAff, nil
 }
 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.
 // See boil.Columns documentation for how to properly use updateColumns and insertColumns.
-func (o *Dial) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
+func (o *Connection) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnConflict bool, conflictColumns []string, updateColumns, insertColumns boil.Columns) error {
 	if o == nil {
-		return errors.New("models: no dials provided for upsert")
+		return errors.New("models: no connections provided for upsert")
 	}
 
 	if err := o.doBeforeUpsertHooks(ctx, exec); err != nil {
 		return err
 	}
 
-	nzDefaults := queries.NonZeroDefaultSet(dialColumnsWithDefault, o)
+	nzDefaults := queries.NonZeroDefaultSet(connectionColumnsWithDefault, o)
 
 	// Build cache key in-line uglily - mysql vs psql problems
 	buf := strmangle.GetBuffer()
@@ -1451,41 +1390,41 @@ func (o *Dial) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCo
 	key := buf.String()
 	strmangle.PutBuffer(buf)
 
-	dialUpsertCacheMut.RLock()
-	cache, cached := dialUpsertCache[key]
-	dialUpsertCacheMut.RUnlock()
+	connectionUpsertCacheMut.RLock()
+	cache, cached := connectionUpsertCache[key]
+	connectionUpsertCacheMut.RUnlock()
 
 	var err error
 
 	if !cached {
 		insert, ret := insertColumns.InsertColumnSet(
-			dialAllColumns,
-			dialColumnsWithDefault,
-			dialColumnsWithoutDefault,
+			connectionAllColumns,
+			connectionColumnsWithDefault,
+			connectionColumnsWithoutDefault,
 			nzDefaults,
 		)
 		update := updateColumns.UpdateColumnSet(
-			dialAllColumns,
-			dialPrimaryKeyColumns,
+			connectionAllColumns,
+			connectionPrimaryKeyColumns,
 		)
 
 		if updateOnConflict && len(update) == 0 {
-			return errors.New("models: unable to upsert dials, could not build update column list")
+			return errors.New("models: unable to upsert connections, could not build update column list")
 		}
 
 		conflict := conflictColumns
 		if len(conflict) == 0 {
-			conflict = make([]string, len(dialPrimaryKeyColumns))
-			copy(conflict, dialPrimaryKeyColumns)
+			conflict = make([]string, len(connectionPrimaryKeyColumns))
+			copy(conflict, connectionPrimaryKeyColumns)
 		}
-		cache.query = buildUpsertQueryPostgres(dialect, "\"dials\"", updateOnConflict, ret, update, conflict, insert)
+		cache.query = buildUpsertQueryPostgres(dialect, "\"connections\"", updateOnConflict, ret, update, conflict, insert)
 
-		cache.valueMapping, err = queries.BindMapping(dialType, dialMapping, insert)
+		cache.valueMapping, err = queries.BindMapping(connectionType, connectionMapping, insert)
 		if err != nil {
 			return err
 		}
 		if len(ret) != 0 {
-			cache.retMapping, err = queries.BindMapping(dialType, dialMapping, ret)
+			cache.retMapping, err = queries.BindMapping(connectionType, connectionMapping, ret)
 			if err != nil {
 				return err
 			}
@@ -1513,31 +1452,31 @@ func (o *Dial) Upsert(ctx context.Context, exec boil.ContextExecutor, updateOnCo
 		_, err = exec.ExecContext(ctx, cache.query, vals...)
 	}
 	if err != nil {
-		return errors.Wrap(err, "models: unable to upsert dials")
+		return errors.Wrap(err, "models: unable to upsert connections")
 	}
 
 	if !cached {
-		dialUpsertCacheMut.Lock()
-		dialUpsertCache[key] = cache
-		dialUpsertCacheMut.Unlock()
+		connectionUpsertCacheMut.Lock()
+		connectionUpsertCache[key] = cache
+		connectionUpsertCacheMut.Unlock()
 	}
 
 	return o.doAfterUpsertHooks(ctx, exec)
 }
 
-// Delete deletes a single Dial record with an executor.
+// Delete deletes a single Connection record with an executor.
 // Delete will match against the primary key column to find the record to delete.
-func (o *Dial) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
+func (o *Connection) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if o == nil {
-		return 0, errors.New("models: no Dial provided for delete")
+		return 0, errors.New("models: no Connection provided for delete")
 	}
 
 	if err := o.doBeforeDeleteHooks(ctx, exec); err != nil {
 		return 0, err
 	}
 
-	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), dialPrimaryKeyMapping)
-	sql := "DELETE FROM \"dials\" WHERE \"id\"=$1"
+	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), connectionPrimaryKeyMapping)
+	sql := "DELETE FROM \"connections\" WHERE \"id\"=$1"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1546,12 +1485,12 @@ func (o *Dial) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, er
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete from dials")
+		return 0, errors.Wrap(err, "models: unable to delete from connections")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for dials")
+		return 0, errors.Wrap(err, "models: failed to get rows affected by delete for connections")
 	}
 
 	if err := o.doAfterDeleteHooks(ctx, exec); err != nil {
@@ -1562,33 +1501,33 @@ func (o *Dial) Delete(ctx context.Context, exec boil.ContextExecutor) (int64, er
 }
 
 // DeleteAll deletes all matching rows.
-func (q dialQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
+func (q connectionQuery) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if q.Query == nil {
-		return 0, errors.New("models: no dialQuery provided for delete all")
+		return 0, errors.New("models: no connectionQuery provided for delete all")
 	}
 
 	queries.SetDelete(q.Query)
 
 	result, err := q.Query.ExecContext(ctx, exec)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from dials")
+		return 0, errors.Wrap(err, "models: unable to delete all from connections")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for dials")
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for connections")
 	}
 
 	return rowsAff, nil
 }
 
 // DeleteAll deletes all rows in the slice, using an executor.
-func (o DialSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
+func (o ConnectionSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (int64, error) {
 	if len(o) == 0 {
 		return 0, nil
 	}
 
-	if len(dialBeforeDeleteHooks) != 0 {
+	if len(connectionBeforeDeleteHooks) != 0 {
 		for _, obj := range o {
 			if err := obj.doBeforeDeleteHooks(ctx, exec); err != nil {
 				return 0, err
@@ -1598,12 +1537,12 @@ func (o DialSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (in
 
 	var args []interface{}
 	for _, obj := range o {
-		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), dialPrimaryKeyMapping)
+		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), connectionPrimaryKeyMapping)
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "DELETE FROM \"dials\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, dialPrimaryKeyColumns, len(o))
+	sql := "DELETE FROM \"connections\" WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, connectionPrimaryKeyColumns, len(o))
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1612,15 +1551,15 @@ func (o DialSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (in
 	}
 	result, err := exec.ExecContext(ctx, sql, args...)
 	if err != nil {
-		return 0, errors.Wrap(err, "models: unable to delete all from dial slice")
+		return 0, errors.Wrap(err, "models: unable to delete all from connection slice")
 	}
 
 	rowsAff, err := result.RowsAffected()
 	if err != nil {
-		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for dials")
+		return 0, errors.Wrap(err, "models: failed to get rows affected by deleteall for connections")
 	}
 
-	if len(dialAfterDeleteHooks) != 0 {
+	if len(connectionAfterDeleteHooks) != 0 {
 		for _, obj := range o {
 			if err := obj.doAfterDeleteHooks(ctx, exec); err != nil {
 				return 0, err
@@ -1633,8 +1572,8 @@ func (o DialSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor) (in
 
 // Reload refetches the object from the database
 // using the primary keys with an executor.
-func (o *Dial) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindDial(ctx, exec, o.ID)
+func (o *Connection) Reload(ctx context.Context, exec boil.ContextExecutor) error {
+	ret, err := FindConnection(ctx, exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -1645,26 +1584,26 @@ func (o *Dial) Reload(ctx context.Context, exec boil.ContextExecutor) error {
 
 // ReloadAll refetches every row with matching primary key column values
 // and overwrites the original object slice with the newly updated slice.
-func (o *DialSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) error {
+func (o *ConnectionSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) error {
 	if o == nil || len(*o) == 0 {
 		return nil
 	}
 
-	slice := DialSlice{}
+	slice := ConnectionSlice{}
 	var args []interface{}
 	for _, obj := range *o {
-		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), dialPrimaryKeyMapping)
+		pkeyArgs := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(obj)), connectionPrimaryKeyMapping)
 		args = append(args, pkeyArgs...)
 	}
 
-	sql := "SELECT \"dials\".* FROM \"dials\" WHERE " +
-		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, dialPrimaryKeyColumns, len(*o))
+	sql := "SELECT \"connections\".* FROM \"connections\" WHERE " +
+		strmangle.WhereClauseRepeated(string(dialect.LQ), string(dialect.RQ), 1, connectionPrimaryKeyColumns, len(*o))
 
 	q := queries.Raw(sql, args...)
 
 	err := q.Bind(ctx, exec, &slice)
 	if err != nil {
-		return errors.Wrap(err, "models: unable to reload all in DialSlice")
+		return errors.Wrap(err, "models: unable to reload all in ConnectionSlice")
 	}
 
 	*o = slice
@@ -1672,10 +1611,10 @@ func (o *DialSlice) ReloadAll(ctx context.Context, exec boil.ContextExecutor) er
 	return nil
 }
 
-// DialExists checks if the Dial row exists.
-func DialExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
+// ConnectionExists checks if the Connection row exists.
+func ConnectionExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"dials\" where \"id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"connections\" where \"id\"=$1 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1686,7 +1625,7 @@ func DialExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, e
 
 	err := row.Scan(&exists)
 	if err != nil {
-		return false, errors.Wrap(err, "models: unable to check if dials exists")
+		return false, errors.Wrap(err, "models: unable to check if connections exists")
 	}
 
 	return exists, nil

@@ -1,4 +1,4 @@
-package services
+package service
 
 import (
 	"context"
@@ -6,26 +6,33 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/db"
-	"github.com/dennis-tra/optimistic-provide/pkg/db/models"
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 	"github.com/dennis-tra/optimistic-provide/pkg/lib"
+	"github.com/dennis-tra/optimistic-provide/pkg/models"
+	"github.com/dennis-tra/optimistic-provide/pkg/repo"
 )
 
-type RoutingTableService struct {
-	dbc *db.Client
+type RoutingTableService interface {
+	SaveRoutingTable(ctx context.Context, h *dht.Host) (*models.RoutingTableSnapshot, error)
 }
 
-func NewRoutingTableService(dbc *db.Client) *RoutingTableService {
-	return &RoutingTableService{
-		dbc: dbc,
+var _ RoutingTableService = &RoutingTable{}
+
+type RoutingTable struct {
+	peerService PeerService
+	rtRepo      repo.RoutingTableRepo
+}
+
+func NewRoutingTableService(peerService PeerService, rtRepo repo.RoutingTableRepo) RoutingTableService {
+	return &RoutingTable{
+		peerService: peerService,
+		rtRepo:      rtRepo,
 	}
 }
 
-func (rts RoutingTableService) SaveRoutingTable(ctx context.Context, h *dht.Host) (*models.RoutingTableSnapshot, error) {
-	localDbPeer, err := rts.dbc.UpsertLocalPeer(h.PeerID)
+func (rts *RoutingTable) SaveRoutingTable(ctx context.Context, h *dht.Host) (*models.RoutingTableSnapshot, error) {
+	localDbPeer, err := rts.peerService.UpsertLocalPeer(h.Host)
 	if err != nil {
 		return nil, errors.Wrap(err, "upsert local peer")
 	}
@@ -33,22 +40,13 @@ func (rts RoutingTableService) SaveRoutingTable(ctx context.Context, h *dht.Host
 	rt := h.DHT.RoutingTable()
 	swarm := h.Host.Network()
 
-	txn, err := rts.dbc.BeginTx(ctx, nil)
+	snapshot, err := rts.rtRepo.SaveSnapshot(ctx, localDbPeer.ID, lib.DefaultBucketSize, len(rt.GetPeerInfos()))
 	if err != nil {
-		return nil, errors.Wrap(err, "begin txn")
-	}
-
-	dbrt := &models.RoutingTableSnapshot{
-		PeerID:     localDbPeer.ID,
-		BucketSize: lib.DefaultBucketSize,
-		EntryCount: len(rt.GetPeerInfos()),
-	}
-	if err := dbrt.Insert(ctx, txn, boil.Infer()); err != nil {
 		return nil, errors.Wrap(err, "insert routing table")
 	}
 
 	for _, peerInfo := range rt.GetPeerInfos() {
-		dbpeer, err := rts.dbc.UpsertPeer(txn, h.Host, peerInfo.Id)
+		dbpeer, err := rts.peerService.UpsertPeer(h.Host, peerInfo.Id)
 		if err != nil {
 			return nil, errors.Wrap(err, "upsert peer")
 		}
@@ -61,8 +59,8 @@ func (rts RoutingTableService) SaveRoutingTable(ctx context.Context, h *dht.Host
 			}
 		}
 
-		dbrte := models.RoutingTableEntry{
-			RoutingTableSnapshotID:        dbrt.ID,
+		rte := &models.RoutingTableEntry{
+			RoutingTableSnapshotID:        snapshot.ID,
 			PeerID:                        dbpeer.ID,
 			Bucket:                        lib.BucketIdForPeer(h.PeerID, peerInfo.Id),
 			LastUsefulAt:                  null.NewTime(peerInfo.LastUsefulAt, !peerInfo.LastUsefulAt.IsZero()),
@@ -71,13 +69,10 @@ func (rts RoutingTableService) SaveRoutingTable(ctx context.Context, h *dht.Host
 			ConnectedAt:                   null.TimeFromPtr(connectedAt),
 		}
 
-		if err = dbrte.Insert(ctx, txn, boil.Infer()); err != nil {
+		if _, err = rts.rtRepo.SaveRoutingTableEntry(ctx, rte); err != nil {
 			return nil, errors.Wrap(err, "insert routing table entry")
 		}
 	}
 
-	if err := txn.Commit(); err != nil {
-		return nil, txn.Rollback()
-	}
-	return dbrt, nil
+	return snapshot, nil
 }

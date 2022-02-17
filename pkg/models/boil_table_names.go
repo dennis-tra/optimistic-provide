@@ -4,6 +4,7 @@
 package models
 
 var TableNames = struct {
+	Connections                string
 	Dials                      string
 	IPAddresses                string
 	MultiAddresses             string
@@ -14,6 +15,7 @@ var TableNames = struct {
 	RoutingTableEntries        string
 	RoutingTableSnapshots      string
 }{
+	Connections:                "connections",
 	Dials:                      "dials",
 	IPAddresses:                "ip_addresses",
 	MultiAddresses:             "multi_addresses",
