@@ -60,6 +60,7 @@ func (ps *Peer) UpsertPeer(h host.Host, pid peer.ID) (*models.Peer, error) {
 	if prots, err := h.Peerstore().GetProtocols(pid); err == nil {
 		protocols = prots
 	}
+	sort.Strings(protocols)
 
 	cached, found := ps.cache.Get(pid.String())
 	if found {

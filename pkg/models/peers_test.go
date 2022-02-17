@@ -494,6 +494,84 @@ func testPeersInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testPeerToManyCloserPeers(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Peer
+	var b, c CloserPeer
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerDBTypes, true, peerColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Peer struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, closerPeerDBTypes, false, closerPeerColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, closerPeerDBTypes, false, closerPeerColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.PeerID = a.ID
+	c.PeerID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.CloserPeers().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.PeerID == b.PeerID {
+			bFound = true
+		}
+		if v.PeerID == c.PeerID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := PeerSlice{&a}
+	if err = a.L.LoadCloserPeers(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.CloserPeers); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.CloserPeers = nil
+	if err = a.L.LoadCloserPeers(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.CloserPeers); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testPeerToManyLocalConnections(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -806,6 +884,162 @@ func testPeerToManyRemoteDials(t *testing.T) {
 	}
 }
 
+func testPeerToManyLocalFindNodes(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Peer
+	var b, c FindNode
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerDBTypes, true, peerColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Peer struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.LocalID = a.ID
+	c.LocalID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.LocalFindNodes().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.LocalID == b.LocalID {
+			bFound = true
+		}
+		if v.LocalID == c.LocalID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := PeerSlice{&a}
+	if err = a.L.LoadLocalFindNodes(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.LocalFindNodes); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.LocalFindNodes = nil
+	if err = a.L.LoadLocalFindNodes(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.LocalFindNodes); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testPeerToManyRemoteFindNodes(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Peer
+	var b, c FindNode
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerDBTypes, true, peerColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Peer struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.RemoteID = a.ID
+	c.RemoteID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.RemoteFindNodes().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.RemoteID == b.RemoteID {
+			bFound = true
+		}
+		if v.RemoteID == c.RemoteID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := PeerSlice{&a}
+	if err = a.L.LoadRemoteFindNodes(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.RemoteFindNodes); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.RemoteFindNodes = nil
+	if err = a.L.LoadRemoteFindNodes(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.RemoteFindNodes); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testPeerToManyPeerLogs(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -876,6 +1110,162 @@ func testPeerToManyPeerLogs(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := len(a.R.PeerLogs); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testPeerToManyPeerStates(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Peer
+	var b, c PeerState
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerDBTypes, true, peerColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Peer struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, peerStateDBTypes, false, peerStateColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, peerStateDBTypes, false, peerStateColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.PeerID = a.ID
+	c.PeerID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.PeerStates().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.PeerID == b.PeerID {
+			bFound = true
+		}
+		if v.PeerID == c.PeerID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := PeerSlice{&a}
+	if err = a.L.LoadPeerStates(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.PeerStates); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.PeerStates = nil
+	if err = a.L.LoadPeerStates(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.PeerStates); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testPeerToManyReferrerPeerStates(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Peer
+	var b, c PeerState
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerDBTypes, true, peerColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Peer struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, peerStateDBTypes, false, peerStateColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, peerStateDBTypes, false, peerStateColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.ReferrerID = a.ID
+	c.ReferrerID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.ReferrerPeerStates().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.ReferrerID == b.ReferrerID {
+			bFound = true
+		}
+		if v.ReferrerID == c.ReferrerID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := PeerSlice{&a}
+	if err = a.L.LoadReferrerPeerStates(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ReferrerPeerStates); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.ReferrerPeerStates = nil
+	if err = a.L.LoadReferrerPeerStates(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ReferrerPeerStates); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -1118,6 +1508,81 @@ func testPeerToManyRoutingTableSnapshots(t *testing.T) {
 	}
 }
 
+func testPeerToManyAddOpCloserPeers(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Peer
+	var b, c, d, e CloserPeer
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*CloserPeer{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, closerPeerDBTypes, false, strmangle.SetComplement(closerPeerPrimaryKeyColumns, closerPeerColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*CloserPeer{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddCloserPeers(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.PeerID {
+			t.Error("foreign key was wrong value", a.ID, first.PeerID)
+		}
+		if a.ID != second.PeerID {
+			t.Error("foreign key was wrong value", a.ID, second.PeerID)
+		}
+
+		if first.R.Peer != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Peer != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.CloserPeers[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.CloserPeers[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.CloserPeers().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testPeerToManyAddOpLocalConnections(t *testing.T) {
 	var err error
 
@@ -1418,6 +1883,156 @@ func testPeerToManyAddOpRemoteDials(t *testing.T) {
 		}
 	}
 }
+func testPeerToManyAddOpLocalFindNodes(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Peer
+	var b, c, d, e FindNode
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*FindNode{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, findNodeDBTypes, false, strmangle.SetComplement(findNodePrimaryKeyColumns, findNodeColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*FindNode{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddLocalFindNodes(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.LocalID {
+			t.Error("foreign key was wrong value", a.ID, first.LocalID)
+		}
+		if a.ID != second.LocalID {
+			t.Error("foreign key was wrong value", a.ID, second.LocalID)
+		}
+
+		if first.R.Local != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Local != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.LocalFindNodes[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.LocalFindNodes[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.LocalFindNodes().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testPeerToManyAddOpRemoteFindNodes(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Peer
+	var b, c, d, e FindNode
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*FindNode{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, findNodeDBTypes, false, strmangle.SetComplement(findNodePrimaryKeyColumns, findNodeColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*FindNode{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddRemoteFindNodes(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.RemoteID {
+			t.Error("foreign key was wrong value", a.ID, first.RemoteID)
+		}
+		if a.ID != second.RemoteID {
+			t.Error("foreign key was wrong value", a.ID, second.RemoteID)
+		}
+
+		if first.R.Remote != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Remote != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.RemoteFindNodes[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.RemoteFindNodes[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.RemoteFindNodes().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testPeerToManyAddOpPeerLogs(t *testing.T) {
 	var err error
 
@@ -1485,6 +2100,156 @@ func testPeerToManyAddOpPeerLogs(t *testing.T) {
 		}
 
 		count, err := a.PeerLogs().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testPeerToManyAddOpPeerStates(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Peer
+	var b, c, d, e PeerState
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*PeerState{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*PeerState{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddPeerStates(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.PeerID {
+			t.Error("foreign key was wrong value", a.ID, first.PeerID)
+		}
+		if a.ID != second.PeerID {
+			t.Error("foreign key was wrong value", a.ID, second.PeerID)
+		}
+
+		if first.R.Peer != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Peer != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.PeerStates[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.PeerStates[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.PeerStates().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testPeerToManyAddOpReferrerPeerStates(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Peer
+	var b, c, d, e PeerState
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*PeerState{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*PeerState{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddReferrerPeerStates(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.ReferrerID {
+			t.Error("foreign key was wrong value", a.ID, first.ReferrerID)
+		}
+		if a.ID != second.ReferrerID {
+			t.Error("foreign key was wrong value", a.ID, second.ReferrerID)
+		}
+
+		if first.R.Referrer != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Referrer != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.ReferrerPeerStates[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.ReferrerPeerStates[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.ReferrerPeerStates().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}

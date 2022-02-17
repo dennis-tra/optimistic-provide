@@ -6,15 +6,21 @@ package models
 import "testing"
 
 func TestUpsert(t *testing.T) {
+	t.Run("CloserPeers", testCloserPeersUpsert)
+
 	t.Run("Connections", testConnectionsUpsert)
 
 	t.Run("Dials", testDialsUpsert)
+
+	t.Run("FindNodes", testFindNodesUpsert)
 
 	t.Run("IPAddresses", testIPAddressesUpsert)
 
 	t.Run("MultiAddresses", testMultiAddressesUpsert)
 
 	t.Run("PeerLogs", testPeerLogsUpsert)
+
+	t.Run("PeerStates", testPeerStatesUpsert)
 
 	t.Run("Peers", testPeersUpsert)
 

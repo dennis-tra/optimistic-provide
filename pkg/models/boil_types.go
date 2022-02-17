@@ -58,3 +58,11 @@ const (
 	DialTransportQuic = "quic"
 	DialTransportUDP  = "udp"
 )
+
+// Enum values for peer_state
+const (
+	PeerStateHEARD       = "HEARD"
+	PeerStateWAITING     = "WAITING"
+	PeerStateQUERIED     = "QUERIED"
+	PeerStateUNREACHABLE = "UNREACHABLE"
+)

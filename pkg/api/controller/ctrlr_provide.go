@@ -53,7 +53,10 @@ func (pc *ProvideController) Create(c *gin.Context) {
 	}
 
 	provide, err := pc.ps.Provide(pc.ctx, hostID)
-
+	if err != nil {
+		c.Status(http.StatusNotFound)
+		return
+	}
 	resp := CreateProvideResponse{
 		ProviderID:            hostID.String(),
 		ProvideID:             provide.ID,

@@ -29,3 +29,11 @@ type QuerySpan struct {
 	End          time.Time
 	Error        error
 }
+
+type FindNodesSpan struct {
+	RemotePeerID peer.ID
+	Start        time.Time
+	End          time.Time
+	CloserPeers  []*peer.AddrInfo
+	Error        error
+}

@@ -494,6 +494,84 @@ func testProvidesInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testProvideToManyCloserPeers(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c CloserPeer
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, true, provideColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Provide struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, closerPeerDBTypes, false, closerPeerColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, closerPeerDBTypes, false, closerPeerColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.ProvideID = a.ID
+	c.ProvideID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.CloserPeers().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.ProvideID == b.ProvideID {
+			bFound = true
+		}
+		if v.ProvideID == c.ProvideID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := ProvideSlice{&a}
+	if err = a.L.LoadCloserPeers(ctx, tx, false, (*[]*Provide)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.CloserPeers); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.CloserPeers = nil
+	if err = a.L.LoadCloserPeers(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.CloserPeers); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testProvideToManyConnections(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -650,6 +728,237 @@ func testProvideToManyDials(t *testing.T) {
 	}
 }
 
+func testProvideToManyFindNodes(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c FindNode
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, true, provideColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Provide struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.ProvideID = a.ID
+	c.ProvideID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.FindNodes().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.ProvideID == b.ProvideID {
+			bFound = true
+		}
+		if v.ProvideID == c.ProvideID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := ProvideSlice{&a}
+	if err = a.L.LoadFindNodes(ctx, tx, false, (*[]*Provide)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.FindNodes); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.FindNodes = nil
+	if err = a.L.LoadFindNodes(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.FindNodes); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testProvideToManyPeerStates(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c PeerState
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, true, provideColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Provide struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, peerStateDBTypes, false, peerStateColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, peerStateDBTypes, false, peerStateColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.ProvideID = a.ID
+	c.ProvideID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.PeerStates().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.ProvideID == b.ProvideID {
+			bFound = true
+		}
+		if v.ProvideID == c.ProvideID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := ProvideSlice{&a}
+	if err = a.L.LoadPeerStates(ctx, tx, false, (*[]*Provide)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.PeerStates); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.PeerStates = nil
+	if err = a.L.LoadPeerStates(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.PeerStates); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testProvideToManyAddOpCloserPeers(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e CloserPeer
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*CloserPeer{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, closerPeerDBTypes, false, strmangle.SetComplement(closerPeerPrimaryKeyColumns, closerPeerColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*CloserPeer{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddCloserPeers(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.ProvideID {
+			t.Error("foreign key was wrong value", a.ID, first.ProvideID)
+		}
+		if a.ID != second.ProvideID {
+			t.Error("foreign key was wrong value", a.ID, second.ProvideID)
+		}
+
+		if first.R.Provide != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Provide != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.CloserPeers[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.CloserPeers[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.CloserPeers().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testProvideToManyAddOpConnections(t *testing.T) {
 	var err error
 
@@ -792,6 +1101,156 @@ func testProvideToManyAddOpDials(t *testing.T) {
 		}
 
 		count, err := a.Dials().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testProvideToManyAddOpFindNodes(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e FindNode
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*FindNode{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, findNodeDBTypes, false, strmangle.SetComplement(findNodePrimaryKeyColumns, findNodeColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*FindNode{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddFindNodes(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.ProvideID {
+			t.Error("foreign key was wrong value", a.ID, first.ProvideID)
+		}
+		if a.ID != second.ProvideID {
+			t.Error("foreign key was wrong value", a.ID, second.ProvideID)
+		}
+
+		if first.R.Provide != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Provide != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.FindNodes[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.FindNodes[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.FindNodes().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testProvideToManyAddOpPeerStates(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e PeerState
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*PeerState{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*PeerState{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddPeerStates(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.ProvideID {
+			t.Error("foreign key was wrong value", a.ID, first.ProvideID)
+		}
+		if a.ID != second.ProvideID {
+			t.Error("foreign key was wrong value", a.ID, second.ProvideID)
+		}
+
+		if first.R.Provide != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Provide != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.PeerStates[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.PeerStates[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.PeerStates().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}

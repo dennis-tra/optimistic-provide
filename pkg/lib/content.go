@@ -1,4 +1,4 @@
-package main
+package lib
 
 import (
 	"crypto/rand"
@@ -16,7 +16,7 @@ import (
 type Content struct {
 	raw   []byte
 	mhash mh.Multihash
-	cid   cid.Cid
+	CID   cid.Cid
 }
 
 // NewRandomContent reads 1024 bytes from crypto/rand and builds a content struct.
@@ -36,7 +36,7 @@ func NewRandomContent() (*Content, error) {
 	return &Content{
 		raw:   raw,
 		mhash: mhash,
-		cid:   cid.NewCidV0(mhash),
+		CID:   cid.NewCidV0(mhash),
 	}, nil
 }
 

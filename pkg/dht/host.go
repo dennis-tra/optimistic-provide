@@ -28,6 +28,7 @@ type Host struct {
 	Bootstrapped *time.Time       `json:"bootstrapped_at"`
 	CreatedAt    time.Time        `json:"created_at"`
 	Transports   []*wrap.Notifier `json:"-"`
+	MsgSender    *wrap.MessageSenderImpl
 
 	RoutingTableRefresh RoutingTableRefresh `json:"routing_table_refresh"`
 }
@@ -48,6 +49,7 @@ func New(ctx context.Context) (*Host, error) {
 	ws, wsTrpt := wrap.NewWSTransport()
 	quic, quicTrpt := wrap.NewQuicTransport()
 
+	msgSender := wrap.NewMessageSenderImpl()
 	var dht *kaddht.IpfsDHT
 	h, err := libp2p.New(
 		libp2p.Identity(key),
@@ -55,7 +57,10 @@ func New(ctx context.Context) (*Host, error) {
 		libp2p.Transport(wsTrpt),
 		libp2p.Transport(quicTrpt),
 		libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
-			dht, err = kaddht.New(ctx, h, kaddht.Mode(kaddht.ModeClient))
+			dht, err = kaddht.New(ctx, h,
+				kaddht.Mode(kaddht.ModeClient),
+				kaddht.MessageSenderImpl(msgSender.Init),
+			)
 			return dht, err
 		}),
 	)
@@ -67,6 +72,7 @@ func New(ctx context.Context) (*Host, error) {
 		PeerID:     h.ID(),
 		Host:       h,
 		DHT:        dht,
+		MsgSender:  msgSender,
 		CreatedAt:  time.Now(),
 		Transports: []*wrap.Notifier{tcp.Notifier, ws.Notifier, quic.Notifier},
 	}

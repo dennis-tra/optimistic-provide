@@ -34,6 +34,9 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 	iaRepo := repo.NewIPAddressRepo(dbclient)
 	dialRepo := repo.NewDialRepo(dbclient)
 	connRepo := repo.NewConnectionRepo(dbclient)
+	fnRepo := repo.NewFindNodesRepo(dbclient)
+	cpRepo := repo.NewCloserPeersRepo(dbclient)
+	psRepo := repo.NewPeerStateRepo(dbclient)
 
 	peerService := service.NewPeerService(peerRepo)
 	rtService := service.NewRoutingTableService(peerService, rtRepo)
@@ -41,7 +44,9 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 	maService := service.NewMultiAddressService(maRepo, iaRepo)
 	dialService := service.NewDialService(peerService, maService, dialRepo)
 	connService := service.NewConnectionService(peerService, maService, connRepo)
-	provideService := service.NewProvideService(peerService, hostService, rtService, maService, dialService, connService, provideRepo)
+	fnService := service.NewFindNodesService(peerService, fnRepo, cpRepo)
+	psService := service.NewPeerStateService(peerService, psRepo)
+	provideService := service.NewProvideService(peerService, hostService, rtService, maService, dialService, connService, fnService, psService, provideRepo)
 
 	peerController := controller.NewPeerController(ctx, peerService)
 	hostController := controller.NewHostController(ctx, hostService)

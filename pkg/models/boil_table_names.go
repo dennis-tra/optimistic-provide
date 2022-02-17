@@ -4,23 +4,29 @@
 package models
 
 var TableNames = struct {
+	CloserPeers                string
 	Connections                string
 	Dials                      string
+	FindNodes                  string
 	IPAddresses                string
 	MultiAddresses             string
 	MultiAddressesXIPAddresses string
 	PeerLogs                   string
+	PeerStates                 string
 	Peers                      string
 	Provides                   string
 	RoutingTableEntries        string
 	RoutingTableSnapshots      string
 }{
+	CloserPeers:                "closer_peers",
 	Connections:                "connections",
 	Dials:                      "dials",
+	FindNodes:                  "find_nodes",
 	IPAddresses:                "ip_addresses",
 	MultiAddresses:             "multi_addresses",
 	MultiAddressesXIPAddresses: "multi_addresses_x_ip_addresses",
 	PeerLogs:                   "peer_logs",
+	PeerStates:                 "peer_states",
 	Peers:                      "peers",
 	Provides:                   "provides",
 	RoutingTableEntries:        "routing_table_entries",

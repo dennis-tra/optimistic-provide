@@ -6,6 +6,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/libp2p/go-libp2p-kad-dht/qpeerset"
+
+	pb "github.com/libp2p/go-libp2p-kad-dht/pb"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/wrap"
+
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
@@ -16,10 +22,14 @@ import (
 )
 
 type ProvideState struct {
-	h *dht.Host
+	h      *dht.Host
+	cancel context.CancelFunc
 
 	dialsLk sync.RWMutex
 	dials   []*DialSpan
+
+	findNodesLk sync.RWMutex
+	findNodes   []*FindNodesSpan
 
 	connectionsStartedLk sync.RWMutex
 	connectionsStarted   map[peer.ID]time.Time
@@ -27,20 +37,24 @@ type ProvideState struct {
 	connectionsLk sync.RWMutex
 	connections   []*ConnectionSpan
 
-	queriesStartedLk sync.RWMutex
-	queriesStarted   map[peer.ID]time.Time
+	peerSet *qpeerset.QueryPeerset
 
-	queriesLk sync.RWMutex
-	queries   []*QuerySpan
+	relevantPeers map[peer.ID]struct{}
 }
 
-func (ps *ProvideState) Register(ctx context.Context) (context.Context, context.CancelFunc) {
+func (ps *ProvideState) Register(ctx context.Context) context.Context {
+	if ps.cancel != nil {
+		panic("already registered for events")
+	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	ctx, lookupEvents := kaddht.RegisterForLookupEvents(ctx)
 	ctx, queryEvents := routing.RegisterForQueryEvents(ctx)
+	ctx, rpcEvents := wrap.RegisterForRPCEvents(ctx)
 
 	go ps.consumeLookupEvents(lookupEvents)
 	go ps.consumeQueryEvents(queryEvents)
+	go ps.consumeRPCEvents(rpcEvents)
 
 	for _, notifier := range ps.h.Transports {
 		notifier.Notify(ps)
@@ -48,74 +62,175 @@ func (ps *ProvideState) Register(ctx context.Context) (context.Context, context.
 
 	ps.h.Host.Network().Notify(ps)
 
-	return ctx, cancel
+	ps.cancel = cancel
+
+	return ctx
 }
 
-func (ps *ProvideState) Unregister(cancel context.CancelFunc) {
+func (ps *ProvideState) Unregister() {
 	ps.h.Host.Network().StopNotify(ps)
 
 	for _, notifier := range ps.h.Transports {
 		notifier.StopNotify(ps)
 	}
 
-	cancel()
+	ps.cancel()
+	ps.cancel = nil
+
+	ps.filterDials()
+	ps.filterConnections()
 }
+
+func (ps *ProvideState) trackConnectionStart(p peer.ID) {
+	ps.connectionsStartedLk.Lock()
+	defer ps.connectionsStartedLk.Unlock()
+	ps.connectionsStarted[p] = time.Now()
+}
+
+func (ps *ProvideState) trackConnectionEnd(p peer.ID, maddr ma.Multiaddr) {
+	end := time.Now()
+
+	ps.connectionsStartedLk.Lock()
+	started, ok := ps.connectionsStarted[p]
+	if !ok {
+		ps.connectionsStartedLk.Unlock()
+		return
+	}
+	delete(ps.connectionsStarted, p)
+	ps.connectionsStartedLk.Unlock()
+
+	ps.connectionsLk.Lock()
+	ps.connections = append(ps.connections, &ConnectionSpan{
+		RemotePeerID: p,
+		Maddr:        maddr,
+		Start:        started,
+		End:          end,
+	})
+	ps.connectionsLk.Unlock()
+}
+
+func (ps *ProvideState) trackFindNodeRequest(evt *wrap.RPCSendRequestEndedEvent) {
+	fns := &FindNodesSpan{
+		RemotePeerID: evt.RemotePeer,
+		Start:        evt.StartedAt,
+		End:          evt.EndedAt,
+		Error:        evt.Error,
+	}
+	if evt.Response != nil {
+		fns.CloserPeers = pb.PBPeersToPeerInfos(evt.Response.CloserPeers)
+	}
+
+	ps.findNodesLk.Lock()
+	defer ps.findNodesLk.Unlock()
+
+	ps.findNodes = append(ps.findNodes, fns)
+	ps.relevantPeers[evt.RemotePeer] = struct{}{}
+	for _, p := range fns.CloserPeers {
+		ps.relevantPeers[p.ID] = struct{}{}
+	}
+}
+
+func (ps *ProvideState) filterDials() {
+	ps.dialsLk.Lock()
+	defer ps.dialsLk.Unlock()
+
+	var relevantDials []*DialSpan
+	for _, dial := range ps.dials {
+		if _, found := ps.relevantPeers[dial.RemotePeerID]; found {
+			relevantDials = append(relevantDials, dial)
+		}
+	}
+	ps.dials = relevantDials
+}
+
+func (ps *ProvideState) filterConnections() {
+	ps.connectionsLk.Lock()
+	defer ps.connectionsLk.Unlock()
+
+	var relevantConnections []*ConnectionSpan
+	for _, conn := range ps.connections {
+		if _, found := ps.relevantPeers[conn.RemotePeerID]; found {
+			relevantConnections = append(relevantConnections, conn)
+		}
+	}
+	ps.connections = relevantConnections
+}
+
+////
 
 func (ps *ProvideState) consumeQueryEvents(queryEvents <-chan *routing.QueryEvent) {
 	for event := range queryEvents {
 		switch event.Type {
 		case routing.DialingPeer:
-			ps.connectionsStartedLk.Lock()
-			ps.connectionsStarted[event.ID] = time.Now()
-			ps.connectionsStartedLk.Unlock()
-		case routing.SendingQuery:
-			ps.queriesStartedLk.Lock()
-			ps.queriesStarted[event.ID] = time.Now()
-			ps.queriesStartedLk.Unlock()
-		case routing.PeerResponse:
-			ps.queriesStartedLk.Lock()
-			started, ok := ps.queriesStarted[event.ID]
-			if !ok {
-				ps.queriesStartedLk.Unlock()
-				continue
-			}
-			delete(ps.queriesStarted, event.ID)
-			ps.queriesStartedLk.Unlock()
+			ps.trackConnectionStart(event.ID)
+		}
+	}
+}
 
-			ps.queriesLk.Lock()
-			ps.queries = append(ps.queries, &QuerySpan{
-				RemotePeerID: event.ID,
-				Start:        started,
-				End:          time.Now(),
-			})
-			ps.queriesLk.Unlock()
-		case routing.QueryError:
-			ps.queriesStartedLk.Lock()
-			started, ok := ps.queriesStarted[event.ID]
-			if !ok {
-				ps.queriesStartedLk.Unlock()
-				continue
+func (ps *ProvideState) consumeRPCEvents(rpcEvents <-chan interface{}) {
+	for event := range rpcEvents {
+		switch evt := event.(type) {
+		case *wrap.RPCSendRequestStartedEvent:
+		case *wrap.RPCSendRequestEndedEvent:
+			switch evt.Request.Type {
+			case pb.Message_FIND_NODE:
+				ps.trackFindNodeRequest(evt)
+			default:
+				log.Warn(evt)
 			}
-			delete(ps.queriesStarted, event.ID)
-			ps.queriesStartedLk.Unlock()
+		default:
+			log.Warn(event)
+		}
+	}
+}
 
-			ps.queriesLk.Lock()
-			ps.queries = append(ps.queries, &QuerySpan{
-				RemotePeerID: event.ID,
-				Start:        started,
-				End:          time.Now(),
-				Error:        fmt.Errorf(event.Extra),
-			})
-			ps.queriesLk.Unlock()
+func (ps *ProvideState) trackLookupRequest(evt *kaddht.LookupEvent) {
+	for _, p := range evt.Request.Waiting {
+		ps.peerSet.SetState(p.Peer, qpeerset.PeerWaiting)
+	}
+}
+
+func (ps *ProvideState) trackLookupResponse(evt *kaddht.LookupEvent) {
+	for _, p := range evt.Response.Heard {
+		if p.Peer == ps.h.PeerID { // don't add self.
+			continue
+		}
+		ps.peerSet.TryAdd(p.Peer, evt.Response.Cause.Peer)
+	}
+	for _, p := range evt.Response.Queried {
+		if p.Peer == ps.h.PeerID { // don't add self.
+			continue
+		}
+		if st := ps.peerSet.GetState(p.Peer); st == qpeerset.PeerWaiting {
+			ps.peerSet.SetState(p.Peer, qpeerset.PeerQueried)
+		} else {
+			panic(fmt.Errorf("kademlia protocol error: tried to transition to the queried state from state %v", st))
+		}
+	}
+	for _, p := range evt.Response.Unreachable {
+		if p.Peer == ps.h.PeerID { // don't add self.
+			continue
+		}
+
+		if st := ps.peerSet.GetState(p.Peer); st == qpeerset.PeerWaiting {
+			ps.peerSet.SetState(p.Peer, qpeerset.PeerUnreachable)
+		} else {
+			panic(fmt.Errorf("kademlia protocol error: tried to transition to the unreachable state from state %v", st))
 		}
 	}
 }
 
 func (ps *ProvideState) consumeLookupEvents(lookupEvents <-chan *kaddht.LookupEvent) {
 	for event := range lookupEvents {
-		_ = event
+		if event.Response != nil {
+			ps.trackLookupResponse(event)
+		} else if event.Request != nil {
+			ps.trackLookupRequest(event)
+		}
 	}
 }
+
+////
 
 func (ps *ProvideState) Listen(network network.Network, multiaddr ma.Multiaddr) {
 }
@@ -124,23 +239,7 @@ func (ps *ProvideState) ListenClose(network network.Network, multiaddr ma.Multia
 }
 
 func (ps *ProvideState) Connected(network network.Network, conn network.Conn) {
-	end := time.Now()
-	ps.connectionsStartedLk.Lock()
-	defer ps.connectionsStartedLk.Unlock()
-	started, ok := ps.connectionsStarted[conn.RemotePeer()]
-	if !ok {
-		return
-	}
-	delete(ps.connectionsStarted, conn.RemotePeer())
-
-	ps.connectionsLk.Lock()
-	defer ps.connectionsLk.Unlock()
-	ps.connections = append(ps.connections, &ConnectionSpan{
-		RemotePeerID: conn.RemotePeer(),
-		Maddr:        conn.RemoteMultiaddr(),
-		Start:        started,
-		End:          end,
-	})
+	ps.trackConnectionEnd(conn.RemotePeer(), conn.RemoteMultiaddr())
 }
 
 func (ps *ProvideState) Disconnected(network network.Network, conn network.Conn) {
@@ -151,6 +250,8 @@ func (ps *ProvideState) OpenedStream(network network.Network, stream network.Str
 
 func (ps *ProvideState) ClosedStream(network network.Network, stream network.Stream) {
 }
+
+////
 
 func (ps *ProvideState) DialStarted(trpt string, raddr ma.Multiaddr, p peer.ID, start time.Time) {
 }

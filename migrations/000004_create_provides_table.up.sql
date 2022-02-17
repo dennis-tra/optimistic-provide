@@ -14,7 +14,7 @@ CREATE TABLE provides
     -- Application level timestamp when this provide operation started
     started_at               TIMESTAMPTZ NOT NULL,
     -- Application level timestamp when this provide operation ended
-    ended_at                 TIMESTAMPTZ NOT NULL,
+    ended_at                 TIMESTAMPTZ,
     -- The returned error of the provide operation
     error                    TEXT,
 

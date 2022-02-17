@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/libp2p/go-libp2p-kad-dht/qpeerset"
+
 	logging "github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/volatiletech/null/v8"
@@ -26,22 +28,36 @@ var _ ProvideService = &Provide{}
 
 type Provide struct {
 	peerService PeerService
-	rtService   RoutingTableService
 	hostService HostService
+	rtService   RoutingTableService
 	maService   MultiAddressService
 	dialService DialService
 	connService ConnectionService
+	fnService   FindNodesService
+	psService   PeerStateService
 	provideRepo repo.ProvideRepo
 }
 
-func NewProvideService(peerService PeerService, hostService HostService, rtService RoutingTableService, maService MultiAddressService, dialService DialService, connService ConnectionService, provideRepo repo.ProvideRepo) *Provide {
+func NewProvideService(
+	peerService PeerService,
+	hostService HostService,
+	rtService RoutingTableService,
+	maService MultiAddressService,
+	dialService DialService,
+	connService ConnectionService,
+	fnService FindNodesService,
+	psService PeerStateService,
+	provideRepo repo.ProvideRepo,
+) *Provide {
 	return &Provide{
 		peerService: peerService,
-		rtService:   rtService,
 		hostService: hostService,
+		rtService:   rtService,
 		maService:   maService,
 		dialService: dialService,
 		connService: connService,
+		fnService:   fnService,
+		psService:   psService,
 		provideRepo: provideRepo,
 	}
 }
@@ -52,7 +68,7 @@ func (ps *Provide) Provide(ctx context.Context, hostID peer.ID) (*models.Provide
 		return nil, errors.New("host not found")
 	}
 
-	rts, err := ps.rtService.SaveRoutingTable(context.Background(), h)
+	rts, err := ps.rtService.SaveRoutingTable(ctx, h)
 	if err != nil {
 		return nil, err
 	}
@@ -79,39 +95,60 @@ func (ps *Provide) Provide(ctx context.Context, hostID peer.ID) (*models.Provide
 	return provide, nil
 }
 
-func (ps *Provide) startProviding(h *dht.Host, dbProvide *models.Provide, content *lib.Content) {
+func (ps *Provide) startProviding(h *dht.Host, provide *models.Provide, content *lib.Content) {
 	ctx := context.Background()
 
 	state := &ProvideState{
 		h:                    h,
 		dialsLk:              sync.RWMutex{},
 		dials:                []*DialSpan{},
+		findNodesLk:          sync.RWMutex{},
+		findNodes:            []*FindNodesSpan{},
 		connectionsStartedLk: sync.RWMutex{},
 		connectionsStarted:   map[peer.ID]time.Time{},
 		connectionsLk:        sync.RWMutex{},
 		connections:          []*ConnectionSpan{},
-		queriesStartedLk:     sync.RWMutex{},
-		queriesStarted:       map[peer.ID]time.Time{},
-		queriesLk:            sync.RWMutex{},
-		queries:              []*QuerySpan{},
+		relevantPeers:        map[peer.ID]struct{}{},
+		peerSet:              qpeerset.NewQueryPeerset(string(content.CID.Hash())),
 	}
 
-	ctx, cancel := state.Register(ctx)
+	ctx = state.Register(ctx)
 	err := h.DHT.Provide(ctx, content.CID, true)
-	state.Unregister(cancel)
+	end := time.Now()
+	state.Unregister()
 
+	rts, err := ps.rtService.SaveRoutingTable(context.Background(), h)
 	if err != nil {
-		dbProvide.Error = null.StringFrom(err.Error())
-		if dbProvide, err = ps.provideRepo.Update(ctx, dbProvide); err != nil {
-			log.Warn("Could not update provide", err)
-		}
+		log.Warn(err)
 	}
 
-	if err = ps.dialService.Save(context.Background(), h.Host, dbProvide.ID, state.dials); err != nil {
-		log.Error(err)
+	provide.Error = nullStringFromErr(err)
+	provide.EndedAt = null.TimeFrom(end)
+	provide.FinalRoutingTableID = null.IntFrom(rts.ID)
+	if provide, err = ps.provideRepo.Update(context.Background(), provide); err != nil {
+		log.Warn(err)
 	}
 
-	if err = ps.connService.Save(context.Background(), h.Host, dbProvide.ID, state.connections); err != nil {
-		log.Error(err)
+	if err = ps.dialService.Save(context.Background(), h.Host, provide.ID, state.dials); err != nil {
+		log.Warn(err)
 	}
+
+	if err = ps.connService.Save(context.Background(), h.Host, provide.ID, state.connections); err != nil {
+		log.Warn(err)
+	}
+
+	if err = ps.fnService.Save(context.Background(), h.Host, provide.ID, state.findNodes); err != nil {
+		log.Warn(err)
+	}
+
+	if err = ps.psService.Save(context.Background(), h.Host, provide.ID, state.peerSet.AllStates()); err != nil {
+		log.Warn(err)
+	}
+}
+
+func nullStringFromErr(err error) null.String {
+	if err == nil {
+		return null.NewString("", false)
+	}
+	return null.StringFrom(err.Error())
 }
