@@ -39,9 +39,9 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 	rtService := service.NewRoutingTableService(peerService, rtRepo)
 	hostService := service.NewHostService(peerService, rtService)
 	maService := service.NewMultiAddressService(maRepo, iaRepo)
-	dialService := service.NewDialService(dialRepo)
-	connService := service.NewConnectionService(connRepo)
-	provideService := service.NewProvideService(peerService, hostService, rtService, maService, provideRepo)
+	dialService := service.NewDialService(peerService, maService, dialRepo)
+	connService := service.NewConnectionService(peerService, maService, connRepo)
+	provideService := service.NewProvideService(peerService, hostService, rtService, maService, dialService, connService, provideRepo)
 
 	peerController := controller.NewPeerController(ctx, peerService)
 	hostController := controller.NewHostController(ctx, hostService)

@@ -4,17 +4,16 @@ import (
 	"context"
 	"time"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/db/models"
-
 	"github.com/libp2p/go-libp2p-core/connmgr"
 	ic "github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/pnet"
-	quic "github.com/libp2p/go-libp2p-quic-transport"
-
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/pnet"
 	"github.com/libp2p/go-libp2p-core/transport"
+	quic "github.com/libp2p/go-libp2p-quic-transport"
 	ma "github.com/multiformats/go-multiaddr"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/models"
 )
 
 // QuicTransport is a thin wrapper around the actual *websocket.WebsocketTransport

@@ -160,7 +160,10 @@ func RootAction(c *cli.Context) error {
 	initPProf(cfg)
 
 	// Run API server
-	srv := api.Run(c.Context, cfg)
+	srv, err := api.Run(c.Context, cfg)
+	if err != nil {
+		return errors.Wrap(err, "start api")
+	}
 
 	// Listen for the interrupt signal.
 	<-c.Context.Done()

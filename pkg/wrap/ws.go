@@ -4,13 +4,13 @@ import (
 	"context"
 	"time"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/db/models"
-
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/transport"
 	websocket "github.com/libp2p/go-ws-transport"
 	ma "github.com/multiformats/go-multiaddr"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/models"
 )
 
 // WSTransport is a thin wrapper around the actual *websocket.WebsocketTransport

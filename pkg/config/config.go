@@ -4,7 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/ghodss/yaml"
+	"gopkg.in/yaml.v3"
+
 	logging "github.com/ipfs/go-log"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
@@ -102,6 +103,10 @@ func NewConfig(c *cli.Context) (*Config, error) {
 
 	if c.IsSet("db-port") || cfg.DB.Port == "" {
 		cfg.DB.Port = c.String("db-port")
+	}
+
+	if c.IsSet("db-name") || cfg.DB.Name == "" {
+		cfg.DB.Name = c.String("db-name")
 	}
 
 	if c.IsSet("db-user") || cfg.DB.User == "" {

@@ -19,14 +19,14 @@ func NewHostRoute(ctrlr *controller.HostController, router gin.IRouter) HostRout
 }
 
 func (p HostRoute) Setup() {
-	hosts := p.router.Group("/peers")
+	hosts := p.router.Group("/hosts")
 	{
-		hosts.POST("/hosts", p.ctrlr.Create)
-		hosts.GET("/hosts", p.ctrlr.List)
-		hosts.GET("/hosts/:peerID", p.ctrlr.Get)
-		hosts.DELETE("/hosts/:peerID", p.ctrlr.Stop)
-		hosts.POST("/hosts/:peerID/bootstrap", p.ctrlr.Bootstrap)
-		hosts.POST("/hosts/:peerID/dht/refresh", p.ctrlr.RefreshRoutingTable)
-		hosts.POST("/hosts/:peerID/dht/save", p.ctrlr.SaveRoutingTable)
+		hosts.POST("/", p.ctrlr.Create)
+		hosts.GET("/", p.ctrlr.List)
+		hosts.GET("/:peerID", p.ctrlr.Get)
+		hosts.DELETE("/:peerID", p.ctrlr.Stop)
+		hosts.POST("/:peerID/bootstrap", p.ctrlr.Bootstrap)
+		hosts.POST("/:peerID/dht/refresh", p.ctrlr.RefreshRoutingTable)
+		hosts.POST("/:peerID/dht/save", p.ctrlr.SaveRoutingTable)
 	}
 }

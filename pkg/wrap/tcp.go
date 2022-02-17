@@ -10,7 +10,7 @@ import (
 	"github.com/libp2p/go-tcp-transport"
 	ma "github.com/multiformats/go-multiaddr"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/db/models"
+	"github.com/dennis-tra/optimistic-provide/pkg/models"
 )
 
 // TCPTransport is a thin wrapper around the actual *tcp.TcpTransport implementation.

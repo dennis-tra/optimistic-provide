@@ -2,12 +2,15 @@ package service
 
 import (
 	"context"
+	"sort"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/models"
-	"github.com/dennis-tra/optimistic-provide/pkg/repo"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/models"
+	"github.com/dennis-tra/optimistic-provide/pkg/repo"
 )
 
 type PeerService interface {
@@ -19,7 +22,8 @@ type PeerService interface {
 var _ PeerService = &Peer{}
 
 type Peer struct {
-	repo repo.PeerRepo
+	repo  repo.PeerRepo
+	cache *lru.Cache
 }
 
 func (ps *Peer) Find(ctx context.Context, p peer.ID) (*models.Peer, error) {
@@ -27,8 +31,14 @@ func (ps *Peer) Find(ctx context.Context, p peer.ID) (*models.Peer, error) {
 }
 
 func NewPeerService(repo repo.PeerRepo) PeerService {
+	cache, err := lru.New(1000)
+	if err != nil {
+		panic(err)
+	}
+
 	return &Peer{
-		repo: repo,
+		repo:  repo,
+		cache: cache,
 	}
 }
 
@@ -51,5 +61,34 @@ func (ps *Peer) UpsertPeer(h host.Host, pid peer.ID) (*models.Peer, error) {
 		protocols = prots
 	}
 
-	return ps.repo.UpsertPeer(pid, av, protocols)
+	cached, found := ps.cache.Get(pid.String())
+	if found {
+		cachedDbPeer := cached.(*models.Peer)
+		sort.Strings(cachedDbPeer.Protocols)
+
+		weHaveNewAgent := av != "" && cachedDbPeer.AgentVersion.String != av
+		weHaveNewProtocols := false
+		if len(cachedDbPeer.Protocols) != len(protocols) {
+			weHaveNewProtocols = true
+		} else {
+			for i := 0; i < len(protocols); i++ {
+				if cachedDbPeer.Protocols[i] != protocols[i] {
+					weHaveNewProtocols = true
+					break
+				}
+			}
+		}
+		if !weHaveNewAgent && !weHaveNewProtocols {
+			return cachedDbPeer, nil
+		}
+	}
+
+	dbPeer, err := ps.repo.UpsertPeer(pid, av, protocols)
+	if err != nil {
+		return nil, err
+	}
+
+	ps.cache.Add(dbPeer.MultiHash, dbPeer)
+
+	return dbPeer, nil
 }

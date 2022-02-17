@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 
+	lru "github.com/hashicorp/golang-lru"
+
 	"github.com/dennis-tra/optimistic-provide/pkg/maxmind"
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
 	"github.com/dennis-tra/optimistic-provide/pkg/repo"
@@ -18,9 +20,10 @@ type MultiAddressService interface {
 var _ MultiAddressService = &MultiAddress{}
 
 type MultiAddress struct {
+	mmclient *maxmind.Client
+	cache    *lru.Cache
 	iaRepo   repo.IPAddressRepo
 	maRepo   repo.MultiAddressRepo
-	mmclient *maxmind.Client
 }
 
 func NewMultiAddressService(maRepo repo.MultiAddressRepo, iaRepo repo.IPAddressRepo) *MultiAddress {
@@ -29,8 +32,14 @@ func NewMultiAddressService(maRepo repo.MultiAddressRepo, iaRepo repo.IPAddressR
 		panic(err)
 	}
 
+	cache, err := lru.New(1000)
+	if err != nil {
+		panic(err)
+	}
+
 	return &MultiAddress{
 		mmclient: mmclient,
+		cache:    cache,
 		iaRepo:   iaRepo,
 		maRepo:   maRepo,
 	}
