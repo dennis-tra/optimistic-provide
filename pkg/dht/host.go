@@ -2,7 +2,10 @@ package dht
 
 import (
 	"context"
+	"sync"
 	"time"
+
+	"github.com/libp2p/go-libp2p-core/peer"
 
 	logging "github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
@@ -19,6 +22,12 @@ import (
 
 var log = logging.Logger("optprov")
 
+type RoutingTableListener interface {
+	PeerAdded(p peer.ID)
+	PeerRemoved(p peer.ID)
+	OnClose()
+}
+
 type Host struct {
 	host.Host
 
@@ -29,13 +38,10 @@ type Host struct {
 	Transports   []*wrap.Notifier
 	MsgSender    *wrap.MessageSenderImpl
 
-	RoutingTableRefresh RoutingTableRefresh
-}
-
-type RoutingTableRefresh struct {
-	StartedAt *time.Time
-	EndedAt   *time.Time
-	Error     *string
+	rtPeerAdded   func(peer.ID)
+	rtPeerRemoved func(peer.ID)
+	rtListenerslk sync.RWMutex
+	rtListeners   map[RoutingTableListener]struct{}
 }
 
 func New(ctx context.Context) (*Host, error) {
@@ -68,23 +74,30 @@ func New(ctx context.Context) (*Host, error) {
 	}
 
 	newHost := &Host{
-		Host:       h,
-		DHT:        dht,
-		MsgSender:  msgSender,
-		CreatedAt:  time.Now(),
-		Transports: []*wrap.Notifier{tcp.Notifier, ws.Notifier, quic.Notifier},
+		Host:          h,
+		DHT:           dht,
+		MsgSender:     msgSender,
+		CreatedAt:     time.Now(),
+		Transports:    []*wrap.Notifier{tcp.Notifier, ws.Notifier, quic.Notifier},
+		rtListeners:   map[RoutingTableListener]struct{}{},
+		rtPeerAdded:   dht.RoutingTable().PeerAdded,
+		rtPeerRemoved: dht.RoutingTable().PeerRemoved,
 	}
+
+	dht.RoutingTable().PeerAdded = newHost.peerAdded
+	dht.RoutingTable().PeerRemoved = newHost.peerRemoved
 
 	log.Infow("Initialized new libp2p host", "localID", util.FmtPeerID(h.ID()))
 	return newHost, nil
 }
 
-func (h *Host) RoutingTableRefreshDuration() *time.Duration {
-	if h.RoutingTableRefresh.StartedAt == nil || h.RoutingTableRefresh.EndedAt == nil {
-		return nil
+func (h *Host) Close() error {
+	h.rtListenerslk.RLock()
+	for listener := range h.rtListeners {
+		go listener.OnClose()
 	}
-	dur := h.RoutingTableRefresh.EndedAt.Sub(*h.RoutingTableRefresh.StartedAt)
-	return &dur
+	h.rtListenerslk.RUnlock()
+	return h.Host.Close()
 }
 
 func (h *Host) Bootstrap(ctx context.Context) error {
@@ -98,24 +111,32 @@ func (h *Host) Bootstrap(ctx context.Context) error {
 	return nil
 }
 
-func (h *Host) RefreshRoutingTable(ctx context.Context) {
-	log.Infow("Start refreshing routing table")
-	defer log.Infow("Done refreshing routing table")
+func (h *Host) RegisterRoutingTableListener(listener RoutingTableListener) {
+	h.rtListenerslk.Lock()
+	defer h.rtListenerslk.Unlock()
+	h.rtListeners[listener] = struct{}{}
+}
 
-	h.RoutingTableRefresh.StartedAt = util.NowPtr()
-	defer func() { h.RoutingTableRefresh.EndedAt = util.NowPtr() }()
+func (h *Host) UnregisterRoutingTableListener(listener RoutingTableListener) {
+	h.rtListenerslk.Lock()
+	defer h.rtListenerslk.Unlock()
+	delete(h.rtListeners, listener)
+}
 
-	h.RoutingTableRefresh.Error = nil
-	h.RoutingTableRefresh.EndedAt = nil
-
-	select {
-	case err := <-h.DHT.RefreshRoutingTable():
-		if err != nil {
-			h.RoutingTableRefresh.Error = util.StrPtr(err.Error())
-		}
-	case <-ctx.Done():
-		if ctx.Err() != nil {
-			h.RoutingTableRefresh.Error = util.StrPtr(ctx.Err().Error())
-		}
+func (h *Host) peerAdded(p peer.ID) {
+	h.rtListenerslk.RLock()
+	for listener := range h.rtListeners {
+		go listener.PeerAdded(p)
 	}
+	h.rtListenerslk.RUnlock()
+	h.rtPeerAdded(p)
+}
+
+func (h *Host) peerRemoved(p peer.ID) {
+	h.rtListenerslk.RLock()
+	for listener := range h.rtListeners {
+		go listener.PeerRemoved(p)
+	}
+	h.rtListenerslk.RUnlock()
+	h.rtPeerRemoved(p)
 }

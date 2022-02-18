@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/google/uuid"
+
 	"gopkg.in/yaml.v3"
 
 	logging "github.com/ipfs/go-log"
@@ -24,6 +26,7 @@ type (
 
 	// App -.
 	App struct {
+		Instance string `yaml:"-"`
 		Version  string `yaml:"version"`
 		LogLevel string `yaml:"log_level"`
 	}
@@ -75,6 +78,7 @@ func NewConfig(c *cli.Context) (*Config, error) {
 		}
 	}
 
+	cfg.Instance = uuid.New().String()
 	cfg.App.Version = c.App.Version
 
 	if c.IsSet("log-level") || cfg.App.LogLevel == "" {

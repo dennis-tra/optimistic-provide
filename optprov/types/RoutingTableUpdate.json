@@ -1,0 +1,60 @@
+{
+  "$schema": "http://json-schema.org/draft-06/schema#",
+  "$ref": "#/definitions/RoutingTableUpdate",
+  "definitions": {
+    "RoutingTableUpdate": {
+      "title": "RoutingTableUpdate",
+      "type": "array",
+      "items": {
+        "title": "RoutingTablePeer",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "peer_id": {
+            "type": "string"
+          },
+          "agent_version": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bucket": {
+            "type": "integer"
+          },
+          "added_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_successful_outbound_query_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last_useful_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "connected_at": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "peer_id",
+          "added_at",
+          "agent_version",
+          "last_successful_outbound_query_at",
+          "last_useful_at",
+          "bucket",
+          "connected_at"
+        ]
+      }
+    }
+  }
+}

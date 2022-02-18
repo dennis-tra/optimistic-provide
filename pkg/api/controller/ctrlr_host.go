@@ -3,14 +3,17 @@ package controller
 import (
 	"context"
 	"net/http"
+	"sort"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/libp2p/go-libp2p-core/peer"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/api/entities"
 	"github.com/dennis-tra/optimistic-provide/pkg/api/render"
+	"github.com/dennis-tra/optimistic-provide/pkg/api/types"
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 	"github.com/dennis-tra/optimistic-provide/pkg/service"
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
 )
 
 // HostController holds the API logic for all routes under /hosts
@@ -35,23 +38,30 @@ func (hc *HostController) Create(c *gin.Context) {
 		return
 	}
 
-	render.OK(c, &entities.HostResponse{
+	render.OK(c, &types.Host{
 		HostID:         h.ID().String(),
 		BootstrappedAt: nil,
-		CreatedAt:      h.CreatedAt,
+		CreatedAt:      h.CreatedAt.Format(time.RFC3339),
 	})
 }
 
 // List lists returns all running libp2p hosts.
 func (hc *HostController) List(c *gin.Context) {
-	hosts := map[string]*entities.HostResponse{}
+	hosts := []*types.Host{}
 	for _, h := range hc.hs.Hosts() {
-		hosts[h.ID().String()] = &entities.HostResponse{
+		hosts = append(hosts, &types.Host{
 			HostID:         h.ID().String(),
-			BootstrappedAt: h.Bootstrapped,
-			CreatedAt:      h.CreatedAt,
-		}
+			BootstrappedAt: util.TimeToStr(h.Bootstrapped),
+			CreatedAt:      h.CreatedAt.Format(time.RFC3339),
+		})
 	}
+
+	sort.Slice(hosts, func(i, j int) bool {
+		ti, _ := time.Parse(time.RFC3339, hosts[i].CreatedAt)
+		tj, _ := time.Parse(time.RFC3339, hosts[j].CreatedAt)
+		return ti.Before(tj)
+	})
+
 	render.OK(c, hosts)
 }
 
@@ -62,10 +72,10 @@ func (hc *HostController) Get(c *gin.Context) {
 		return
 	}
 
-	render.OK(c, &entities.HostResponse{
+	render.OK(c, &types.Host{
 		HostID:         h.ID().String(),
-		BootstrappedAt: h.Bootstrapped,
-		CreatedAt:      h.CreatedAt,
+		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
+		CreatedAt:      h.CreatedAt.Format(time.RFC3339),
 	})
 }
 
@@ -95,42 +105,11 @@ func (hc *HostController) Bootstrap(c *gin.Context) {
 		return
 	}
 
-	render.OK(c, &entities.HostResponse{
+	render.OK(c, &types.Host{
 		HostID:         h.ID().String(),
-		BootstrappedAt: h.Bootstrapped,
-		CreatedAt:      h.CreatedAt,
+		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
+		CreatedAt:      h.CreatedAt.Format(time.RFC3339),
 	})
-}
-
-func (hc *HostController) RefreshRoutingTable(c *gin.Context) {
-	peerID, err := getHostID(c)
-	if err != nil {
-		render.Err(c, err)
-		return
-	}
-
-	if err := hc.hs.RefreshRoutingTableAsync(hc.ctx, peerID); err != nil {
-		render.ErrInternal(c, "Could not refresh routing table", err)
-		return
-	}
-
-	c.Status(http.StatusOK)
-}
-
-func (hc *HostController) SaveRoutingTable(c *gin.Context) {
-	peerID, rerr := getHostID(c)
-	if rerr != nil {
-		render.Err(c, rerr)
-		return
-	}
-
-	rts, err := hc.hs.SaveRoutingTable(hc.ctx, peerID)
-	if err != nil {
-		render.ErrInternal(c, "Saving routing table failed", err)
-		return
-	}
-
-	render.OK(c, rts)
 }
 
 func getHostID(c *gin.Context) (peer.ID, *render.Error) {

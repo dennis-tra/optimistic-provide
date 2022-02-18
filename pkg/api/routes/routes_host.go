@@ -26,6 +26,5 @@ func (p HostRoute) Setup() {
 		hosts.GET("/:hostID", p.ctrlr.Get)
 		hosts.DELETE("/:hostID", p.ctrlr.Stop)
 		hosts.POST("/:hostID/bootstrap", p.ctrlr.Bootstrap)
-		hosts.POST("/:hostID/dht/refresh", p.ctrlr.RefreshRoutingTable)
 	}
 }

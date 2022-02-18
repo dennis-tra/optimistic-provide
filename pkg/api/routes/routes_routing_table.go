@@ -24,5 +24,7 @@ func (p RoutingTableRoute) Setup() {
 		routingTables.POST("/", p.ctrlr.Create)
 		routingTables.GET("/", p.ctrlr.List)
 		routingTables.GET("/:routingTableID", p.ctrlr.Get)
+		routingTables.GET("/listen", p.ctrlr.Listen)
+		routingTables.POST("/refresh", p.ctrlr.Refresh)
 	}
 }

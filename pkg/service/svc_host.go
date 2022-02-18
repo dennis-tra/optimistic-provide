@@ -91,7 +91,7 @@ func (hs *Host) Stop(p peer.ID) error {
 		return fmt.Errorf("not found")
 	}
 
-	if err := h.Host.Close(); err != nil {
+	if err := h.Close(); err != nil {
 		return err
 	}
 
@@ -101,12 +101,12 @@ func (hs *Host) Stop(p peer.ID) error {
 }
 
 func (hs *Host) RefreshRoutingTableAsync(ctx context.Context, p peer.ID) error {
-	h, found := hs.Host(p)
+	_, found := hs.Host(p)
 	if !found {
 		return errors.New("peer not found")
 	}
 
-	go h.RefreshRoutingTable(ctx)
+	// go h.RefreshRoutingTable(ctx)
 
 	return nil
 }

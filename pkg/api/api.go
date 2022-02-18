@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	logging "github.com/ipfs/go-log"
 	"github.com/pkg/errors"
@@ -21,6 +22,8 @@ var log = logging.Logger("optprov")
 // Run starts the REST API to control libp2p hosts.
 func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 	router := gin.Default()
+
+	router.Use(cors.Default())
 
 	dbclient, err := db.NewClient(cfg)
 	if err != nil {

@@ -9,15 +9,15 @@ import (
 // Response is the structured type for every API response. The type contains two fields, 'result' for the
 // actual data and 'response' for the API response information.
 type Response struct {
-	Error *Error      `json:"error,omitempty"`
-	Data  interface{} `json:"data,omitempty"`
+	Error *Error      `json:"error"`
+	Data  interface{} `json:"data"`
 }
 
 type Error struct {
 	Status  int         `json:"-"`
 	Code    ErrorCode   `json:"code"`
 	Message string      `json:"msg"`
-	Details interface{} `json:"details,omitempty"`
+	Details interface{} `json:"details"`
 }
 
 func NewError(status int, code ErrorCode, msg string, err error) *Error {

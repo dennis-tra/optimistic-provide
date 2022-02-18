@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/friendsofgo/errors v0.9.2
+	github.com/gin-contrib/cors v1.3.1
 	github.com/gin-gonic/gin v1.7.7
 	github.com/golang-migrate/migrate/v4 v4.15.1
 	github.com/hashicorp/golang-lru v0.5.4

@@ -2,12 +2,6 @@ package entities
 
 import "time"
 
-type HostResponse struct {
-	HostID         string     `json:"host_id"`
-	BootstrappedAt *time.Time `json:"bootstrapped_at"`
-	CreatedAt      time.Time  `json:"created_at"`
-}
-
 type ProvideCreateRequest struct {
 	HostID string `json:"host_id"`
 }
