@@ -8,9 +8,9 @@ import (
 	"github.com/volatiletech/null/v8"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
-	"github.com/dennis-tra/optimistic-provide/pkg/lib"
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
 	"github.com/dennis-tra/optimistic-provide/pkg/repo"
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
 )
 
 type RoutingTableService interface {
@@ -40,7 +40,7 @@ func (rts *RoutingTable) SaveRoutingTable(ctx context.Context, h *dht.Host) (*mo
 	rt := h.DHT.RoutingTable()
 	swarm := h.Host.Network()
 
-	snapshot, err := rts.rtRepo.SaveSnapshot(ctx, localDbPeer.ID, lib.DefaultBucketSize, len(rt.GetPeerInfos()))
+	snapshot, err := rts.rtRepo.SaveSnapshot(ctx, localDbPeer.ID, util.DefaultBucketSize, len(rt.GetPeerInfos()))
 	if err != nil {
 		return nil, errors.Wrap(err, "insert routing table")
 	}
@@ -62,7 +62,7 @@ func (rts *RoutingTable) SaveRoutingTable(ctx context.Context, h *dht.Host) (*mo
 		rte := &models.RoutingTableEntry{
 			RoutingTableSnapshotID:        snapshot.ID,
 			PeerID:                        dbpeer.ID,
-			Bucket:                        lib.BucketIdForPeer(h.PeerID, peerInfo.Id),
+			Bucket:                        util.BucketIdForPeer(h.ID(), peerInfo.Id),
 			LastUsefulAt:                  null.NewTime(peerInfo.LastUsefulAt, !peerInfo.LastUsefulAt.IsZero()),
 			LastSuccessfulOutboundQueryAt: peerInfo.LastSuccessfulOutboundQueryAt,
 			AddedAt:                       peerInfo.AddedAt,

@@ -192,13 +192,13 @@ func (ps *ProvideState) trackLookupRequest(evt *kaddht.LookupEvent) {
 
 func (ps *ProvideState) trackLookupResponse(evt *kaddht.LookupEvent) {
 	for _, p := range evt.Response.Heard {
-		if p.Peer == ps.h.PeerID { // don't add self.
+		if p.Peer == ps.h.ID() { // don't add self.
 			continue
 		}
 		ps.peerSet.TryAdd(p.Peer, evt.Response.Cause.Peer)
 	}
 	for _, p := range evt.Response.Queried {
-		if p.Peer == ps.h.PeerID { // don't add self.
+		if p.Peer == ps.h.ID() { // don't add self.
 			continue
 		}
 		if st := ps.peerSet.GetState(p.Peer); st == qpeerset.PeerWaiting {
@@ -208,7 +208,7 @@ func (ps *ProvideState) trackLookupResponse(evt *kaddht.LookupEvent) {
 		}
 	}
 	for _, p := range evt.Response.Unreachable {
-		if p.Peer == ps.h.PeerID { // don't add self.
+		if p.Peer == ps.h.ID() { // don't add self.
 			continue
 		}
 

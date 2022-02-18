@@ -13,9 +13,9 @@ import (
 	"github.com/volatiletech/null/v8"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
-	"github.com/dennis-tra/optimistic-provide/pkg/lib"
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
 	"github.com/dennis-tra/optimistic-provide/pkg/repo"
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
 )
 
 var log = logging.Logger("optprov")
@@ -73,7 +73,7 @@ func (ps *Provide) Provide(ctx context.Context, hostID peer.ID) (*models.Provide
 		return nil, err
 	}
 
-	content, err := lib.NewRandomContent()
+	content, err := util.NewRandomContent()
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (ps *Provide) Provide(ctx context.Context, hostID peer.ID) (*models.Provide
 	return provide, nil
 }
 
-func (ps *Provide) startProviding(h *dht.Host, provide *models.Provide, content *lib.Content) {
+func (ps *Provide) startProviding(h *dht.Host, provide *models.Provide, content *util.Content) {
 	ctx := context.Background()
 
 	state := &ProvideState{

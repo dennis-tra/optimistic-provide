@@ -8,22 +8,21 @@ import (
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/routing"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/pkg/errors"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/lib"
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
 	"github.com/dennis-tra/optimistic-provide/pkg/wrap"
 )
 
 var log = logging.Logger("optprov")
 
 type Host struct {
+	host.Host
+
 	DBPeer       *models.Peer
-	PeerID       peer.ID
-	Host         host.Host
 	DHT          *kaddht.IpfsDHT
 	Bootstrapped *time.Time
 	CreatedAt    time.Time
@@ -48,8 +47,8 @@ func New(ctx context.Context) (*Host, error) {
 	tcp, tcpTrpt := wrap.NewTCPTransport()
 	ws, wsTrpt := wrap.NewWSTransport()
 	quic, quicTrpt := wrap.NewQuicTransport()
-
 	msgSender := wrap.NewMessageSenderImpl()
+
 	var dht *kaddht.IpfsDHT
 	h, err := libp2p.New(
 		libp2p.Identity(key),
@@ -69,7 +68,6 @@ func New(ctx context.Context) (*Host, error) {
 	}
 
 	newHost := &Host{
-		PeerID:     h.ID(),
 		Host:       h,
 		DHT:        dht,
 		MsgSender:  msgSender,
@@ -77,7 +75,7 @@ func New(ctx context.Context) (*Host, error) {
 		Transports: []*wrap.Notifier{tcp.Notifier, ws.Notifier, quic.Notifier},
 	}
 
-	log.Infow("Initialized new libp2p host", "localID", lib.FmtPeerID(h.ID()))
+	log.Infow("Initialized new libp2p host", "localID", util.FmtPeerID(h.ID()))
 	return newHost, nil
 }
 
@@ -91,12 +89,12 @@ func (h *Host) RoutingTableRefreshDuration() *time.Duration {
 
 func (h *Host) Bootstrap(ctx context.Context) error {
 	for _, bp := range kaddht.GetDefaultBootstrapPeerAddrInfos() {
-		log.Infow("Connecting to bootstrap peer", "remoteID", lib.FmtPeerID(bp.ID))
+		log.Infow("Connecting to bootstrap peer", "remoteID", util.FmtPeerID(bp.ID))
 		if err := h.Host.Connect(ctx, bp); err != nil {
 			return errors.Wrap(err, "connecting to bootstrap peer")
 		}
 	}
-	h.Bootstrapped = lib.NowPtr()
+	h.Bootstrapped = util.NowPtr()
 	return nil
 }
 
@@ -104,8 +102,8 @@ func (h *Host) RefreshRoutingTable(ctx context.Context) {
 	log.Infow("Start refreshing routing table")
 	defer log.Infow("Done refreshing routing table")
 
-	h.RoutingTableRefresh.StartedAt = lib.NowPtr()
-	defer func() { h.RoutingTableRefresh.EndedAt = lib.NowPtr() }()
+	h.RoutingTableRefresh.StartedAt = util.NowPtr()
+	defer func() { h.RoutingTableRefresh.EndedAt = util.NowPtr() }()
 
 	h.RoutingTableRefresh.Error = nil
 	h.RoutingTableRefresh.EndedAt = nil
@@ -113,11 +111,11 @@ func (h *Host) RefreshRoutingTable(ctx context.Context) {
 	select {
 	case err := <-h.DHT.RefreshRoutingTable():
 		if err != nil {
-			h.RoutingTableRefresh.Error = lib.StrPtr(err.Error())
+			h.RoutingTableRefresh.Error = util.StrPtr(err.Error())
 		}
 	case <-ctx.Done():
 		if ctx.Err() != nil {
-			h.RoutingTableRefresh.Error = lib.StrPtr(ctx.Err().Error())
+			h.RoutingTableRefresh.Error = util.StrPtr(ctx.Err().Error())
 		}
 	}
 }

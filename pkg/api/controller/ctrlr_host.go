@@ -36,7 +36,7 @@ func (hc *HostController) Create(c *gin.Context) {
 	}
 
 	render.OK(c, &entities.HostResponse{
-		HostID:         h.PeerID.String(),
+		HostID:         h.ID().String(),
 		BootstrappedAt: nil,
 		CreatedAt:      h.CreatedAt,
 	})
@@ -46,8 +46,8 @@ func (hc *HostController) Create(c *gin.Context) {
 func (hc *HostController) List(c *gin.Context) {
 	hosts := map[string]*entities.HostResponse{}
 	for _, h := range hc.hs.Hosts() {
-		hosts[h.PeerID.String()] = &entities.HostResponse{
-			HostID:         h.PeerID.String(),
+		hosts[h.ID().String()] = &entities.HostResponse{
+			HostID:         h.ID().String(),
 			BootstrappedAt: h.Bootstrapped,
 			CreatedAt:      h.CreatedAt,
 		}
@@ -63,7 +63,7 @@ func (hc *HostController) Get(c *gin.Context) {
 	}
 
 	render.OK(c, &entities.HostResponse{
-		HostID:         h.PeerID.String(),
+		HostID:         h.ID().String(),
 		BootstrappedAt: h.Bootstrapped,
 		CreatedAt:      h.CreatedAt,
 	})
@@ -96,7 +96,7 @@ func (hc *HostController) Bootstrap(c *gin.Context) {
 	}
 
 	render.OK(c, &entities.HostResponse{
-		HostID:         h.PeerID.String(),
+		HostID:         h.ID().String(),
 		BootstrappedAt: h.Bootstrapped,
 		CreatedAt:      h.CreatedAt,
 	})

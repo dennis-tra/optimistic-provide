@@ -1,4 +1,4 @@
-package lib
+package util
 
 func UniqueInt(input []int) *int {
 	u := make([]int, 0, len(input))

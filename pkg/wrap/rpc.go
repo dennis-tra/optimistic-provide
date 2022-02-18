@@ -19,7 +19,10 @@ type Disconnector interface {
 	OnDisconnect(ctx context.Context, p peer.ID)
 }
 
-var _ pb.MessageSender = (*MessageSenderImpl)(nil)
+var (
+	_ Disconnector     = (*MessageSenderImpl)(nil)
+	_ pb.MessageSender = (*MessageSenderImpl)(nil)
+)
 
 func NewMessageSenderImpl() *MessageSenderImpl {
 	return &MessageSenderImpl{}
@@ -51,7 +54,22 @@ func (m *MessageSenderImpl) SendRequest(ctx context.Context, p peer.ID, pmes *pb
 }
 
 func (m *MessageSenderImpl) SendMessage(ctx context.Context, p peer.ID, pmes *pb.Message) error {
-	return m.messenger.SendMessage(ctx, p, pmes)
+	started := &RPCSendMessageStartedEvent{
+		RemotePeer: p,
+		StartedAt:  time.Now(),
+		Message:    pmes,
+	}
+	PublishRPCEvent(ctx, started)
+	err := m.messenger.SendMessage(ctx, p, pmes)
+	ended := &RPCSendMessageEndedEvent{
+		RemotePeer: p,
+		StartedAt:  started.StartedAt,
+		EndedAt:    time.Now(),
+		Message:    pmes,
+		Error:      err,
+	}
+	PublishRPCEvent(ctx, ended)
+	return err
 }
 
 func (m *MessageSenderImpl) OnDisconnect(ctx context.Context, p peer.ID) {

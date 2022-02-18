@@ -10,10 +10,7 @@ import (
 	"github.com/libp2p/go-libp2p-core/peer"
 )
 
-// RPCEventType indicates the query event's type.
-type RPCEventType int
-
-// Number of events to buffer.
+// RPCEventBufferSize defines the number of events to buffer.
 var RPCEventBufferSize = 16
 
 // RPCSendRequestStartedEvent .
@@ -30,6 +27,22 @@ type RPCSendRequestEndedEvent struct {
 	EndedAt    time.Time
 	Request    *pb.Message
 	Response   *pb.Message
+	Error      error
+}
+
+// RPCSendMessageStartedEvent .
+type RPCSendMessageStartedEvent struct {
+	RemotePeer peer.ID
+	StartedAt  time.Time
+	Message    *pb.Message
+}
+
+// RPCSendMessageEndedEvent .
+type RPCSendMessageEndedEvent struct {
+	RemotePeer peer.ID
+	StartedAt  time.Time
+	EndedAt    time.Time
+	Message    *pb.Message
 	Error      error
 }
 

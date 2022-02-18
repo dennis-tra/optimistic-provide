@@ -8,8 +8,8 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/types"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/db"
-	"github.com/dennis-tra/optimistic-provide/pkg/lib"
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
 )
 
 type MultiAddressRepo interface {
@@ -50,9 +50,9 @@ func (c *MultiAddress) UpsertMultiAddress(ctx context.Context, maddr *models.Mul
 
 	query := queries.Raw("SELECT upsert_multi_address($1, $2, $3, $4, $5, $6)",
 		maddr.Maddr,
-		null.StringFromPtr(lib.UniqueStr(countries)),
-		null.StringFromPtr(lib.UniqueStr(continents)),
-		null.IntFromPtr(lib.UniqueInt(asns)),
+		null.StringFromPtr(util.UniqueStr(countries)),
+		null.StringFromPtr(util.UniqueStr(continents)),
+		null.IntFromPtr(util.UniqueInt(asns)),
 		isPublic,
 		types.Int64Array(ipAddressIDs),
 	)
