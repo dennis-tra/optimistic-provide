@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/models"
-
 	"github.com/pkg/errors"
 
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -15,12 +13,11 @@ import (
 )
 
 type HostService interface {
-	Create(ctx context.Context) (*dht.Host, error)
+	Create(ctx context.Context, name string) (*dht.Host, error)
 	Hosts() map[string]*dht.Host
 	Host(p peer.ID) (*dht.Host, bool)
 	Stop(p peer.ID) error
 	RefreshRoutingTableAsync(ctx context.Context, p peer.ID) error
-	SaveRoutingTable(ctx context.Context, p peer.ID) (*models.RoutingTableSnapshot, error)
 }
 
 var _ HostService = &Host{}
@@ -41,11 +38,11 @@ func NewHostService(peerService PeerService, rtService RoutingTableService) Host
 	}
 }
 
-func (hs *Host) Create(ctx context.Context) (*dht.Host, error) {
+func (hs *Host) Create(ctx context.Context, name string) (*dht.Host, error) {
 	hs.hostsLk.Lock()
 	defer hs.hostsLk.Unlock()
 
-	h, err := dht.New(ctx)
+	h, err := dht.New(ctx, name)
 	if err != nil {
 		return nil, err
 	}
@@ -109,13 +106,4 @@ func (hs *Host) RefreshRoutingTableAsync(ctx context.Context, p peer.ID) error {
 	// go h.RefreshRoutingTable(ctx)
 
 	return nil
-}
-
-func (hs *Host) SaveRoutingTable(ctx context.Context, p peer.ID) (*models.RoutingTableSnapshot, error) {
-	h, found := hs.Host(p)
-	if !found {
-		return nil, errors.New("peer not found")
-	}
-
-	return hs.rtService.SaveRoutingTable(ctx, h)
 }

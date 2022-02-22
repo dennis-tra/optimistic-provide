@@ -153,11 +153,21 @@ func RootAction(c *cli.Context) error {
 		return errors.Wrap(err, "new config")
 	}
 
-	if err = initLogging(cfg); err != nil {
-		return errors.Wrap(err, "init logging")
+	if err := logging.SetLogLevel("optprov", cfg.App.LogLevel); err != nil {
+		return errors.Wrap(err, "set optprov log level")
 	}
 
-	initPProf(cfg)
+	if err := logging.SetLogLevel("dht", cfg.App.LogLevel); err != nil {
+		return errors.Wrap(err, "set DHT log level")
+	}
+
+	go func() {
+		pprofAddr := cfg.PProf.Host + ":" + cfg.PProf.Port
+		log.Debugw("Starting profiling endpoint at", pprofAddr)
+		if err := http.ListenAndServe(pprofAddr, nil); err != nil {
+			log.Errorw("Error serving pprof", err)
+		}
+	}()
 
 	// Run API server
 	srv, err := api.Run(c.Context, cfg)
@@ -180,25 +190,4 @@ func RootAction(c *cli.Context) error {
 
 	log.Info("Server exiting")
 	return nil
-}
-
-func initLogging(cfg *config.Config) error {
-	if err := logging.SetLogLevel("optprov", cfg.App.LogLevel); err != nil {
-		return errors.Wrap(err, "set optprov log level")
-	}
-	if err := logging.SetLogLevel("dht", cfg.App.LogLevel); err != nil {
-		return errors.Wrap(err, "set DHT log level")
-	}
-
-	return nil
-}
-
-func initPProf(cfg *config.Config) {
-	go func() {
-		pprofAddr := cfg.PProf.Host + ":" + cfg.PProf.Port
-		log.Debugw("Starting profiling endpoint at", pprofAddr)
-		if err := http.ListenAndServe(pprofAddr, nil); err != nil {
-			log.Errorw("Error serving pprof", err)
-		}
-	}()
 }

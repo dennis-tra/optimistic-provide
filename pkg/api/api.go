@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/api/controller"
-	"github.com/dennis-tra/optimistic-provide/pkg/api/routes"
+	"github.com/dennis-tra/optimistic-provide/pkg/api/middlewares"
 	"github.com/dennis-tra/optimistic-provide/pkg/config"
 	"github.com/dennis-tra/optimistic-provide/pkg/db"
 	"github.com/dennis-tra/optimistic-provide/pkg/repo"
@@ -53,15 +53,49 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 
 	peerController := controller.NewPeerController(ctx, peerService)
 	hostController := controller.NewHostController(ctx, hostService)
-	provideController := controller.NewProvideController(ctx, provideService)
-	routingTableController := controller.NewRoutingTableController(ctx, rtService, hostService, rtRepo)
+	provideController := controller.NewProvideController(ctx, provideService, hostService)
+	routingTableController := controller.NewRoutingTableController(ctx, rtService, hostService)
 
-	v1 := router.Group("/v1")
+	hosts := router.Group("/hosts")
 	{
-		routes.NewPeerRoute(peerController, v1).Setup()
-		routes.NewHostRoute(hostController, v1).Setup()
-		routes.NewProvideRoute(provideController, v1).Setup()
-		routes.NewRoutingTableRoute(routingTableController, v1).Setup()
+		hosts.POST("/", hostController.Create)
+		hosts.GET("/", hostController.List)
+
+		hostID := hosts.Group("/:hostID")
+		{
+			hostID.Use(middlewares.HostID(hostService))
+			hostID.GET("/", hostController.Get)
+			hostID.DELETE("/", hostController.Stop)
+			hostID.POST("/bootstrap", hostController.Bootstrap)
+
+			provides := hostID.Group("provides")
+			{
+				provides.POST("/", provideController.Create)
+			}
+
+			routingTables := hostID.Group("routing-tables")
+			{
+				routingTables.POST("/", routingTableController.Create)
+				routingTables.GET("/", routingTableController.List)
+				routingTables.GET("/listen", routingTableController.Listen)
+				routingTables.POST("/refresh", routingTableController.Refresh)
+
+				routingTableID := routingTables.Group("/:routingTableID")
+				{
+					routingTableID.Use(middlewares.RoutingTableID)
+					routingTableID.GET("/", routingTableController.Get)
+				}
+			}
+		}
+	}
+
+	peers := router.Group("/peers")
+	{
+		peerID := peers.Group("/:peerID")
+		{
+			peerID.Use(middlewares.PeerID)
+			peerID.GET("/", peerController.Get)
+		}
 	}
 
 	srv := &http.Server{

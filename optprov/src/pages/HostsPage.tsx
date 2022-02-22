@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { OptProvClient } from "../api";
+import { HostsApi, Host } from "../api";
 import Button from "@mui/material/Button";
-import { Host } from "../models/Host";
 import { useParams, useNavigate } from "react-router-dom";
 import Stack from "@mui/material/Stack";
 import List from "@mui/material/List";
@@ -19,10 +18,10 @@ function HostsPage() {
   const navigate = useNavigate();
   const [hosts, setHosts] = useState<Host[]>([]);
 
-  const client = new OptProvClient("http://localhost:7000/v1");
+  const client = new HostsApi();
 
   useEffect(() => {
-    client.hostsList().then(setHosts);
+    client.getHosts().then(setHosts);
   }, []);
 
   return (
@@ -31,7 +30,7 @@ function HostsPage() {
       <Grid container direction="row" justifyContent="flex-end" alignItems="center">
         <Button
           onClick={() => {
-            client.hostsList().then(setHosts);
+            client.getHosts().then(setHosts);
           }}
         >
           Refresh
@@ -41,26 +40,26 @@ function HostsPage() {
         <List>
           {hosts.map((host) => (
             <ListItem
-              key={host.host_id}
+              key={host.hostId}
               disablePadding
               secondaryAction={
                 <IconButton
                   color="error"
                   edge="end"
                   onClick={async () => {
-                    await client.deleteHost(host.host_id);
-                    client.hostsList().then(setHosts);
+                    await client.deleteHost({ hostId: host.hostId });
+                    client.getHosts().then(setHosts);
                   }}
                 >
                   <DeleteIcon />
                 </IconButton>
               }
             >
-              <ListItemButton role={undefined} onClick={() => navigate(`/hosts/${host.host_id}`)} dense>
+              <ListItemButton role={undefined} onClick={() => navigate(`/hosts/${host.hostId}`)} dense>
                 <ListItemIcon>
                   <FolderIcon />
                 </ListItemIcon>
-                <ListItemText primary={host.host_id} secondary={"Created at " + host.created_at.toLocaleString()} />
+                <ListItemText primary={host.hostId} secondary={"Created at " + host.createdAt.toLocaleString()} />
               </ListItemButton>
             </ListItem>
           ))}
@@ -68,8 +67,8 @@ function HostsPage() {
         <Button
           variant="outlined"
           onClick={async () => {
-            await client.hostsCreate();
-            client.hostsList().then(setHosts);
+            await client.createHost({ createHostRequest: { name: "some name" } });
+            client.getHosts().then(setHosts);
           }}
         >
           Create Host

@@ -2,14 +2,12 @@ package service
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"time"
 
-	"github.com/libp2p/go-libp2p-kad-dht/qpeerset"
-
 	logging "github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-kad-dht/qpeerset"
 	"github.com/volatiletech/null/v8"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
@@ -21,7 +19,7 @@ import (
 var log = logging.Logger("optprov")
 
 type ProvideService interface {
-	Provide(ctx context.Context, hostID peer.ID) (*models.Provide, error)
+	Provide(ctx context.Context, h *dht.Host) (*models.Provide, error)
 }
 
 var _ ProvideService = &Provide{}
@@ -62,13 +60,8 @@ func NewProvideService(
 	}
 }
 
-func (ps *Provide) Provide(ctx context.Context, hostID peer.ID) (*models.Provide, error) {
-	h, found := ps.hostService.Host(hostID)
-	if !found {
-		return nil, errors.New("host not found")
-	}
-
-	rts, err := ps.rtService.SaveRoutingTable(ctx, h)
+func (ps *Provide) Provide(ctx context.Context, h *dht.Host) (*models.Provide, error) {
+	rts, err := ps.rtService.Save(ctx, h)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +110,7 @@ func (ps *Provide) startProviding(h *dht.Host, provide *models.Provide, content 
 	end := time.Now()
 	state.Unregister()
 
-	rts, err := ps.rtService.SaveRoutingTable(context.Background(), h)
+	rts, err := ps.rtService.Save(context.Background(), h)
 	if err != nil {
 		log.Warn(err)
 	}

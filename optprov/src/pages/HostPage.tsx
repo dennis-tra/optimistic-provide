@@ -1,15 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { OptProvClient } from "../api";
 import RootLayout from "../layouts/RootLayout";
-import { Host } from "../models/Host";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import IconButton from "@mui/material/IconButton";
 import CloudIcon from "@mui/icons-material/Cloud";
 import RoutingTable from "../components/RoutingTable";
-import Button from "@mui/material/Button";
+import { HostsApi, Host } from "../api";
 
 const HostPage: React.FC = (props) => {
   const { hostId } = useParams();
@@ -19,13 +17,13 @@ const HostPage: React.FC = (props) => {
 
   const [host, setHost] = useState<Host | null>(null);
 
-  const client = new OptProvClient("http://localhost:7000/v1");
+  const client = new HostsApi();
   useEffect(() => {
-    client.hostGet(hostId).then(setHost);
+    client.getHost({ hostId }).then(setHost);
   }, []);
 
   if (!host) {
-    return <RootLayout></RootLayout>;
+    return <div>Loading...</div>;
   }
 
   return (
@@ -34,29 +32,23 @@ const HostPage: React.FC = (props) => {
       <h2>General</h2>
       <List>
         <ListItem>
-          <ListItemText primary="PeerID" secondary={host.host_id} />
+          <ListItemText primary="PeerID" secondary={host.hostId} />
         </ListItem>
         <ListItem>
-          <ListItemText primary="Created at" secondary={host.created_at} />
+          <ListItemText primary="Created at" secondary={host.createdAt} />
         </ListItem>
         <ListItem
           secondaryAction={
-            host.bootstrapped_at ? null : (
-              <IconButton
-                edge="end"
-                onClick={async () => {
-                  client.hostBootstrap(host.host_id).then(setHost);
-                }}
-              >
+            host.bootstrappedAt ? null : (
+              <IconButton edge="end" onClick={async () => client.bootstrapHost({ hostId }).then(setHost)}>
                 <CloudIcon />
               </IconButton>
             )
           }
         >
-          <ListItemText primary="Bootstrapped at" secondary={host.bootstrapped_at || "n.a."} />
+          <ListItemText primary="Bootstrapped at" secondary={host.bootstrappedAt || "n.a."} />
         </ListItem>
       </List>
-      <Button onClick={() => client.refreshRoutingTable(hostId)}>Refresh Routing Table</Button>
       <h2>Routing Table</h2>
       <RoutingTable host={host} />
     </RootLayout>

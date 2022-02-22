@@ -14,6 +14,7 @@ import (
 type RoutingTableRepo interface {
 	Find(ctx context.Context, routingTableID int) (*models.RoutingTableSnapshot, error)
 	FindAll(ctx context.Context, hostID string) ([]*models.RoutingTableSnapshot, error)
+	FindByIDAndHostID(ctx context.Context, id int, hostID string) (*models.RoutingTableSnapshot, error)
 	SaveSnapshot(context.Context, int, int, int) (*models.RoutingTableSnapshot, error)
 	SaveRoutingTableEntry(context.Context, *models.RoutingTableEntry) (*models.RoutingTableEntry, error)
 }
@@ -54,4 +55,13 @@ func (r *RoutingTable) FindAll(ctx context.Context, hostID string) ([]*models.Ro
 		qm.InnerJoin(models.TableNames.Peers+" ON "+models.TableNames.Peers+"."+models.PeerColumns.ID+" = "+models.RoutingTableSnapshotColumns.PeerID),
 		models.PeerWhere.MultiHash.EQ(hostID),
 	).All(ctx, r.dbc)
+}
+
+func (r *RoutingTable) FindByIDAndHostID(ctx context.Context, routingTableID int, hostID string) (*models.RoutingTableSnapshot, error) {
+	return models.RoutingTableSnapshots(
+		qm.Load(models.RoutingTableSnapshotRels.Peer),
+		models.RoutingTableSnapshotWhere.ID.EQ(routingTableID),
+		qm.InnerJoin(models.TableNames.Peers+" ON "+models.TableNames.Peers+"."+models.PeerColumns.ID+" = "+models.RoutingTableSnapshotColumns.PeerID),
+		models.PeerWhere.MultiHash.EQ(hostID),
+	).One(ctx, r.dbc)
 }

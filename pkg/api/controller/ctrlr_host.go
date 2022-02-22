@@ -6,14 +6,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/libp2p/go-libp2p-core/peer"
-
-	"github.com/dennis-tra/optimistic-provide/pkg/api/render"
 	"github.com/dennis-tra/optimistic-provide/pkg/api/types"
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 	"github.com/dennis-tra/optimistic-provide/pkg/service"
 	"github.com/dennis-tra/optimistic-provide/pkg/util"
+	"github.com/gin-gonic/gin"
 )
 
 // HostController holds the API logic for all routes under /hosts
@@ -32,14 +29,29 @@ func NewHostController(ctx context.Context, hs service.HostService) *HostControl
 
 // Create starts a new libp2p host.
 func (hc *HostController) Create(c *gin.Context) {
-	h, err := hc.hs.Create(hc.ctx)
-	if err != nil {
-		render.ErrInternal(c, "Could not create libp2p host", err)
+	chr := &types.CreateHostRequest{}
+	if err := c.BindJSON(chr); err != nil {
+		c.JSON(http.StatusBadRequest, types.Error{
+			Code:    types.ErrorCodeMALFORMEDREQUEST,
+			Message: "Could not create libp2p host because of a malformed JSON request",
+			Details: types.ErrDetails(err),
+		})
 		return
 	}
 
-	render.OK(c, &types.Host{
-		HostID:         h.ID().String(),
+	h, err := hc.hs.Create(hc.ctx, chr.Name)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, types.Error{
+			Code:    types.ErrorCodeINTERNAL,
+			Message: "Could not create libp2p host",
+			Details: types.ErrDetails(err),
+		})
+		return
+	}
+
+	c.JSON(http.StatusCreated, &types.Host{
+		Name:           h.Name,
+		HostId:         h.ID().String(),
 		BootstrappedAt: nil,
 		CreatedAt:      h.CreatedAt.Format(time.RFC3339),
 	})
@@ -50,7 +62,8 @@ func (hc *HostController) List(c *gin.Context) {
 	hosts := []*types.Host{}
 	for _, h := range hc.hs.Hosts() {
 		hosts = append(hosts, &types.Host{
-			HostID:         h.ID().String(),
+			Name:           h.Name,
+			HostId:         h.ID().String(),
 			BootstrappedAt: util.TimeToStr(h.Bootstrapped),
 			CreatedAt:      h.CreatedAt.Format(time.RFC3339),
 		})
@@ -62,80 +75,50 @@ func (hc *HostController) List(c *gin.Context) {
 		return ti.Before(tj)
 	})
 
-	render.OK(c, hosts)
+	c.JSON(http.StatusOK, hosts)
 }
 
 func (hc *HostController) Get(c *gin.Context) {
-	h, err := hc.getHost(c)
-	if err != nil {
-		render.Err(c, err)
-		return
-	}
-
-	render.OK(c, &types.Host{
-		HostID:         h.ID().String(),
+	h := c.MustGet("host").(*dht.Host)
+	c.JSON(http.StatusOK, &types.Host{
+		Name:           h.Name,
+		HostId:         h.ID().String(),
 		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
 		CreatedAt:      h.CreatedAt.Format(time.RFC3339),
 	})
 }
 
 func (hc *HostController) Stop(c *gin.Context) {
-	peerID, err := getHostID(c)
-	if err != nil {
-		render.Err(c, err)
+	h := c.MustGet("host").(*dht.Host)
+
+	if err := hc.hs.Stop(h.ID()); err != nil {
+		c.JSON(http.StatusInternalServerError, types.Error{
+			Code:    types.ErrorCodeINTERNAL,
+			Message: "Could not stop libp2p host",
+			Details: types.ErrDetails(err),
+		})
 		return
 	}
 
-	if err := hc.hs.Stop(peerID); err != nil {
-		render.ErrInternal(c, "Could not stop libp2p host", err)
-		return
-	}
-	c.Status(http.StatusOK)
+	c.Status(http.StatusNoContent)
 }
 
 func (hc *HostController) Bootstrap(c *gin.Context) {
-	h, err := hc.getHost(c)
-	if err != nil {
-		render.Err(c, err)
-		return
-	}
+	h := c.MustGet("host").(*dht.Host)
 
 	if err := h.Bootstrap(hc.ctx); err != nil {
-		render.ErrInternal(c, "Could not bootstrap host", err)
+		c.JSON(http.StatusInternalServerError, types.Error{
+			Code:    types.ErrorCodeINTERNAL,
+			Message: "Could not bootstrap host",
+			Details: types.ErrDetails(err),
+		})
 		return
 	}
 
-	render.OK(c, &types.Host{
-		HostID:         h.ID().String(),
+	c.JSON(http.StatusOK, &types.Host{
+		Name:           h.Name,
+		HostId:         h.ID().String(),
 		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
 		CreatedAt:      h.CreatedAt.Format(time.RFC3339),
 	})
-}
-
-func getHostID(c *gin.Context) (peer.ID, *render.Error) {
-	param, ok := c.Params.Get("hostID")
-	if !ok {
-		return "", render.NewErrInternalServerError(render.ErrorCodeGetPeerFromPath, "Could not get host multi hash from endpoint path", nil)
-	}
-
-	peerID, err := peer.Decode(param)
-	if err != nil {
-		return "", render.NewErrBadRequest(render.ErrorCodeMalformedPeerID, "Could not decode host peer ID: "+param, err)
-	}
-
-	return peerID, nil
-}
-
-func (hc *HostController) getHost(c *gin.Context) (*dht.Host, *render.Error) {
-	peerID, err := getHostID(c)
-	if err != nil {
-		return nil, err
-	}
-
-	h, found := hc.hs.Host(peerID)
-	if !found {
-		return nil, render.NewErrNotFound(render.ErrorCodeHostNotFound, "Host with ID "+peerID.String()+" was not found.", nil)
-	}
-
-	return h, nil
 }

@@ -2,15 +2,20 @@ package controller
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
+	"fmt"
 	"net/http"
-	"strconv"
+	"time"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/api/render"
-	"github.com/dennis-tra/optimistic-provide/pkg/repo"
-	"github.com/dennis-tra/optimistic-provide/pkg/service"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	logging "github.com/ipfs/go-log"
+	"github.com/pkg/errors"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/api/types"
+	"github.com/dennis-tra/optimistic-provide/pkg/dht"
+	"github.com/dennis-tra/optimistic-provide/pkg/service"
 )
 
 var log = logging.Logger("optprov")
@@ -23,105 +28,110 @@ var upgrader = websocket.Upgrader{
 
 // RoutingTableController holds the API logic for all routes under /hosts
 type RoutingTableController struct {
-	ctx    context.Context
-	rts    service.RoutingTableService
-	hs     service.HostService
-	rtRepo repo.RoutingTableRepo
+	ctx context.Context
+	rts service.RoutingTableService
+	hs  service.HostService
 }
 
 // NewRoutingTableController initializes a new host controller with the provided services.
-func NewRoutingTableController(ctx context.Context, rts service.RoutingTableService, hs service.HostService, rtRepo repo.RoutingTableRepo) *RoutingTableController {
+func NewRoutingTableController(ctx context.Context, rts service.RoutingTableService, hs service.HostService) *RoutingTableController {
 	return &RoutingTableController{
-		ctx:    ctx,
-		rts:    rts,
-		hs:     hs,
-		rtRepo: rtRepo,
+		ctx: ctx,
+		rts: rts,
+		hs:  hs,
 	}
 }
 
 // Create starts a new libp2p host.
 func (rtc *RoutingTableController) Create(c *gin.Context) {
-	peerID, rerr := getHostID(c)
-	if rerr != nil {
-		render.Err(c, rerr)
-		return
-	}
+	h := c.MustGet("host").(*dht.Host)
 
-	h, found := rtc.hs.Host(peerID)
-	if !found {
-		render.Err(c, render.NewErrNotFound(render.ErrorCodeHostNotFound, "Host with ID "+peerID.String()+" was not found.", nil))
-		return
-	}
-
-	rts, err := rtc.rts.SaveRoutingTable(rtc.ctx, h)
+	rts, err := rtc.rts.Save(rtc.ctx, h)
 	if err != nil {
-		render.ErrInternal(c, "Saving routing table failed", err)
+		c.JSON(http.StatusInternalServerError, types.Error{
+			Code:    types.ErrorCodeSAVINGROUTINGTABLE,
+			Message: "Saving routing table for host " + h.ID().String() + "failed",
+			Details: types.ErrDetails(err),
+		})
 		return
 	}
 
-	render.OK(c, rts)
+	c.JSON(http.StatusCreated, types.RoutingTable{
+		Id:         rts.ID,
+		HostId:     h.ID().String(),
+		BucketSize: rts.BucketSize,
+		CreatedAt:  rts.CreatedAt.Format(time.RFC3339),
+		EntryCount: rts.EntryCount,
+	})
 }
 
 func (rtc *RoutingTableController) Get(c *gin.Context) {
-	_, rerr := getHostID(c)
-	if rerr != nil {
-		render.Err(c, rerr)
+	h := c.MustGet("host").(*dht.Host)
+	routingTableID := c.MustGet("routingTableID").(int)
+
+	rts, err := rtc.rts.FindByIDAndHostID(rtc.ctx, routingTableID, h.ID())
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, types.Error{
+				Code:    types.ErrorCodeROUTINGTABLENOTFOUND,
+				Message: fmt.Sprintf("Routing table with ID %d for host %s was not found", routingTableID, h.ID()),
+			})
+		} else {
+			c.JSON(http.StatusInternalServerError, types.Error{
+				Code:    types.ErrorCodeINTERNAL,
+				Message: fmt.Sprintf("Error retrieving routing table snapshot for ID %d and host %s", routingTableID, h.ID()),
+				Details: types.ErrDetails(err),
+			})
+		}
 		return
 	}
 
-	routingTableIDStr, ok := c.Params.Get("routingTableID")
-	if !ok {
-		render.Err(c, render.NewErrInternalServerError(render.ErrorCodeGetPeerFromPath, "Could not get host multi hash from endpoint path", nil))
-		return
-	}
-
-	routingTableID, err := strconv.Atoi(routingTableIDStr)
-	if rerr != nil {
-		render.NewErrInternalServerError(render.ErrorCodeMalformedJSON, "Could not convert "+routingTableIDStr+"to integer", err)
-		return
-	}
-
-	rts, err := rtc.rtRepo.Find(rtc.ctx, routingTableID)
-	if rerr != nil {
-		render.NewErrInternalServerError(render.ErrorCodeMalformedJSON, "Could not convert "+routingTableIDStr+"to integer", err)
-		return
-	}
-
-	// TODO: check host ID
-	render.OK(c, rts)
+	c.JSON(http.StatusCreated, types.RoutingTable{
+		Id:         rts.ID,
+		HostId:     h.ID().String(),
+		BucketSize: rts.BucketSize,
+		CreatedAt:  rts.CreatedAt.Format(time.RFC3339),
+		EntryCount: rts.EntryCount,
+	})
 }
 
 func (rtc *RoutingTableController) List(c *gin.Context) {
-	hostID, rerr := getHostID(c)
-	if rerr != nil {
-		render.Err(c, rerr)
+	h := c.MustGet("host").(*dht.Host)
+
+	rts, err := rtc.rts.FindAll(rtc.ctx, h.ID())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, types.Error{
+			Code:    types.ErrorCodeINTERNAL,
+			Message: fmt.Sprintf("Error retrieving routing table snapshots for host %s", h.ID()),
+			Details: types.ErrDetails(err),
+		})
 		return
 	}
 
-	rts, err := rtc.rtRepo.FindAll(rtc.ctx, hostID.String())
-	if rerr != nil {
-		render.NewErrInternalServerError(render.ErrorCodeMalformedJSON, "Could not convert to integer", err)
-		return
+	snapshots := make([]types.RoutingTable, len(rts))
+	for i, r := range rts {
+		snapshots[i] = types.RoutingTable{
+			BucketSize: r.BucketSize,
+			CreatedAt:  r.CreatedAt.Format(time.RFC3339),
+			EntryCount: r.EntryCount,
+			Id:         r.ID,
+			HostId:     r.R.Peer.MultiHash,
+		}
 	}
-	render.OK(c, rts)
+
+	c.JSON(http.StatusOK, snapshots)
 }
 
 func (rtc *RoutingTableController) Listen(c *gin.Context) {
-	hostID, rerr := getHostID(c)
-	if rerr != nil {
-		render.Err(c, rerr)
-		return
-	}
-
-	h, found := rtc.hs.Host(hostID)
-	if !found {
-		render.Err(c, render.NewErrNotFound(render.ErrorCodeHostNotFound, "Host not found", nil))
-		return
-	}
+	h := c.MustGet("host").(*dht.Host)
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		render.ErrInternal(c, "Could not upgrade connection", err)
+		c.JSON(http.StatusInternalServerError, types.Error{
+			Code:    types.ErrorCodeINTERNAL,
+			Message: fmt.Sprintf("Error could not upgrade connection"),
+			Details: types.ErrDetails(err),
+		})
 		return
 	}
 
@@ -143,12 +153,12 @@ func (rtc *RoutingTableController) Listen(c *gin.Context) {
 
 	go func() {
 		for update := range rtl.Updates() {
-			data, err := update.Marshal()
+			data, err := json.Marshal(update)
 			if err != nil {
 				log.Warnf("Could not marshal routing table update %v: %s", update, err)
 				continue
 			}
-			log.Infof("Sending %d bytes for %s", len(data), hostID.String())
+			log.Infof("Sending %d bytes for %s", len(data), h.ID().String())
 			if err = conn.WriteMessage(websocket.TextMessage, data); err != nil {
 				log.Warn("Could not write websocket message", err)
 				continue
@@ -160,21 +170,12 @@ func (rtc *RoutingTableController) Listen(c *gin.Context) {
 }
 
 func (rtc *RoutingTableController) Refresh(c *gin.Context) {
-	hostID, rerr := getHostID(c)
-	if rerr != nil {
-		render.Err(c, rerr)
-		return
-	}
-
-	h, found := rtc.hs.Host(hostID)
-	if !found {
-		render.Err(c, render.NewErrNotFound(render.ErrorCodeHostNotFound, "Host not found", nil))
-		return
-	}
+	h := c.MustGet("host").(*dht.Host)
 
 	go func() {
 		err := <-h.DHT.RefreshRoutingTable()
 		log.Warn("Routing Table refresh", err)
 	}()
-	c.Status(http.StatusOK)
+
+	c.Status(http.StatusNoContent)
 }

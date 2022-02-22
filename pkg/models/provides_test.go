@@ -1442,7 +1442,7 @@ func testProvidesSelect(t *testing.T) {
 }
 
 var (
-	provideDBTypes = map[string]string{`ID`: `integer`, `ProviderID`: `integer`, `ContentID`: `text`, `InitialRoutingTableID`: `integer`, `FinalRoutingTableID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `Error`: `text`, `UpdatedAt`: `timestamp with time zone`, `CreatedAt`: `timestamp with time zone`}
+	provideDBTypes = map[string]string{`ID`: `integer`, `ProviderID`: `integer`, `ContentID`: `text`, `InitialRoutingTableID`: `integer`, `FinalRoutingTableID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `Error`: `text`, `DoneAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `CreatedAt`: `timestamp with time zone`}
 	_              = bytes.MinRead
 )
 

@@ -11,6 +11,7 @@ import TimeAgo from "javascript-time-ago";
 
 import en from "javascript-time-ago/locale/en.json";
 import ru from "javascript-time-ago/locale/ru.json";
+import Dashboard from "./pages/Dashboard";
 
 TimeAgo.addDefaultLocale(en);
 TimeAgo.addLocale(ru);
@@ -22,6 +23,7 @@ ReactDOM.render(
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<RootPage />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/hosts" element={<HostsPage />} />
           <Route path="/hosts/:hostId" element={<HostPage />} />
         </Routes>

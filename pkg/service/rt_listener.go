@@ -70,13 +70,13 @@ func (r *RoutingTableListener) SendUpdate() {
 		}
 
 		rtp[i] = types.RoutingTablePeer{
+			PeerId:                        info.Id.String(),
 			AddedAt:                       info.AddedAt.Format(time.RFC3339),
 			AgentVersion:                  null.NewString(av, av != "").Ptr(),
-			Bucket:                        int64(util.BucketIdForPeer(r.h.ID(), info.Id)),
-			ConnectedAt:                   util.TimeToStr(connectedAt),
+			Bucket:                        int(util.BucketIdForPeer(r.h.ID(), info.Id)),
+			ConnectedSince:                util.TimeToStr(connectedAt),
 			LastSuccessfulOutboundQueryAt: info.LastSuccessfulOutboundQueryAt.Format(time.RFC3339),
 			LastUsefulAt:                  util.TimeToStr(&info.LastUsefulAt),
-			PeerID:                        info.Id.String(),
 		}
 	}
 

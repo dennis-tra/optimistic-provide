@@ -14,6 +14,8 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("FindNodes", testFindNodesUpsert)
 
+	t.Run("Hosts", testHostsUpsert)
+
 	t.Run("IPAddresses", testIPAddressesUpsert)
 
 	t.Run("MultiAddresses", testMultiAddressesUpsert)

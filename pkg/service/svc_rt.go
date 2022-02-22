@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/libp2p/go-libp2p-core/peer"
+
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null/v8"
 
@@ -14,7 +16,10 @@ import (
 )
 
 type RoutingTableService interface {
-	SaveRoutingTable(ctx context.Context, h *dht.Host) (*models.RoutingTableSnapshot, error)
+	Find(ctx context.Context, id int) (*models.RoutingTableSnapshot, error)
+	FindAll(ctx context.Context, hostID peer.ID) ([]*models.RoutingTableSnapshot, error)
+	FindByIDAndHostID(ctx context.Context, id int, hostID peer.ID) (*models.RoutingTableSnapshot, error)
+	Save(ctx context.Context, h *dht.Host) (*models.RoutingTableSnapshot, error)
 }
 
 var _ RoutingTableService = &RoutingTable{}
@@ -31,7 +36,19 @@ func NewRoutingTableService(peerService PeerService, rtRepo repo.RoutingTableRep
 	}
 }
 
-func (rts *RoutingTable) SaveRoutingTable(ctx context.Context, h *dht.Host) (*models.RoutingTableSnapshot, error) {
+func (rts *RoutingTable) Find(ctx context.Context, id int) (*models.RoutingTableSnapshot, error) {
+	return rts.rtRepo.Find(ctx, id)
+}
+
+func (rts *RoutingTable) FindAll(ctx context.Context, hostID peer.ID) ([]*models.RoutingTableSnapshot, error) {
+	return rts.rtRepo.FindAll(ctx, hostID.String())
+}
+
+func (rts *RoutingTable) FindByIDAndHostID(ctx context.Context, id int, hostID peer.ID) (*models.RoutingTableSnapshot, error) {
+	panic("implement me")
+}
+
+func (rts *RoutingTable) Save(ctx context.Context, h *dht.Host) (*models.RoutingTableSnapshot, error) {
 	localDbPeer, err := rts.peerService.UpsertLocalPeer(h.Host)
 	if err != nil {
 		return nil, errors.Wrap(err, "upsert local peer")

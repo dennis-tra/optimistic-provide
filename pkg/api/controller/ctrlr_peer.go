@@ -2,10 +2,15 @@ package controller
 
 import (
 	"context"
+	"database/sql"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/pkg/errors"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/api/render"
+	"github.com/dennis-tra/optimistic-provide/pkg/api/types"
 	"github.com/dennis-tra/optimistic-provide/pkg/service"
 )
 
@@ -24,17 +29,29 @@ func NewPeerController(ctx context.Context, ps service.PeerService) *PeerControl
 }
 
 func (pc *PeerController) Get(c *gin.Context) {
-	pid, rerr := getHostID(c)
-	if rerr != nil {
-		render.Err(c, rerr)
-		return
-	}
+	pid := c.MustGet("peerID").(peer.ID)
 
 	dbPeer, err := pc.ps.Find(c.Request.Context(), pid)
 	if err != nil {
-		render.ErrInternal(c, "could not find peer ID", err)
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, types.Error{
+				Code:    types.ErrorCodePEERNOTFOUND,
+				Message: "Peer with ID " + pid.String() + " was not found",
+			})
+		} else {
+			c.JSON(http.StatusInternalServerError, types.Error{
+				Code:    types.ErrorCodeINTERNAL,
+				Message: "Error retrieving peer with ID " + pid.String(),
+				Details: types.ErrDetails(err),
+			})
+		}
 		return
 	}
 
-	render.OK(c, dbPeer)
+	c.JSON(http.StatusOK, types.Peer{
+		AgentVersion: dbPeer.AgentVersion.Ptr(),
+		CreatedAt:    dbPeer.CreatedAt.Format(time.RFC3339),
+		PeerId:       dbPeer.MultiHash,
+		Protocols:    dbPeer.Protocols,
+	})
 }

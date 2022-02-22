@@ -31,6 +31,7 @@ type RoutingTableListener interface {
 type Host struct {
 	host.Host
 
+	Name         string
 	DBPeer       *models.Peer
 	DHT          *kaddht.IpfsDHT
 	Bootstrapped *time.Time
@@ -44,7 +45,7 @@ type Host struct {
 	rtListeners   map[RoutingTableListener]struct{}
 }
 
-func New(ctx context.Context) (*Host, error) {
+func New(ctx context.Context, name string) (*Host, error) {
 	key, _, err := crypto.GenerateKeyPair(crypto.Secp256k1, 256)
 	if err != nil {
 		return nil, errors.Wrap(err, "generate key pair")
@@ -74,6 +75,7 @@ func New(ctx context.Context) (*Host, error) {
 	}
 
 	newHost := &Host{
+		Name:          name,
 		Host:          h,
 		DHT:           dht,
 		MsgSender:     msgSender,

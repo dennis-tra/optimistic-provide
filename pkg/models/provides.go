@@ -32,6 +32,7 @@ type Provide struct {
 	StartedAt             time.Time   `boil:"started_at" json:"started_at" toml:"started_at" yaml:"started_at"`
 	EndedAt               null.Time   `boil:"ended_at" json:"ended_at,omitempty" toml:"ended_at" yaml:"ended_at,omitempty"`
 	Error                 null.String `boil:"error" json:"error,omitempty" toml:"error" yaml:"error,omitempty"`
+	DoneAt                null.Time   `boil:"done_at" json:"done_at,omitempty" toml:"done_at" yaml:"done_at,omitempty"`
 	UpdatedAt             time.Time   `boil:"updated_at" json:"updated_at" toml:"updated_at" yaml:"updated_at"`
 	CreatedAt             time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 
@@ -48,6 +49,7 @@ var ProvideColumns = struct {
 	StartedAt             string
 	EndedAt               string
 	Error                 string
+	DoneAt                string
 	UpdatedAt             string
 	CreatedAt             string
 }{
@@ -59,6 +61,7 @@ var ProvideColumns = struct {
 	StartedAt:             "started_at",
 	EndedAt:               "ended_at",
 	Error:                 "error",
+	DoneAt:                "done_at",
 	UpdatedAt:             "updated_at",
 	CreatedAt:             "created_at",
 }
@@ -72,6 +75,7 @@ var ProvideTableColumns = struct {
 	StartedAt             string
 	EndedAt               string
 	Error                 string
+	DoneAt                string
 	UpdatedAt             string
 	CreatedAt             string
 }{
@@ -83,6 +87,7 @@ var ProvideTableColumns = struct {
 	StartedAt:             "provides.started_at",
 	EndedAt:               "provides.ended_at",
 	Error:                 "provides.error",
+	DoneAt:                "provides.done_at",
 	UpdatedAt:             "provides.updated_at",
 	CreatedAt:             "provides.created_at",
 }
@@ -121,6 +126,7 @@ var ProvideWhere = struct {
 	StartedAt             whereHelpertime_Time
 	EndedAt               whereHelpernull_Time
 	Error                 whereHelpernull_String
+	DoneAt                whereHelpernull_Time
 	UpdatedAt             whereHelpertime_Time
 	CreatedAt             whereHelpertime_Time
 }{
@@ -132,6 +138,7 @@ var ProvideWhere = struct {
 	StartedAt:             whereHelpertime_Time{field: "\"provides\".\"started_at\""},
 	EndedAt:               whereHelpernull_Time{field: "\"provides\".\"ended_at\""},
 	Error:                 whereHelpernull_String{field: "\"provides\".\"error\""},
+	DoneAt:                whereHelpernull_Time{field: "\"provides\".\"done_at\""},
 	UpdatedAt:             whereHelpertime_Time{field: "\"provides\".\"updated_at\""},
 	CreatedAt:             whereHelpertime_Time{field: "\"provides\".\"created_at\""},
 }
@@ -172,8 +179,8 @@ func (*provideR) NewStruct() *provideR {
 type provideL struct{}
 
 var (
-	provideAllColumns            = []string{"id", "provider_id", "content_id", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "updated_at", "created_at"}
-	provideColumnsWithoutDefault = []string{"provider_id", "content_id", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "updated_at", "created_at"}
+	provideAllColumns            = []string{"id", "provider_id", "content_id", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
+	provideColumnsWithoutDefault = []string{"provider_id", "content_id", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
 	provideColumnsWithDefault    = []string{"id"}
 	providePrimaryKeyColumns     = []string{"id"}
 )

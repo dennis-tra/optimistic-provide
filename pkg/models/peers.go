@@ -120,6 +120,7 @@ var PeerRels = struct {
 	RemoteDials           string
 	LocalFindNodes        string
 	RemoteFindNodes       string
+	HostHosts             string
 	PeerLogs              string
 	PeerStates            string
 	ReferrerPeerStates    string
@@ -134,6 +135,7 @@ var PeerRels = struct {
 	RemoteDials:           "RemoteDials",
 	LocalFindNodes:        "LocalFindNodes",
 	RemoteFindNodes:       "RemoteFindNodes",
+	HostHosts:             "HostHosts",
 	PeerLogs:              "PeerLogs",
 	PeerStates:            "PeerStates",
 	ReferrerPeerStates:    "ReferrerPeerStates",
@@ -151,6 +153,7 @@ type peerR struct {
 	RemoteDials           DialSlice                 `boil:"RemoteDials" json:"RemoteDials" toml:"RemoteDials" yaml:"RemoteDials"`
 	LocalFindNodes        FindNodeSlice             `boil:"LocalFindNodes" json:"LocalFindNodes" toml:"LocalFindNodes" yaml:"LocalFindNodes"`
 	RemoteFindNodes       FindNodeSlice             `boil:"RemoteFindNodes" json:"RemoteFindNodes" toml:"RemoteFindNodes" yaml:"RemoteFindNodes"`
+	HostHosts             HostSlice                 `boil:"HostHosts" json:"HostHosts" toml:"HostHosts" yaml:"HostHosts"`
 	PeerLogs              PeerLogSlice              `boil:"PeerLogs" json:"PeerLogs" toml:"PeerLogs" yaml:"PeerLogs"`
 	PeerStates            PeerStateSlice            `boil:"PeerStates" json:"PeerStates" toml:"PeerStates" yaml:"PeerStates"`
 	ReferrerPeerStates    PeerStateSlice            `boil:"ReferrerPeerStates" json:"ReferrerPeerStates" toml:"ReferrerPeerStates" yaml:"ReferrerPeerStates"`
@@ -591,6 +594,27 @@ func (o *Peer) RemoteFindNodes(mods ...qm.QueryMod) findNodeQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"find_nodes\".*"})
+	}
+
+	return query
+}
+
+// HostHosts retrieves all the host's Hosts with an executor via host_id column.
+func (o *Peer) HostHosts(mods ...qm.QueryMod) hostQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"hosts\".\"host_id\"=?", o.ID),
+	)
+
+	query := Hosts(queryMods...)
+	queries.SetFrom(query.Query, "\"hosts\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"hosts\".*"})
 	}
 
 	return query
@@ -1400,6 +1424,104 @@ func (peerL) LoadRemoteFindNodes(ctx context.Context, e boil.ContextExecutor, si
 					foreign.R = &findNodeR{}
 				}
 				foreign.R.Remote = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadHostHosts allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (peerL) LoadHostHosts(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
+	var slice []*Peer
+	var object *Peer
+
+	if singular {
+		object = maybePeer.(*Peer)
+	} else {
+		slice = *maybePeer.(*[]*Peer)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &peerR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &peerR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`hosts`),
+		qm.WhereIn(`hosts.host_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load hosts")
+	}
+
+	var resultSlice []*Host
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice hosts")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on hosts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for hosts")
+	}
+
+	if len(hostAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.HostHosts = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &hostR{}
+			}
+			foreign.R.Host = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.HostID {
+				local.R.HostHosts = append(local.R.HostHosts, foreign)
+				if foreign.R == nil {
+					foreign.R = &hostR{}
+				}
+				foreign.R.Host = local
 				break
 			}
 		}
@@ -2362,6 +2484,59 @@ func (o *Peer) AddRemoteFindNodes(ctx context.Context, exec boil.ContextExecutor
 			}
 		} else {
 			rel.R.Remote = o
+		}
+	}
+	return nil
+}
+
+// AddHostHosts adds the given related objects to the existing relationships
+// of the peer, optionally inserting them as new records.
+// Appends related to o.R.HostHosts.
+// Sets related.R.Host appropriately.
+func (o *Peer) AddHostHosts(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Host) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.HostID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"hosts\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"host_id"}),
+				strmangle.WhereClause("\"", "\"", 2, hostPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.HostID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &peerR{
+			HostHosts: related,
+		}
+	} else {
+		o.R.HostHosts = append(o.R.HostHosts, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &hostR{
+				Host: o,
+			}
+		} else {
+			rel.R.Host = o
 		}
 	}
 	return nil

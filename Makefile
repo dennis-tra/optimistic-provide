@@ -39,4 +39,7 @@ migrate-up:
 migrate-down:
 	migrate -database 'postgres://optprov:password@localhost:5432/optprov?sslmode=disable' -path migrations down
 
+ts-client:
+	openapi-generator generate -g typescript-fetch -i ./pkg/api/openapi.yaml -o ./optprov/src/api --global-property client --additional-properties=supportsES6=true,typescriptThreePlus=true
+
 .PHONY: all clean test format tools models migrate-up migrate-down
