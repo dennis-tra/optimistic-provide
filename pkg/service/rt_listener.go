@@ -51,6 +51,10 @@ func (r *RoutingTableListener) PeerRemoved(p peer.ID) {
 }
 
 func (r *RoutingTableListener) SendUpdate() {
+	r.updateChan <- r.BuildUpdate()
+}
+
+func (r *RoutingTableListener) BuildUpdate() types.RoutingTableUpdate {
 	infos := r.h.DHT.RoutingTable().GetPeerInfos()
 	swarm := r.h.Network()
 
@@ -86,7 +90,7 @@ func (r *RoutingTableListener) SendUpdate() {
 		return ti.After(tj)
 	})
 
-	r.updateChan <- rtp
+	return rtp
 }
 
 func (r *RoutingTableListener) OnClose() {

@@ -78,6 +78,7 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 				routingTables.POST("/", routingTableController.Create)
 				routingTables.GET("/", routingTableController.List)
 				routingTables.GET("/listen", routingTableController.Listen)
+				routingTables.GET("/current", routingTableController.Current)
 				routingTables.POST("/refresh", routingTableController.Refresh)
 
 				routingTableID := routingTables.Group("/:routingTableID")

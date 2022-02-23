@@ -122,6 +122,12 @@ func (rtc *RoutingTableController) List(c *gin.Context) {
 	c.JSON(http.StatusOK, snapshots)
 }
 
+func (rtc *RoutingTableController) Current(c *gin.Context) {
+	h := c.MustGet("host").(*dht.Host)
+	rtl := service.NewRoutingTableListener(h)
+	c.JSON(http.StatusOK, rtl.BuildUpdate())
+}
+
 func (rtc *RoutingTableController) Listen(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
 

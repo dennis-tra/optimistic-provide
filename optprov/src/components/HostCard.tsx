@@ -10,20 +10,19 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
-import { Host, HostsApi } from "../api";
 import ReactTimeAgo from "react-time-ago";
+import { useDeleteHostMutation, useBootstrapHostMutation } from "../store/api";
+import { Host } from "../api";
 
 interface HostCardProps {
   host: Host;
-  idx: number;
-  reload: () => Promise<void>;
 }
 
-const client = new HostsApi();
+const HostCard: React.FC<HostCardProps> = ({ host }) => {
+  const [deleteHost] = useDeleteHostMutation();
+  const [bootstrapHost] = useBootstrapHostMutation();
 
-const HostCard: React.FC<HostCardProps> = ({ host, idx, reload }) => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-
   const handleClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
     if (reason === "clickaway") {
       return;
@@ -32,7 +31,7 @@ const HostCard: React.FC<HostCardProps> = ({ host, idx, reload }) => {
   };
 
   return (
-    <Grid key={host.hostId} item xs={12} md={4} lg={4}>
+    <Grid item xs={12} md={4} lg={4}>
       <Paper
         sx={{
           p: 2,
@@ -75,8 +74,7 @@ const HostCard: React.FC<HostCardProps> = ({ host, idx, reload }) => {
                 color="warning"
                 variant="outlined"
                 onClick={async () => {
-                  await client.bootstrapHost({ hostId: host.hostId });
-                  await reload();
+                  await bootstrapHost(host.hostId);
                 }}
               />
             </Tooltip>
@@ -84,15 +82,14 @@ const HostCard: React.FC<HostCardProps> = ({ host, idx, reload }) => {
         </Stack>
         <Box sx={{ flex: 1 }}></Box>
         <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">
-          <Button color="primary" variant="contained" component={RouterLink} to={`hosts/${host.hostId}`}>
+          <Button color="primary" variant="contained" component={RouterLink} to={`/hosts/${host.hostId}`}>
             Details
           </Button>
           <Button
             color="error"
             variant="outlined"
             onClick={async () => {
-              await client.deleteHost({ hostId: host.hostId });
-              await reload();
+              await deleteHost(host.hostId);
             }}
           >
             Delete

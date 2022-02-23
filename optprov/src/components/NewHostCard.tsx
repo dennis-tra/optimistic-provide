@@ -2,32 +2,25 @@ import { useState } from "react";
 import Grid from "@mui/material/Grid";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
 import Button from "@mui/material/Button";
-import Tooltip from "@mui/material/Tooltip";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
-import { Host, HostsApi } from "../api";
+import { useCreateHostMutation } from "../store/api";
 
-interface NewHostCardProps {
-  reload: () => Promise<void>;
-}
+interface NewHostCardProps {}
 
-const client = new HostsApi();
-
-const NewHostCard: React.FC<NewHostCardProps> = ({ reload }) => {
+const NewHostCard: React.FC<NewHostCardProps> = ({}) => {
+  const [createHost, { isLoading }] = useCreateHostMutation();
   const [hostName, setHostName] = useState("");
 
-  const handleSubmit = async (event: any) => {
+  const handleSubmit = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
-    if (hostName === "") {
-      return;
+    try {
+      await createHost({ name: hostName }).unwrap();
+      setHostName("");
+    } catch (err) {
+      console.error("Failed to create new host: ", err);
     }
-    await client.createHost({ createHostRequest: { name: hostName } });
-    setHostName("");
-    await reload();
   };
 
   return (
@@ -53,7 +46,7 @@ const NewHostCard: React.FC<NewHostCardProps> = ({ reload }) => {
             onChange={(event) => setHostName(event.target.value)}
           />
           <Box sx={{ flex: 1 }}></Box>
-          <Button type="submit" variant="contained" onClick={handleSubmit}>
+          <Button type="submit" variant="contained" onClick={handleSubmit} disabled={!hostName || isLoading}>
             Create
           </Button>
         </Paper>
