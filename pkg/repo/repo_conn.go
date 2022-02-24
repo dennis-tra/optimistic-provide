@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
@@ -12,7 +13,8 @@ import (
 
 type ConnectionRepo interface {
 	Save(ctx context.Context, conn *models.Connection) (*models.Connection, error)
-	List(ctx context.Context, provideID int) ([]*models.Connection, error)
+	ListFromProvide(ctx context.Context, provideID int) ([]*models.Connection, error)
+	ListFromRetrieval(ctx context.Context, retrievalID int) ([]*models.Connection, error)
 }
 
 var _ ConnectionRepo = &Connection{}
@@ -27,9 +29,17 @@ func NewConnectionRepo(dbc *db.Client) ConnectionRepo {
 	}
 }
 
-func (c Connection) List(ctx context.Context, provideID int) ([]*models.Connection, error) {
+func (c Connection) ListFromProvide(ctx context.Context, provideID int) ([]*models.Connection, error) {
 	return models.Connections(
-		models.ConnectionWhere.ProvideID.EQ(provideID),
+		models.ConnectionWhere.ProvideID.EQ(null.IntFrom(provideID)),
+		qm.Load(models.ConnectionRels.Remote),
+		qm.Load(models.ConnectionRels.MultiAddress),
+	).All(ctx, c.dbc)
+}
+
+func (c Connection) ListFromRetrieval(ctx context.Context, retrievalID int) ([]*models.Connection, error) {
+	return models.Connections(
+		models.ConnectionWhere.RetrievalID.EQ(null.IntFrom(retrievalID)),
 		qm.Load(models.ConnectionRels.Remote),
 		qm.Load(models.ConnectionRels.MultiAddress),
 	).All(ctx, c.dbc)

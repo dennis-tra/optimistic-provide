@@ -9,9 +9,16 @@ import (
 	"github.com/volatiletech/null/v8"
 )
 
+type HostOperation string
+
+const (
+	HostOperationProvide   HostOperation = "PROVIDE"
+	HostOperationRetrieval HostOperation = "RETRIEVAL"
+)
+
 type DialService interface {
-	Save(ctx context.Context, h host.Host, provideID int, dials []*DialSpan) error
-	List(ctx context.Context, provideID int) ([]*models.Dial, error)
+	Save(ctx context.Context, h host.Host, op HostOperation, id int, dials []*DialSpan) error
+	List(ctx context.Context, op HostOperation, id int) ([]*models.Dial, error)
 }
 
 var _ DialService = &Dial{}
@@ -30,11 +37,18 @@ func NewDialService(peerService PeerService, maService MultiAddressService, dial
 	}
 }
 
-func (d *Dial) List(ctx context.Context, provideID int) ([]*models.Dial, error) {
-	return d.dialRepo.List(ctx, provideID)
+func (d *Dial) List(ctx context.Context, op HostOperation, id int) ([]*models.Dial, error) {
+	switch op {
+	case HostOperationProvide:
+		return d.dialRepo.ListFromProvide(ctx, id)
+	case HostOperationRetrieval:
+		return d.dialRepo.ListFromRetrieval(ctx, id)
+	default:
+		panic(op)
+	}
 }
 
-func (d *Dial) Save(ctx context.Context, h host.Host, provideID int, dials []*DialSpan) error {
+func (d *Dial) Save(ctx context.Context, h host.Host, op HostOperation, id int, dials []*DialSpan) error {
 	log.Info("Saving dials...")
 	defer log.Info("Done saving dials")
 
@@ -59,7 +73,6 @@ func (d *Dial) Save(ctx context.Context, h host.Host, provideID int, dials []*Di
 			errStr = dial.Error.Error()
 		}
 		dbDial := &models.Dial{
-			ProvideID:      provideID,
 			LocalID:        localPeer.ID,
 			RemoteID:       remotePeer.ID,
 			Transport:      dial.Trpt,
@@ -68,6 +81,16 @@ func (d *Dial) Save(ctx context.Context, h host.Host, provideID int, dials []*Di
 			EndedAt:        dial.End,
 			Error:          null.NewString(errStr, errStr != ""),
 		}
+
+		switch op {
+		case HostOperationProvide:
+			dbDial.ProvideID = null.IntFrom(id)
+		case HostOperationRetrieval:
+			dbDial.RetrievalID = null.IntFrom(id)
+		default:
+			panic(op)
+		}
+
 		if dbDial, err = d.dialRepo.Save(ctx, dbDial); err != nil {
 			return err
 		}

@@ -37,7 +37,7 @@ type Retrieval struct {
 	retrieveRepo repo.RetrievalRepo
 }
 
-func NewRetrievalService(peerService PeerService, hostService HostService, rtService RoutingTableService, maService MultiAddressService, dialService DialService, connService ConnectionService, gpService GetProvidersService, psService PeerStateService, apService AddRetrievalrsService, retrieveRepo repo.RetrievalRepo) *Retrieval {
+func NewRetrievalService(peerService PeerService, hostService HostService, rtService RoutingTableService, maService MultiAddressService, dialService DialService, connService ConnectionService, gpService GetProvidersService, psService PeerStateService, retrieveRepo repo.RetrievalRepo) *Retrieval {
 	return &Retrieval{
 		peerService:  peerService,
 		hostService:  hostService,
@@ -103,19 +103,19 @@ func (rs *Retrieval) startRetrieving(h *dht.Host, retrieval *models.Retrieval, c
 		log.Warn(err)
 	}
 
-	if err = rs.dialService.Save(context.Background(), h.Host, retrieval.ID, state.dials); err != nil {
+	if err = rs.dialService.Save(context.Background(), h.Host, HostOperationRetrieval, retrieval.ID, state.dials); err != nil {
 		log.Warn(err)
 	}
 
-	if err = rs.connService.Save(context.Background(), h.Host, retrieval.ID, state.connections); err != nil {
+	if err = rs.connService.Save(context.Background(), h.Host, HostOperationRetrieval, retrieval.ID, state.connections); err != nil {
+		log.Warn(err)
+	}
+
+	if err = rs.psService.Save(context.Background(), h.Host, HostOperationRetrieval, retrieval.ID, state.peerSet.AllStates()); err != nil {
 		log.Warn(err)
 	}
 
 	if err = rs.gpService.Save(context.Background(), h.Host, retrieval.ID, state.getProviders); err != nil {
-		log.Warn(err)
-	}
-
-	if err = rs.psService.Save(context.Background(), h.Host, retrieval.ID, state.peerSet.AllStates()); err != nil {
 		log.Warn(err)
 	}
 }

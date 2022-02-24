@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 
+	"github.com/volatiletech/null/v8"
+
 	"github.com/libp2p/go-libp2p-kad-dht/qpeerset"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
@@ -11,7 +13,7 @@ import (
 )
 
 type PeerStateService interface {
-	Save(ctx context.Context, h host.Host, provideID int, states []qpeerset.QueryPeerState) error
+	Save(ctx context.Context, h host.Host, op HostOperation, id int, states []qpeerset.QueryPeerState) error
 }
 
 var _ PeerStateService = &PeerState{}
@@ -28,7 +30,7 @@ func NewPeerStateService(peerService PeerService, psRepo repo.PeerStateRepo) Pee
 	}
 }
 
-func (ps *PeerState) Save(ctx context.Context, h host.Host, provideID int, states []qpeerset.QueryPeerState) error {
+func (ps *PeerState) Save(ctx context.Context, h host.Host, op HostOperation, id int, states []qpeerset.QueryPeerState) error {
 	log.Info("Saving connections...")
 	defer log.Info("Done saving connections")
 
@@ -42,11 +44,19 @@ func (ps *PeerState) Save(ctx context.Context, h host.Host, provideID int, state
 			return err
 		}
 		pState := &models.PeerState{
-			ProvideID:  provideID,
 			PeerID:     remotePeer.ID,
 			ReferrerID: referrerPeer.ID,
 			State:      ps.mapState(state.State),
 			Distance:   state.Distance.Bytes(),
+		}
+
+		switch op {
+		case HostOperationProvide:
+			pState.ProvideID = null.IntFrom(id)
+		case HostOperationRetrieval:
+			pState.RetrievalID = null.IntFrom(id)
+		default:
+			panic(op)
 		}
 
 		if pState, err = ps.psRepo.Save(ctx, pState); err != nil {

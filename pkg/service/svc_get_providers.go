@@ -19,20 +19,20 @@ var _ GetProvidersService = &GetProviders{}
 
 type GetProviders struct {
 	peerService PeerService
-	fnRepo      repo.GetProvidersRepo
+	gpRepo      repo.GetProvidersRepo
 	cpRepo      repo.CloserPeersRepo
 }
 
-func NewGetProvidersService(peerService PeerService, fnRepo repo.GetProvidersRepo, cpRepo repo.CloserPeersRepo) GetProvidersService {
+func NewGetProvidersService(peerService PeerService, gpRepo repo.GetProvidersRepo, cpRepo repo.CloserPeersRepo) GetProvidersService {
 	return &GetProviders{
 		peerService: peerService,
-		fnRepo:      fnRepo,
+		gpRepo:      gpRepo,
 		cpRepo:      cpRepo,
 	}
 }
 
 func (fn *GetProviders) List(ctx context.Context, retrievalID int) ([]*models.GetProvider, error) {
-	return fn.fnRepo.List(ctx, retrievalID)
+	return fn.gpRepo.List(ctx, retrievalID)
 }
 
 func (fn *GetProviders) Save(ctx context.Context, h host.Host, retrievalID int, fnReqs []*GetProvidersSpan) error {
@@ -68,28 +68,10 @@ func (fn *GetProviders) Save(ctx context.Context, h host.Host, retrievalID int, 
 			Error:            errStr,
 			CloserPeersCount: cpCount,
 		}
-		dbfn, err = fn.fnRepo.Save(ctx, dbfn)
+		dbfn, err = fn.gpRepo.Save(ctx, dbfn)
 		if err != nil {
 			return err
 		}
-
-		for _, closerPeer := range fnReq.CloserPeers {
-
-			cp, err := fn.peerService.UpsertPeer(h, closerPeer.ID)
-			if err != nil {
-				return err
-			}
-
-			dbcp := &models.CloserPeer{
-				ProvideID:     retrievalID,
-				GetProviderID: dbfn.ID,
-				PeerID:        cp.ID,
-			}
-			if _, err = fn.cpRepo.Save(ctx, dbcp); err != nil {
-				return err
-			}
-		}
-
 	}
 	return nil
 }
