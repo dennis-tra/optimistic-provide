@@ -936,7 +936,7 @@ func (provideL) LoadConnections(ctx context.Context, e boil.ContextExecutor, sin
 			}
 
 			for _, a := range args {
-				if a == obj.ID {
+				if queries.Equal(a, obj.ID) {
 					continue Outer
 				}
 			}
@@ -994,7 +994,7 @@ func (provideL) LoadConnections(ctx context.Context, e boil.ContextExecutor, sin
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.ProvideID {
+			if queries.Equal(local.ID, foreign.ProvideID) {
 				local.R.Connections = append(local.R.Connections, foreign)
 				if foreign.R == nil {
 					foreign.R = &connectionR{}
@@ -1034,7 +1034,7 @@ func (provideL) LoadDials(ctx context.Context, e boil.ContextExecutor, singular 
 			}
 
 			for _, a := range args {
-				if a == obj.ID {
+				if queries.Equal(a, obj.ID) {
 					continue Outer
 				}
 			}
@@ -1092,7 +1092,7 @@ func (provideL) LoadDials(ctx context.Context, e boil.ContextExecutor, singular 
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.ProvideID {
+			if queries.Equal(local.ID, foreign.ProvideID) {
 				local.R.Dials = append(local.R.Dials, foreign)
 				if foreign.R == nil {
 					foreign.R = &dialR{}
@@ -1230,7 +1230,7 @@ func (provideL) LoadPeerStates(ctx context.Context, e boil.ContextExecutor, sing
 			}
 
 			for _, a := range args {
-				if a == obj.ID {
+				if queries.Equal(a, obj.ID) {
 					continue Outer
 				}
 			}
@@ -1288,7 +1288,7 @@ func (provideL) LoadPeerStates(ctx context.Context, e boil.ContextExecutor, sing
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.ProvideID {
+			if queries.Equal(local.ID, foreign.ProvideID) {
 				local.R.PeerStates = append(local.R.PeerStates, foreign)
 				if foreign.R == nil {
 					foreign.R = &peerStateR{}
@@ -1463,7 +1463,7 @@ func (o *Provide) AddConnections(ctx context.Context, exec boil.ContextExecutor,
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.ProvideID = o.ID
+			queries.Assign(&rel.ProvideID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -1484,7 +1484,7 @@ func (o *Provide) AddConnections(ctx context.Context, exec boil.ContextExecutor,
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.ProvideID = o.ID
+			queries.Assign(&rel.ProvideID, o.ID)
 		}
 	}
 
@@ -1508,6 +1508,80 @@ func (o *Provide) AddConnections(ctx context.Context, exec boil.ContextExecutor,
 	return nil
 }
 
+// SetConnections removes all previously related items of the
+// provide replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Provide's Connections accordingly.
+// Replaces o.R.Connections with related.
+// Sets related.R.Provide's Connections accordingly.
+func (o *Provide) SetConnections(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Connection) error {
+	query := "update \"connections\" set \"provide_id\" = null where \"provide_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.Connections {
+			queries.SetScanner(&rel.ProvideID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Provide = nil
+		}
+
+		o.R.Connections = nil
+	}
+	return o.AddConnections(ctx, exec, insert, related...)
+}
+
+// RemoveConnections relationships from objects passed in.
+// Removes related items from R.Connections (uses pointer comparison, removal does not keep order)
+// Sets related.R.Provide.
+func (o *Provide) RemoveConnections(ctx context.Context, exec boil.ContextExecutor, related ...*Connection) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ProvideID, nil)
+		if rel.R != nil {
+			rel.R.Provide = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("provide_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Connections {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Connections)
+			if ln > 1 && i < ln-1 {
+				o.R.Connections[i] = o.R.Connections[ln-1]
+			}
+			o.R.Connections = o.R.Connections[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
 // AddDials adds the given related objects to the existing relationships
 // of the provide, optionally inserting them as new records.
 // Appends related to o.R.Dials.
@@ -1516,7 +1590,7 @@ func (o *Provide) AddDials(ctx context.Context, exec boil.ContextExecutor, inser
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.ProvideID = o.ID
+			queries.Assign(&rel.ProvideID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -1537,7 +1611,7 @@ func (o *Provide) AddDials(ctx context.Context, exec boil.ContextExecutor, inser
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.ProvideID = o.ID
+			queries.Assign(&rel.ProvideID, o.ID)
 		}
 	}
 
@@ -1558,6 +1632,80 @@ func (o *Provide) AddDials(ctx context.Context, exec boil.ContextExecutor, inser
 			rel.R.Provide = o
 		}
 	}
+	return nil
+}
+
+// SetDials removes all previously related items of the
+// provide replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Provide's Dials accordingly.
+// Replaces o.R.Dials with related.
+// Sets related.R.Provide's Dials accordingly.
+func (o *Provide) SetDials(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Dial) error {
+	query := "update \"dials\" set \"provide_id\" = null where \"provide_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.Dials {
+			queries.SetScanner(&rel.ProvideID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Provide = nil
+		}
+
+		o.R.Dials = nil
+	}
+	return o.AddDials(ctx, exec, insert, related...)
+}
+
+// RemoveDials relationships from objects passed in.
+// Removes related items from R.Dials (uses pointer comparison, removal does not keep order)
+// Sets related.R.Provide.
+func (o *Provide) RemoveDials(ctx context.Context, exec boil.ContextExecutor, related ...*Dial) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ProvideID, nil)
+		if rel.R != nil {
+			rel.R.Provide = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("provide_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Dials {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Dials)
+			if ln > 1 && i < ln-1 {
+				o.R.Dials[i] = o.R.Dials[ln-1]
+			}
+			o.R.Dials = o.R.Dials[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 
@@ -1622,7 +1770,7 @@ func (o *Provide) AddPeerStates(ctx context.Context, exec boil.ContextExecutor, 
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.ProvideID = o.ID
+			queries.Assign(&rel.ProvideID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -1632,7 +1780,7 @@ func (o *Provide) AddPeerStates(ctx context.Context, exec boil.ContextExecutor, 
 				strmangle.SetParamNames("\"", "\"", 1, []string{"provide_id"}),
 				strmangle.WhereClause("\"", "\"", 2, peerStatePrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ProvideID, rel.PeerID}
+			values := []interface{}{o.ID, rel.ID}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)
@@ -1643,7 +1791,7 @@ func (o *Provide) AddPeerStates(ctx context.Context, exec boil.ContextExecutor, 
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.ProvideID = o.ID
+			queries.Assign(&rel.ProvideID, o.ID)
 		}
 	}
 
@@ -1664,6 +1812,80 @@ func (o *Provide) AddPeerStates(ctx context.Context, exec boil.ContextExecutor, 
 			rel.R.Provide = o
 		}
 	}
+	return nil
+}
+
+// SetPeerStates removes all previously related items of the
+// provide replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Provide's PeerStates accordingly.
+// Replaces o.R.PeerStates with related.
+// Sets related.R.Provide's PeerStates accordingly.
+func (o *Provide) SetPeerStates(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*PeerState) error {
+	query := "update \"peer_states\" set \"provide_id\" = null where \"provide_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.PeerStates {
+			queries.SetScanner(&rel.ProvideID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Provide = nil
+		}
+
+		o.R.PeerStates = nil
+	}
+	return o.AddPeerStates(ctx, exec, insert, related...)
+}
+
+// RemovePeerStates relationships from objects passed in.
+// Removes related items from R.PeerStates (uses pointer comparison, removal does not keep order)
+// Sets related.R.Provide.
+func (o *Provide) RemovePeerStates(ctx context.Context, exec boil.ContextExecutor, related ...*PeerState) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.ProvideID, nil)
+		if rel.R != nil {
+			rel.R.Provide = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("provide_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.PeerStates {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.PeerStates)
+			if ln > 1 && i < ln-1 {
+				o.R.PeerStates[i] = o.R.PeerStates[ln-1]
+			}
+			o.R.PeerStates = o.R.PeerStates[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

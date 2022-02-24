@@ -149,7 +149,7 @@ func testPeerStatesExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := PeerStateExists(ctx, tx, o.ProvideID, o.PeerID)
+	e, err := PeerStateExists(ctx, tx, o.ID)
 	if err != nil {
 		t.Errorf("Unable to check if PeerState exists: %s", err)
 	}
@@ -175,7 +175,7 @@ func testPeerStatesFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	peerStateFound, err := FindPeerState(ctx, tx, o.ProvideID, o.PeerID)
+	peerStateFound, err := FindPeerState(ctx, tx, o.ID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -554,7 +554,7 @@ func testPeerStateToOneProvideUsingProvide(t *testing.T) {
 	var foreign Provide
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, peerStateDBTypes, false, peerStateColumnsWithDefault...); err != nil {
+	if err := randomize.Struct(seed, &local, peerStateDBTypes, true, peerStateColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize PeerState struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
@@ -565,7 +565,7 @@ func testPeerStateToOneProvideUsingProvide(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	local.ProvideID = foreign.ID
+	queries.Assign(&local.ProvideID, foreign.ID)
 	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -575,7 +575,7 @@ func testPeerStateToOneProvideUsingProvide(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if check.ID != foreign.ID {
+	if !queries.Equal(check.ID, foreign.ID) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
@@ -647,6 +647,57 @@ func testPeerStateToOnePeerUsingReferrer(t *testing.T) {
 	}
 }
 
+func testPeerStateToOneRetrievalUsingRetrieval(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local PeerState
+	var foreign Retrieval
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, peerStateDBTypes, true, peerStateColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize PeerState struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, retrievalDBTypes, false, retrievalColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Retrieval struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&local.RetrievalID, foreign.ID)
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.Retrieval().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !queries.Equal(check.ID, foreign.ID) {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := PeerStateSlice{&local}
+	if err = local.L.LoadRetrieval(ctx, tx, false, (*[]*PeerState)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Retrieval == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.Retrieval = nil
+	if err = local.L.LoadRetrieval(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Retrieval == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
 func testPeerStateToOneSetOpPeerUsingPeer(t *testing.T) {
 	var err error
 
@@ -692,12 +743,16 @@ func testPeerStateToOneSetOpPeerUsingPeer(t *testing.T) {
 			t.Error("foreign key was wrong value", a.PeerID)
 		}
 
-		if exists, err := PeerStateExists(ctx, tx, a.ProvideID, a.PeerID); err != nil {
-			t.Fatal(err)
-		} else if !exists {
-			t.Error("want 'a' to exist")
+		zero := reflect.Zero(reflect.TypeOf(a.PeerID))
+		reflect.Indirect(reflect.ValueOf(&a.PeerID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
 		}
 
+		if a.PeerID != x.ID {
+			t.Error("foreign key was wrong value", a.PeerID, x.ID)
+		}
 	}
 }
 func testPeerStateToOneSetOpProvideUsingProvide(t *testing.T) {
@@ -741,18 +796,74 @@ func testPeerStateToOneSetOpProvideUsingProvide(t *testing.T) {
 		if x.R.PeerStates[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.ProvideID != x.ID {
+		if !queries.Equal(a.ProvideID, x.ID) {
 			t.Error("foreign key was wrong value", a.ProvideID)
 		}
 
-		if exists, err := PeerStateExists(ctx, tx, a.ProvideID, a.PeerID); err != nil {
-			t.Fatal(err)
-		} else if !exists {
-			t.Error("want 'a' to exist")
+		zero := reflect.Zero(reflect.TypeOf(a.ProvideID))
+		reflect.Indirect(reflect.ValueOf(&a.ProvideID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
 		}
 
+		if !queries.Equal(a.ProvideID, x.ID) {
+			t.Error("foreign key was wrong value", a.ProvideID, x.ID)
+		}
 	}
 }
+
+func testPeerStateToOneRemoveOpProvideUsingProvide(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PeerState
+	var b Provide
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetProvide(ctx, tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemoveProvide(ctx, tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.Provide().Count(ctx, tx)
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.Provide != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if !queries.IsValuerNil(a.ProvideID) {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.PeerStates) != 0 {
+		t.Error("failed to remove a from b's relationships")
+	}
+}
+
 func testPeerStateToOneSetOpPeerUsingReferrer(t *testing.T) {
 	var err error
 
@@ -808,6 +919,114 @@ func testPeerStateToOneSetOpPeerUsingReferrer(t *testing.T) {
 		if a.ReferrerID != x.ID {
 			t.Error("foreign key was wrong value", a.ReferrerID, x.ID)
 		}
+	}
+}
+func testPeerStateToOneSetOpRetrievalUsingRetrieval(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PeerState
+	var b, c Retrieval
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Retrieval{&b, &c} {
+		err = a.SetRetrieval(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.Retrieval != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.PeerStates[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if !queries.Equal(a.RetrievalID, x.ID) {
+			t.Error("foreign key was wrong value", a.RetrievalID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.RetrievalID))
+		reflect.Indirect(reflect.ValueOf(&a.RetrievalID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if !queries.Equal(a.RetrievalID, x.ID) {
+			t.Error("foreign key was wrong value", a.RetrievalID, x.ID)
+		}
+	}
+}
+
+func testPeerStateToOneRemoveOpRetrievalUsingRetrieval(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a PeerState
+	var b Retrieval
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetRetrieval(ctx, tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemoveRetrieval(ctx, tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.Retrieval().Count(ctx, tx)
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.Retrieval != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if !queries.IsValuerNil(a.RetrievalID) {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.PeerStates) != 0 {
+		t.Error("failed to remove a from b's relationships")
 	}
 }
 
@@ -885,7 +1104,7 @@ func testPeerStatesSelect(t *testing.T) {
 }
 
 var (
-	peerStateDBTypes = map[string]string{`ProvideID`: `integer`, `PeerID`: `integer`, `ReferrerID`: `integer`, `State`: `enum.peer_state('HEARD','WAITING','QUERIED','UNREACHABLE')`, `Distance`: `bytea`}
+	peerStateDBTypes = map[string]string{`ID`: `integer`, `ProvideID`: `integer`, `RetrievalID`: `integer`, `PeerID`: `integer`, `ReferrerID`: `integer`, `State`: `enum.peer_state('HEARD','WAITING','QUERIED','UNREACHABLE')`, `Distance`: `bytea`}
 	_                = bytes.MinRead
 )
 

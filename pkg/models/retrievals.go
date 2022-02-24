@@ -130,16 +130,25 @@ var RetrievalWhere = struct {
 // RetrievalRels is where relationship names are stored.
 var RetrievalRels = struct {
 	Retriever    string
+	Connections  string
+	Dials        string
 	GetProviders string
+	PeerStates   string
 }{
 	Retriever:    "Retriever",
+	Connections:  "Connections",
+	Dials:        "Dials",
 	GetProviders: "GetProviders",
+	PeerStates:   "PeerStates",
 }
 
 // retrievalR is where relationships are stored.
 type retrievalR struct {
 	Retriever    *Peer            `boil:"Retriever" json:"Retriever" toml:"Retriever" yaml:"Retriever"`
+	Connections  ConnectionSlice  `boil:"Connections" json:"Connections" toml:"Connections" yaml:"Connections"`
+	Dials        DialSlice        `boil:"Dials" json:"Dials" toml:"Dials" yaml:"Dials"`
 	GetProviders GetProviderSlice `boil:"GetProviders" json:"GetProviders" toml:"GetProviders" yaml:"GetProviders"`
+	PeerStates   PeerStateSlice   `boil:"PeerStates" json:"PeerStates" toml:"PeerStates" yaml:"PeerStates"`
 }
 
 // NewStruct creates a new relationship struct
@@ -446,6 +455,48 @@ func (o *Retrieval) Retriever(mods ...qm.QueryMod) peerQuery {
 	return query
 }
 
+// Connections retrieves all the connection's Connections with an executor.
+func (o *Retrieval) Connections(mods ...qm.QueryMod) connectionQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"connections\".\"retrieval_id\"=?", o.ID),
+	)
+
+	query := Connections(queryMods...)
+	queries.SetFrom(query.Query, "\"connections\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"connections\".*"})
+	}
+
+	return query
+}
+
+// Dials retrieves all the dial's Dials with an executor.
+func (o *Retrieval) Dials(mods ...qm.QueryMod) dialQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"dials\".\"retrieval_id\"=?", o.ID),
+	)
+
+	query := Dials(queryMods...)
+	queries.SetFrom(query.Query, "\"dials\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"dials\".*"})
+	}
+
+	return query
+}
+
 // GetProviders retrieves all the get_provider's GetProviders with an executor.
 func (o *Retrieval) GetProviders(mods ...qm.QueryMod) getProviderQuery {
 	var queryMods []qm.QueryMod
@@ -462,6 +513,27 @@ func (o *Retrieval) GetProviders(mods ...qm.QueryMod) getProviderQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"get_providers\".*"})
+	}
+
+	return query
+}
+
+// PeerStates retrieves all the peer_state's PeerStates with an executor.
+func (o *Retrieval) PeerStates(mods ...qm.QueryMod) peerStateQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"peer_states\".\"retrieval_id\"=?", o.ID),
+	)
+
+	query := PeerStates(queryMods...)
+	queries.SetFrom(query.Query, "\"peer_states\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"peer_states\".*"})
 	}
 
 	return query
@@ -571,6 +643,202 @@ func (retrievalL) LoadRetriever(ctx context.Context, e boil.ContextExecutor, sin
 	return nil
 }
 
+// LoadConnections allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (retrievalL) LoadConnections(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRetrieval interface{}, mods queries.Applicator) error {
+	var slice []*Retrieval
+	var object *Retrieval
+
+	if singular {
+		object = maybeRetrieval.(*Retrieval)
+	} else {
+		slice = *maybeRetrieval.(*[]*Retrieval)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &retrievalR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &retrievalR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`connections`),
+		qm.WhereIn(`connections.retrieval_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load connections")
+	}
+
+	var resultSlice []*Connection
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice connections")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on connections")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for connections")
+	}
+
+	if len(connectionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.Connections = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &connectionR{}
+			}
+			foreign.R.Retrieval = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.RetrievalID) {
+				local.R.Connections = append(local.R.Connections, foreign)
+				if foreign.R == nil {
+					foreign.R = &connectionR{}
+				}
+				foreign.R.Retrieval = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadDials allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (retrievalL) LoadDials(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRetrieval interface{}, mods queries.Applicator) error {
+	var slice []*Retrieval
+	var object *Retrieval
+
+	if singular {
+		object = maybeRetrieval.(*Retrieval)
+	} else {
+		slice = *maybeRetrieval.(*[]*Retrieval)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &retrievalR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &retrievalR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`dials`),
+		qm.WhereIn(`dials.retrieval_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load dials")
+	}
+
+	var resultSlice []*Dial
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice dials")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on dials")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for dials")
+	}
+
+	if len(dialAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.Dials = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &dialR{}
+			}
+			foreign.R.Retrieval = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.RetrievalID) {
+				local.R.Dials = append(local.R.Dials, foreign)
+				if foreign.R == nil {
+					foreign.R = &dialR{}
+				}
+				foreign.R.Retrieval = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadGetProviders allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (retrievalL) LoadGetProviders(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRetrieval interface{}, mods queries.Applicator) error {
@@ -669,6 +937,104 @@ func (retrievalL) LoadGetProviders(ctx context.Context, e boil.ContextExecutor, 
 	return nil
 }
 
+// LoadPeerStates allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (retrievalL) LoadPeerStates(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRetrieval interface{}, mods queries.Applicator) error {
+	var slice []*Retrieval
+	var object *Retrieval
+
+	if singular {
+		object = maybeRetrieval.(*Retrieval)
+	} else {
+		slice = *maybeRetrieval.(*[]*Retrieval)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &retrievalR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &retrievalR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`peer_states`),
+		qm.WhereIn(`peer_states.retrieval_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load peer_states")
+	}
+
+	var resultSlice []*PeerState
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice peer_states")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on peer_states")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for peer_states")
+	}
+
+	if len(peerStateAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.PeerStates = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &peerStateR{}
+			}
+			foreign.R.Retrieval = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.RetrievalID) {
+				local.R.PeerStates = append(local.R.PeerStates, foreign)
+				if foreign.R == nil {
+					foreign.R = &peerStateR{}
+				}
+				foreign.R.Retrieval = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetRetriever of the retrieval to the related item.
 // Sets o.R.Retriever to related.
 // Adds o to related.R.RetrieverRetrievals.
@@ -711,6 +1077,260 @@ func (o *Retrieval) SetRetriever(ctx context.Context, exec boil.ContextExecutor,
 		}
 	} else {
 		related.R.RetrieverRetrievals = append(related.R.RetrieverRetrievals, o)
+	}
+
+	return nil
+}
+
+// AddConnections adds the given related objects to the existing relationships
+// of the retrieval, optionally inserting them as new records.
+// Appends related to o.R.Connections.
+// Sets related.R.Retrieval appropriately.
+func (o *Retrieval) AddConnections(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Connection) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.RetrievalID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"connections\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"retrieval_id"}),
+				strmangle.WhereClause("\"", "\"", 2, connectionPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.RetrievalID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &retrievalR{
+			Connections: related,
+		}
+	} else {
+		o.R.Connections = append(o.R.Connections, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &connectionR{
+				Retrieval: o,
+			}
+		} else {
+			rel.R.Retrieval = o
+		}
+	}
+	return nil
+}
+
+// SetConnections removes all previously related items of the
+// retrieval replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Retrieval's Connections accordingly.
+// Replaces o.R.Connections with related.
+// Sets related.R.Retrieval's Connections accordingly.
+func (o *Retrieval) SetConnections(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Connection) error {
+	query := "update \"connections\" set \"retrieval_id\" = null where \"retrieval_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.Connections {
+			queries.SetScanner(&rel.RetrievalID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Retrieval = nil
+		}
+
+		o.R.Connections = nil
+	}
+	return o.AddConnections(ctx, exec, insert, related...)
+}
+
+// RemoveConnections relationships from objects passed in.
+// Removes related items from R.Connections (uses pointer comparison, removal does not keep order)
+// Sets related.R.Retrieval.
+func (o *Retrieval) RemoveConnections(ctx context.Context, exec boil.ContextExecutor, related ...*Connection) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.RetrievalID, nil)
+		if rel.R != nil {
+			rel.R.Retrieval = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("retrieval_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Connections {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Connections)
+			if ln > 1 && i < ln-1 {
+				o.R.Connections[i] = o.R.Connections[ln-1]
+			}
+			o.R.Connections = o.R.Connections[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddDials adds the given related objects to the existing relationships
+// of the retrieval, optionally inserting them as new records.
+// Appends related to o.R.Dials.
+// Sets related.R.Retrieval appropriately.
+func (o *Retrieval) AddDials(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Dial) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.RetrievalID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"dials\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"retrieval_id"}),
+				strmangle.WhereClause("\"", "\"", 2, dialPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.RetrievalID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &retrievalR{
+			Dials: related,
+		}
+	} else {
+		o.R.Dials = append(o.R.Dials, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &dialR{
+				Retrieval: o,
+			}
+		} else {
+			rel.R.Retrieval = o
+		}
+	}
+	return nil
+}
+
+// SetDials removes all previously related items of the
+// retrieval replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Retrieval's Dials accordingly.
+// Replaces o.R.Dials with related.
+// Sets related.R.Retrieval's Dials accordingly.
+func (o *Retrieval) SetDials(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Dial) error {
+	query := "update \"dials\" set \"retrieval_id\" = null where \"retrieval_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.Dials {
+			queries.SetScanner(&rel.RetrievalID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Retrieval = nil
+		}
+
+		o.R.Dials = nil
+	}
+	return o.AddDials(ctx, exec, insert, related...)
+}
+
+// RemoveDials relationships from objects passed in.
+// Removes related items from R.Dials (uses pointer comparison, removal does not keep order)
+// Sets related.R.Retrieval.
+func (o *Retrieval) RemoveDials(ctx context.Context, exec boil.ContextExecutor, related ...*Dial) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.RetrievalID, nil)
+		if rel.R != nil {
+			rel.R.Retrieval = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("retrieval_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.Dials {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.Dials)
+			if ln > 1 && i < ln-1 {
+				o.R.Dials[i] = o.R.Dials[ln-1]
+			}
+			o.R.Dials = o.R.Dials[:ln-1]
+			break
+		}
 	}
 
 	return nil
@@ -766,6 +1386,133 @@ func (o *Retrieval) AddGetProviders(ctx context.Context, exec boil.ContextExecut
 			rel.R.Retrieval = o
 		}
 	}
+	return nil
+}
+
+// AddPeerStates adds the given related objects to the existing relationships
+// of the retrieval, optionally inserting them as new records.
+// Appends related to o.R.PeerStates.
+// Sets related.R.Retrieval appropriately.
+func (o *Retrieval) AddPeerStates(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*PeerState) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.RetrievalID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"peer_states\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"retrieval_id"}),
+				strmangle.WhereClause("\"", "\"", 2, peerStatePrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.RetrievalID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &retrievalR{
+			PeerStates: related,
+		}
+	} else {
+		o.R.PeerStates = append(o.R.PeerStates, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &peerStateR{
+				Retrieval: o,
+			}
+		} else {
+			rel.R.Retrieval = o
+		}
+	}
+	return nil
+}
+
+// SetPeerStates removes all previously related items of the
+// retrieval replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.Retrieval's PeerStates accordingly.
+// Replaces o.R.PeerStates with related.
+// Sets related.R.Retrieval's PeerStates accordingly.
+func (o *Retrieval) SetPeerStates(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*PeerState) error {
+	query := "update \"peer_states\" set \"retrieval_id\" = null where \"retrieval_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.PeerStates {
+			queries.SetScanner(&rel.RetrievalID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.Retrieval = nil
+		}
+
+		o.R.PeerStates = nil
+	}
+	return o.AddPeerStates(ctx, exec, insert, related...)
+}
+
+// RemovePeerStates relationships from objects passed in.
+// Removes related items from R.PeerStates (uses pointer comparison, removal does not keep order)
+// Sets related.R.Retrieval.
+func (o *Retrieval) RemovePeerStates(ctx context.Context, exec boil.ContextExecutor, related ...*PeerState) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.RetrievalID, nil)
+		if rel.R != nil {
+			rel.R.Retrieval = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("retrieval_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.PeerStates {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.PeerStates)
+			if ln > 1 && i < ln-1 {
+				o.R.PeerStates[i] = o.R.PeerStates[ln-1]
+			}
+			o.R.PeerStates = o.R.PeerStates[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 

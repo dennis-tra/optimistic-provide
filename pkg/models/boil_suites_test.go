@@ -255,10 +255,12 @@ func TestToOne(t *testing.T) {
 	t.Run("ConnectionToMultiAddressUsingMultiAddress", testConnectionToOneMultiAddressUsingMultiAddress)
 	t.Run("ConnectionToProvideUsingProvide", testConnectionToOneProvideUsingProvide)
 	t.Run("ConnectionToPeerUsingRemote", testConnectionToOnePeerUsingRemote)
+	t.Run("ConnectionToRetrievalUsingRetrieval", testConnectionToOneRetrievalUsingRetrieval)
 	t.Run("DialToPeerUsingLocal", testDialToOnePeerUsingLocal)
 	t.Run("DialToMultiAddressUsingMultiAddress", testDialToOneMultiAddressUsingMultiAddress)
 	t.Run("DialToProvideUsingProvide", testDialToOneProvideUsingProvide)
 	t.Run("DialToPeerUsingRemote", testDialToOnePeerUsingRemote)
+	t.Run("DialToRetrievalUsingRetrieval", testDialToOneRetrievalUsingRetrieval)
 	t.Run("FindNodeToPeerUsingLocal", testFindNodeToOnePeerUsingLocal)
 	t.Run("FindNodeToProvideUsingProvide", testFindNodeToOneProvideUsingProvide)
 	t.Run("FindNodeToPeerUsingRemote", testFindNodeToOnePeerUsingRemote)
@@ -269,6 +271,7 @@ func TestToOne(t *testing.T) {
 	t.Run("PeerStateToPeerUsingPeer", testPeerStateToOnePeerUsingPeer)
 	t.Run("PeerStateToProvideUsingProvide", testPeerStateToOneProvideUsingProvide)
 	t.Run("PeerStateToPeerUsingReferrer", testPeerStateToOnePeerUsingReferrer)
+	t.Run("PeerStateToRetrievalUsingRetrieval", testPeerStateToOneRetrievalUsingRetrieval)
 	t.Run("ProvideToPeerUsingProvider", testProvideToOnePeerUsingProvider)
 	t.Run("RetrievalToPeerUsingRetriever", testRetrievalToOnePeerUsingRetriever)
 	t.Run("RoutingTableEntryToPeerUsingPeer", testRoutingTableEntryToOnePeerUsingPeer)
@@ -312,7 +315,10 @@ func TestToMany(t *testing.T) {
 	t.Run("ProvideToDials", testProvideToManyDials)
 	t.Run("ProvideToFindNodes", testProvideToManyFindNodes)
 	t.Run("ProvideToPeerStates", testProvideToManyPeerStates)
+	t.Run("RetrievalToConnections", testRetrievalToManyConnections)
+	t.Run("RetrievalToDials", testRetrievalToManyDials)
 	t.Run("RetrievalToGetProviders", testRetrievalToManyGetProviders)
+	t.Run("RetrievalToPeerStates", testRetrievalToManyPeerStates)
 	t.Run("RoutingTableSnapshotToRoutingTableEntries", testRoutingTableSnapshotToManyRoutingTableEntries)
 }
 
@@ -329,10 +335,12 @@ func TestToOneSet(t *testing.T) {
 	t.Run("ConnectionToMultiAddressUsingConnections", testConnectionToOneSetOpMultiAddressUsingMultiAddress)
 	t.Run("ConnectionToProvideUsingConnections", testConnectionToOneSetOpProvideUsingProvide)
 	t.Run("ConnectionToPeerUsingRemoteConnections", testConnectionToOneSetOpPeerUsingRemote)
+	t.Run("ConnectionToRetrievalUsingConnections", testConnectionToOneSetOpRetrievalUsingRetrieval)
 	t.Run("DialToPeerUsingLocalDials", testDialToOneSetOpPeerUsingLocal)
 	t.Run("DialToMultiAddressUsingDials", testDialToOneSetOpMultiAddressUsingMultiAddress)
 	t.Run("DialToProvideUsingDials", testDialToOneSetOpProvideUsingProvide)
 	t.Run("DialToPeerUsingRemoteDials", testDialToOneSetOpPeerUsingRemote)
+	t.Run("DialToRetrievalUsingDials", testDialToOneSetOpRetrievalUsingRetrieval)
 	t.Run("FindNodeToPeerUsingLocalFindNodes", testFindNodeToOneSetOpPeerUsingLocal)
 	t.Run("FindNodeToProvideUsingFindNodes", testFindNodeToOneSetOpProvideUsingProvide)
 	t.Run("FindNodeToPeerUsingRemoteFindNodes", testFindNodeToOneSetOpPeerUsingRemote)
@@ -343,6 +351,7 @@ func TestToOneSet(t *testing.T) {
 	t.Run("PeerStateToPeerUsingPeerStates", testPeerStateToOneSetOpPeerUsingPeer)
 	t.Run("PeerStateToProvideUsingPeerStates", testPeerStateToOneSetOpProvideUsingProvide)
 	t.Run("PeerStateToPeerUsingReferrerPeerStates", testPeerStateToOneSetOpPeerUsingReferrer)
+	t.Run("PeerStateToRetrievalUsingPeerStates", testPeerStateToOneSetOpRetrievalUsingRetrieval)
 	t.Run("ProvideToPeerUsingProviderProvides", testProvideToOneSetOpPeerUsingProvider)
 	t.Run("RetrievalToPeerUsingRetrieverRetrievals", testRetrievalToOneSetOpPeerUsingRetriever)
 	t.Run("RoutingTableEntryToPeerUsingRoutingTableEntries", testRoutingTableEntryToOneSetOpPeerUsingPeer)
@@ -352,7 +361,14 @@ func TestToOneSet(t *testing.T) {
 
 // TestToOneRemove tests cannot be run in parallel
 // or deadlocks can occur.
-func TestToOneRemove(t *testing.T) {}
+func TestToOneRemove(t *testing.T) {
+	t.Run("ConnectionToProvideUsingConnections", testConnectionToOneRemoveOpProvideUsingProvide)
+	t.Run("ConnectionToRetrievalUsingConnections", testConnectionToOneRemoveOpRetrievalUsingRetrieval)
+	t.Run("DialToProvideUsingDials", testDialToOneRemoveOpProvideUsingProvide)
+	t.Run("DialToRetrievalUsingDials", testDialToOneRemoveOpRetrievalUsingRetrieval)
+	t.Run("PeerStateToProvideUsingPeerStates", testPeerStateToOneRemoveOpProvideUsingProvide)
+	t.Run("PeerStateToRetrievalUsingPeerStates", testPeerStateToOneRemoveOpRetrievalUsingRetrieval)
+}
 
 // TestOneToOneSet tests cannot be run in parallel
 // or deadlocks can occur.
@@ -394,7 +410,10 @@ func TestToManyAdd(t *testing.T) {
 	t.Run("ProvideToDials", testProvideToManyAddOpDials)
 	t.Run("ProvideToFindNodes", testProvideToManyAddOpFindNodes)
 	t.Run("ProvideToPeerStates", testProvideToManyAddOpPeerStates)
+	t.Run("RetrievalToConnections", testRetrievalToManyAddOpConnections)
+	t.Run("RetrievalToDials", testRetrievalToManyAddOpDials)
 	t.Run("RetrievalToGetProviders", testRetrievalToManyAddOpGetProviders)
+	t.Run("RetrievalToPeerStates", testRetrievalToManyAddOpPeerStates)
 	t.Run("RoutingTableSnapshotToRoutingTableEntries", testRoutingTableSnapshotToManyAddOpRoutingTableEntries)
 }
 
@@ -403,6 +422,12 @@ func TestToManyAdd(t *testing.T) {
 func TestToManySet(t *testing.T) {
 	t.Run("IPAddressToMultiAddresses", testIPAddressToManySetOpMultiAddresses)
 	t.Run("MultiAddressToIPAddresses", testMultiAddressToManySetOpIPAddresses)
+	t.Run("ProvideToConnections", testProvideToManySetOpConnections)
+	t.Run("ProvideToDials", testProvideToManySetOpDials)
+	t.Run("ProvideToPeerStates", testProvideToManySetOpPeerStates)
+	t.Run("RetrievalToConnections", testRetrievalToManySetOpConnections)
+	t.Run("RetrievalToDials", testRetrievalToManySetOpDials)
+	t.Run("RetrievalToPeerStates", testRetrievalToManySetOpPeerStates)
 }
 
 // TestToManyRemove tests cannot be run in parallel
@@ -410,6 +435,12 @@ func TestToManySet(t *testing.T) {
 func TestToManyRemove(t *testing.T) {
 	t.Run("IPAddressToMultiAddresses", testIPAddressToManyRemoveOpMultiAddresses)
 	t.Run("MultiAddressToIPAddresses", testMultiAddressToManyRemoveOpIPAddresses)
+	t.Run("ProvideToConnections", testProvideToManyRemoveOpConnections)
+	t.Run("ProvideToDials", testProvideToManyRemoveOpDials)
+	t.Run("ProvideToPeerStates", testProvideToManyRemoveOpPeerStates)
+	t.Run("RetrievalToConnections", testRetrievalToManyRemoveOpConnections)
+	t.Run("RetrievalToDials", testRetrievalToManyRemoveOpDials)
+	t.Run("RetrievalToPeerStates", testRetrievalToManyRemoveOpPeerStates)
 }
 
 func TestReload(t *testing.T) {

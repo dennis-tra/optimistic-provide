@@ -675,9 +675,8 @@ func testProvideToManyConnections(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b.ProvideID = a.ID
-	c.ProvideID = a.ID
-
+	queries.Assign(&b.ProvideID, a.ID)
+	queries.Assign(&c.ProvideID, a.ID)
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -692,10 +691,10 @@ func testProvideToManyConnections(t *testing.T) {
 
 	bFound, cFound := false, false
 	for _, v := range check {
-		if v.ProvideID == b.ProvideID {
+		if queries.Equal(v.ProvideID, b.ProvideID) {
 			bFound = true
 		}
-		if v.ProvideID == c.ProvideID {
+		if queries.Equal(v.ProvideID, c.ProvideID) {
 			cFound = true
 		}
 	}
@@ -753,9 +752,8 @@ func testProvideToManyDials(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b.ProvideID = a.ID
-	c.ProvideID = a.ID
-
+	queries.Assign(&b.ProvideID, a.ID)
+	queries.Assign(&c.ProvideID, a.ID)
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -770,10 +768,10 @@ func testProvideToManyDials(t *testing.T) {
 
 	bFound, cFound := false, false
 	for _, v := range check {
-		if v.ProvideID == b.ProvideID {
+		if queries.Equal(v.ProvideID, b.ProvideID) {
 			bFound = true
 		}
-		if v.ProvideID == c.ProvideID {
+		if queries.Equal(v.ProvideID, c.ProvideID) {
 			cFound = true
 		}
 	}
@@ -909,9 +907,8 @@ func testProvideToManyPeerStates(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b.ProvideID = a.ID
-	c.ProvideID = a.ID
-
+	queries.Assign(&b.ProvideID, a.ID)
+	queries.Assign(&c.ProvideID, a.ID)
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -926,10 +923,10 @@ func testProvideToManyPeerStates(t *testing.T) {
 
 	bFound, cFound := false, false
 	for _, v := range check {
-		if v.ProvideID == b.ProvideID {
+		if queries.Equal(v.ProvideID, b.ProvideID) {
 			bFound = true
 		}
-		if v.ProvideID == c.ProvideID {
+		if queries.Equal(v.ProvideID, c.ProvideID) {
 			cFound = true
 		}
 	}
@@ -1157,10 +1154,10 @@ func testProvideToManyAddOpConnections(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ID != first.ProvideID {
+		if !queries.Equal(a.ID, first.ProvideID) {
 			t.Error("foreign key was wrong value", a.ID, first.ProvideID)
 		}
-		if a.ID != second.ProvideID {
+		if !queries.Equal(a.ID, second.ProvideID) {
 			t.Error("foreign key was wrong value", a.ID, second.ProvideID)
 		}
 
@@ -1187,6 +1184,182 @@ func testProvideToManyAddOpConnections(t *testing.T) {
 		}
 	}
 }
+
+func testProvideToManySetOpConnections(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e Connection
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Connection{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetConnections(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Connections().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetConnections(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Connections().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ProvideID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ProvideID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.ProvideID) {
+		t.Error("foreign key was wrong value", a.ID, d.ProvideID)
+	}
+	if !queries.Equal(a.ID, e.ProvideID) {
+		t.Error("foreign key was wrong value", a.ID, e.ProvideID)
+	}
+
+	if b.R.Provide != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Provide != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Provide != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Provide != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.Connections[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.Connections[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testProvideToManyRemoveOpConnections(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e Connection
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Connection{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddConnections(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Connections().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveConnections(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Connections().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ProvideID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ProvideID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.Provide != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Provide != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Provide != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.Provide != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.Connections) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.Connections[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.Connections[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
 func testProvideToManyAddOpDials(t *testing.T) {
 	var err error
 
@@ -1232,10 +1405,10 @@ func testProvideToManyAddOpDials(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ID != first.ProvideID {
+		if !queries.Equal(a.ID, first.ProvideID) {
 			t.Error("foreign key was wrong value", a.ID, first.ProvideID)
 		}
-		if a.ID != second.ProvideID {
+		if !queries.Equal(a.ID, second.ProvideID) {
 			t.Error("foreign key was wrong value", a.ID, second.ProvideID)
 		}
 
@@ -1262,6 +1435,182 @@ func testProvideToManyAddOpDials(t *testing.T) {
 		}
 	}
 }
+
+func testProvideToManySetOpDials(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e Dial
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Dial{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, dialDBTypes, false, strmangle.SetComplement(dialPrimaryKeyColumns, dialColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetDials(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Dials().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetDials(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Dials().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ProvideID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ProvideID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.ProvideID) {
+		t.Error("foreign key was wrong value", a.ID, d.ProvideID)
+	}
+	if !queries.Equal(a.ID, e.ProvideID) {
+		t.Error("foreign key was wrong value", a.ID, e.ProvideID)
+	}
+
+	if b.R.Provide != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Provide != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Provide != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Provide != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.Dials[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.Dials[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testProvideToManyRemoveOpDials(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e Dial
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Dial{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, dialDBTypes, false, strmangle.SetComplement(dialPrimaryKeyColumns, dialColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddDials(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Dials().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveDials(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Dials().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ProvideID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ProvideID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.Provide != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Provide != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Provide != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.Provide != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.Dials) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.Dials[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.Dials[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
 func testProvideToManyAddOpFindNodes(t *testing.T) {
 	var err error
 
@@ -1382,10 +1731,10 @@ func testProvideToManyAddOpPeerStates(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ID != first.ProvideID {
+		if !queries.Equal(a.ID, first.ProvideID) {
 			t.Error("foreign key was wrong value", a.ID, first.ProvideID)
 		}
-		if a.ID != second.ProvideID {
+		if !queries.Equal(a.ID, second.ProvideID) {
 			t.Error("foreign key was wrong value", a.ID, second.ProvideID)
 		}
 
@@ -1412,6 +1761,182 @@ func testProvideToManyAddOpPeerStates(t *testing.T) {
 		}
 	}
 }
+
+func testProvideToManySetOpPeerStates(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e PeerState
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*PeerState{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetPeerStates(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.PeerStates().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetPeerStates(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.PeerStates().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ProvideID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ProvideID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.ProvideID) {
+		t.Error("foreign key was wrong value", a.ID, d.ProvideID)
+	}
+	if !queries.Equal(a.ID, e.ProvideID) {
+		t.Error("foreign key was wrong value", a.ID, e.ProvideID)
+	}
+
+	if b.R.Provide != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Provide != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Provide != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Provide != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.PeerStates[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.PeerStates[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testProvideToManyRemoveOpPeerStates(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e PeerState
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*PeerState{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddPeerStates(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.PeerStates().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemovePeerStates(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.PeerStates().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.ProvideID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.ProvideID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.Provide != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.Provide != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.Provide != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.Provide != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.PeerStates) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.PeerStates[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.PeerStates[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
 func testProvideToOnePeerUsingProvider(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))

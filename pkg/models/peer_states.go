@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -23,76 +24,93 @@ import (
 
 // PeerState is an object representing the database table.
 type PeerState struct {
-	ProvideID  int    `boil:"provide_id" json:"provide_id" toml:"provide_id" yaml:"provide_id"`
-	PeerID     int    `boil:"peer_id" json:"peer_id" toml:"peer_id" yaml:"peer_id"`
-	ReferrerID int    `boil:"referrer_id" json:"referrer_id" toml:"referrer_id" yaml:"referrer_id"`
-	State      string `boil:"state" json:"state" toml:"state" yaml:"state"`
-	Distance   []byte `boil:"distance" json:"distance" toml:"distance" yaml:"distance"`
+	ID          int      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ProvideID   null.Int `boil:"provide_id" json:"provide_id,omitempty" toml:"provide_id" yaml:"provide_id,omitempty"`
+	RetrievalID null.Int `boil:"retrieval_id" json:"retrieval_id,omitempty" toml:"retrieval_id" yaml:"retrieval_id,omitempty"`
+	PeerID      int      `boil:"peer_id" json:"peer_id" toml:"peer_id" yaml:"peer_id"`
+	ReferrerID  int      `boil:"referrer_id" json:"referrer_id" toml:"referrer_id" yaml:"referrer_id"`
+	State       string   `boil:"state" json:"state" toml:"state" yaml:"state"`
+	Distance    []byte   `boil:"distance" json:"distance" toml:"distance" yaml:"distance"`
 
 	R *peerStateR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L peerStateL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var PeerStateColumns = struct {
-	ProvideID  string
-	PeerID     string
-	ReferrerID string
-	State      string
-	Distance   string
+	ID          string
+	ProvideID   string
+	RetrievalID string
+	PeerID      string
+	ReferrerID  string
+	State       string
+	Distance    string
 }{
-	ProvideID:  "provide_id",
-	PeerID:     "peer_id",
-	ReferrerID: "referrer_id",
-	State:      "state",
-	Distance:   "distance",
+	ID:          "id",
+	ProvideID:   "provide_id",
+	RetrievalID: "retrieval_id",
+	PeerID:      "peer_id",
+	ReferrerID:  "referrer_id",
+	State:       "state",
+	Distance:    "distance",
 }
 
 var PeerStateTableColumns = struct {
-	ProvideID  string
-	PeerID     string
-	ReferrerID string
-	State      string
-	Distance   string
+	ID          string
+	ProvideID   string
+	RetrievalID string
+	PeerID      string
+	ReferrerID  string
+	State       string
+	Distance    string
 }{
-	ProvideID:  "peer_states.provide_id",
-	PeerID:     "peer_states.peer_id",
-	ReferrerID: "peer_states.referrer_id",
-	State:      "peer_states.state",
-	Distance:   "peer_states.distance",
+	ID:          "peer_states.id",
+	ProvideID:   "peer_states.provide_id",
+	RetrievalID: "peer_states.retrieval_id",
+	PeerID:      "peer_states.peer_id",
+	ReferrerID:  "peer_states.referrer_id",
+	State:       "peer_states.state",
+	Distance:    "peer_states.distance",
 }
 
 // Generated where
 
 var PeerStateWhere = struct {
-	ProvideID  whereHelperint
-	PeerID     whereHelperint
-	ReferrerID whereHelperint
-	State      whereHelperstring
-	Distance   whereHelper__byte
+	ID          whereHelperint
+	ProvideID   whereHelpernull_Int
+	RetrievalID whereHelpernull_Int
+	PeerID      whereHelperint
+	ReferrerID  whereHelperint
+	State       whereHelperstring
+	Distance    whereHelper__byte
 }{
-	ProvideID:  whereHelperint{field: "\"peer_states\".\"provide_id\""},
-	PeerID:     whereHelperint{field: "\"peer_states\".\"peer_id\""},
-	ReferrerID: whereHelperint{field: "\"peer_states\".\"referrer_id\""},
-	State:      whereHelperstring{field: "\"peer_states\".\"state\""},
-	Distance:   whereHelper__byte{field: "\"peer_states\".\"distance\""},
+	ID:          whereHelperint{field: "\"peer_states\".\"id\""},
+	ProvideID:   whereHelpernull_Int{field: "\"peer_states\".\"provide_id\""},
+	RetrievalID: whereHelpernull_Int{field: "\"peer_states\".\"retrieval_id\""},
+	PeerID:      whereHelperint{field: "\"peer_states\".\"peer_id\""},
+	ReferrerID:  whereHelperint{field: "\"peer_states\".\"referrer_id\""},
+	State:       whereHelperstring{field: "\"peer_states\".\"state\""},
+	Distance:    whereHelper__byte{field: "\"peer_states\".\"distance\""},
 }
 
 // PeerStateRels is where relationship names are stored.
 var PeerStateRels = struct {
-	Peer     string
-	Provide  string
-	Referrer string
+	Peer      string
+	Provide   string
+	Referrer  string
+	Retrieval string
 }{
-	Peer:     "Peer",
-	Provide:  "Provide",
-	Referrer: "Referrer",
+	Peer:      "Peer",
+	Provide:   "Provide",
+	Referrer:  "Referrer",
+	Retrieval: "Retrieval",
 }
 
 // peerStateR is where relationships are stored.
 type peerStateR struct {
-	Peer     *Peer    `boil:"Peer" json:"Peer" toml:"Peer" yaml:"Peer"`
-	Provide  *Provide `boil:"Provide" json:"Provide" toml:"Provide" yaml:"Provide"`
-	Referrer *Peer    `boil:"Referrer" json:"Referrer" toml:"Referrer" yaml:"Referrer"`
+	Peer      *Peer      `boil:"Peer" json:"Peer" toml:"Peer" yaml:"Peer"`
+	Provide   *Provide   `boil:"Provide" json:"Provide" toml:"Provide" yaml:"Provide"`
+	Referrer  *Peer      `boil:"Referrer" json:"Referrer" toml:"Referrer" yaml:"Referrer"`
+	Retrieval *Retrieval `boil:"Retrieval" json:"Retrieval" toml:"Retrieval" yaml:"Retrieval"`
 }
 
 // NewStruct creates a new relationship struct
@@ -104,10 +122,10 @@ func (*peerStateR) NewStruct() *peerStateR {
 type peerStateL struct{}
 
 var (
-	peerStateAllColumns            = []string{"provide_id", "peer_id", "referrer_id", "state", "distance"}
-	peerStateColumnsWithoutDefault = []string{"provide_id", "peer_id", "referrer_id", "state", "distance"}
-	peerStateColumnsWithDefault    = []string{}
-	peerStatePrimaryKeyColumns     = []string{"provide_id", "peer_id"}
+	peerStateAllColumns            = []string{"id", "provide_id", "retrieval_id", "peer_id", "referrer_id", "state", "distance"}
+	peerStateColumnsWithoutDefault = []string{"provide_id", "retrieval_id", "peer_id", "referrer_id", "state", "distance"}
+	peerStateColumnsWithDefault    = []string{"id"}
+	peerStatePrimaryKeyColumns     = []string{"id"}
 )
 
 type (
@@ -427,6 +445,20 @@ func (o *PeerState) Referrer(mods ...qm.QueryMod) peerQuery {
 	return query
 }
 
+// Retrieval pointed to by the foreign key.
+func (o *PeerState) Retrieval(mods ...qm.QueryMod) retrievalQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.RetrievalID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	query := Retrievals(queryMods...)
+	queries.SetFrom(query.Query, "\"retrievals\"")
+
+	return query
+}
+
 // LoadPeer allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (peerStateL) LoadPeer(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeerState interface{}, mods queries.Applicator) error {
@@ -548,7 +580,9 @@ func (peerStateL) LoadProvide(ctx context.Context, e boil.ContextExecutor, singu
 		if object.R == nil {
 			object.R = &peerStateR{}
 		}
-		args = append(args, object.ProvideID)
+		if !queries.IsNil(object.ProvideID) {
+			args = append(args, object.ProvideID)
+		}
 
 	} else {
 	Outer:
@@ -558,12 +592,14 @@ func (peerStateL) LoadProvide(ctx context.Context, e boil.ContextExecutor, singu
 			}
 
 			for _, a := range args {
-				if a == obj.ProvideID {
+				if queries.Equal(a, obj.ProvideID) {
 					continue Outer
 				}
 			}
 
-			args = append(args, obj.ProvideID)
+			if !queries.IsNil(obj.ProvideID) {
+				args = append(args, obj.ProvideID)
+			}
 
 		}
 	}
@@ -621,7 +657,7 @@ func (peerStateL) LoadProvide(ctx context.Context, e boil.ContextExecutor, singu
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.ProvideID == foreign.ID {
+			if queries.Equal(local.ProvideID, foreign.ID) {
 				local.R.Provide = foreign
 				if foreign.R == nil {
 					foreign.R = &provideR{}
@@ -739,6 +775,114 @@ func (peerStateL) LoadReferrer(ctx context.Context, e boil.ContextExecutor, sing
 	return nil
 }
 
+// LoadRetrieval allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (peerStateL) LoadRetrieval(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeerState interface{}, mods queries.Applicator) error {
+	var slice []*PeerState
+	var object *PeerState
+
+	if singular {
+		object = maybePeerState.(*PeerState)
+	} else {
+		slice = *maybePeerState.(*[]*PeerState)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &peerStateR{}
+		}
+		if !queries.IsNil(object.RetrievalID) {
+			args = append(args, object.RetrievalID)
+		}
+
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &peerStateR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.RetrievalID) {
+					continue Outer
+				}
+			}
+
+			if !queries.IsNil(obj.RetrievalID) {
+				args = append(args, obj.RetrievalID)
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`retrievals`),
+		qm.WhereIn(`retrievals.id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Retrieval")
+	}
+
+	var resultSlice []*Retrieval
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Retrieval")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for retrievals")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for retrievals")
+	}
+
+	if len(peerStateAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Retrieval = foreign
+		if foreign.R == nil {
+			foreign.R = &retrievalR{}
+		}
+		foreign.R.PeerStates = append(foreign.R.PeerStates, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.RetrievalID, foreign.ID) {
+				local.R.Retrieval = foreign
+				if foreign.R == nil {
+					foreign.R = &retrievalR{}
+				}
+				foreign.R.PeerStates = append(foreign.R.PeerStates, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetPeer of the peerState to the related item.
 // Sets o.R.Peer to related.
 // Adds o to related.R.PeerStates.
@@ -755,7 +899,7 @@ func (o *PeerState) SetPeer(ctx context.Context, exec boil.ContextExecutor, inse
 		strmangle.SetParamNames("\"", "\"", 1, []string{"peer_id"}),
 		strmangle.WhereClause("\"", "\"", 2, peerStatePrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.ProvideID, o.PeerID}
+	values := []interface{}{related.ID, o.ID}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -802,7 +946,7 @@ func (o *PeerState) SetProvide(ctx context.Context, exec boil.ContextExecutor, i
 		strmangle.SetParamNames("\"", "\"", 1, []string{"provide_id"}),
 		strmangle.WhereClause("\"", "\"", 2, peerStatePrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.ProvideID, o.PeerID}
+	values := []interface{}{related.ID, o.ID}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -813,7 +957,7 @@ func (o *PeerState) SetProvide(ctx context.Context, exec boil.ContextExecutor, i
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.ProvideID = related.ID
+	queries.Assign(&o.ProvideID, related.ID)
 	if o.R == nil {
 		o.R = &peerStateR{
 			Provide: related,
@@ -833,6 +977,39 @@ func (o *PeerState) SetProvide(ctx context.Context, exec boil.ContextExecutor, i
 	return nil
 }
 
+// RemoveProvide relationship.
+// Sets o.R.Provide to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *PeerState) RemoveProvide(ctx context.Context, exec boil.ContextExecutor, related *Provide) error {
+	var err error
+
+	queries.SetScanner(&o.ProvideID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("provide_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.Provide = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.PeerStates {
+		if queries.Equal(o.ProvideID, ri.ProvideID) {
+			continue
+		}
+
+		ln := len(related.R.PeerStates)
+		if ln > 1 && i < ln-1 {
+			related.R.PeerStates[i] = related.R.PeerStates[ln-1]
+		}
+		related.R.PeerStates = related.R.PeerStates[:ln-1]
+		break
+	}
+	return nil
+}
+
 // SetReferrer of the peerState to the related item.
 // Sets o.R.Referrer to related.
 // Adds o to related.R.ReferrerPeerStates.
@@ -849,7 +1026,7 @@ func (o *PeerState) SetReferrer(ctx context.Context, exec boil.ContextExecutor, 
 		strmangle.SetParamNames("\"", "\"", 1, []string{"referrer_id"}),
 		strmangle.WhereClause("\"", "\"", 2, peerStatePrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.ProvideID, o.PeerID}
+	values := []interface{}{related.ID, o.ID}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -880,6 +1057,86 @@ func (o *PeerState) SetReferrer(ctx context.Context, exec boil.ContextExecutor, 
 	return nil
 }
 
+// SetRetrieval of the peerState to the related item.
+// Sets o.R.Retrieval to related.
+// Adds o to related.R.PeerStates.
+func (o *PeerState) SetRetrieval(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Retrieval) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"peer_states\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"retrieval_id"}),
+		strmangle.WhereClause("\"", "\"", 2, peerStatePrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.RetrievalID, related.ID)
+	if o.R == nil {
+		o.R = &peerStateR{
+			Retrieval: related,
+		}
+	} else {
+		o.R.Retrieval = related
+	}
+
+	if related.R == nil {
+		related.R = &retrievalR{
+			PeerStates: PeerStateSlice{o},
+		}
+	} else {
+		related.R.PeerStates = append(related.R.PeerStates, o)
+	}
+
+	return nil
+}
+
+// RemoveRetrieval relationship.
+// Sets o.R.Retrieval to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *PeerState) RemoveRetrieval(ctx context.Context, exec boil.ContextExecutor, related *Retrieval) error {
+	var err error
+
+	queries.SetScanner(&o.RetrievalID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("retrieval_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.Retrieval = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.PeerStates {
+		if queries.Equal(o.RetrievalID, ri.RetrievalID) {
+			continue
+		}
+
+		ln := len(related.R.PeerStates)
+		if ln > 1 && i < ln-1 {
+			related.R.PeerStates[i] = related.R.PeerStates[ln-1]
+		}
+		related.R.PeerStates = related.R.PeerStates[:ln-1]
+		break
+	}
+	return nil
+}
+
 // PeerStates retrieves all the records using an executor.
 func PeerStates(mods ...qm.QueryMod) peerStateQuery {
 	mods = append(mods, qm.From("\"peer_states\""))
@@ -888,7 +1145,7 @@ func PeerStates(mods ...qm.QueryMod) peerStateQuery {
 
 // FindPeerState retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindPeerState(ctx context.Context, exec boil.ContextExecutor, provideID int, peerID int, selectCols ...string) (*PeerState, error) {
+func FindPeerState(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*PeerState, error) {
 	peerStateObj := &PeerState{}
 
 	sel := "*"
@@ -896,10 +1153,10 @@ func FindPeerState(ctx context.Context, exec boil.ContextExecutor, provideID int
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"peer_states\" where \"provide_id\"=$1 AND \"peer_id\"=$2", sel,
+		"select %s from \"peer_states\" where \"id\"=$1", sel,
 	)
 
-	q := queries.Raw(query, provideID, peerID)
+	q := queries.Raw(query, iD)
 
 	err := q.Bind(ctx, exec, peerStateObj)
 	if err != nil {
@@ -1250,7 +1507,7 @@ func (o *PeerState) Delete(ctx context.Context, exec boil.ContextExecutor) (int6
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), peerStatePrimaryKeyMapping)
-	sql := "DELETE FROM \"peer_states\" WHERE \"provide_id\"=$1 AND \"peer_id\"=$2"
+	sql := "DELETE FROM \"peer_states\" WHERE \"id\"=$1"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1347,7 +1604,7 @@ func (o PeerStateSlice) DeleteAll(ctx context.Context, exec boil.ContextExecutor
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *PeerState) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindPeerState(ctx, exec, o.ProvideID, o.PeerID)
+	ret, err := FindPeerState(ctx, exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -1386,16 +1643,16 @@ func (o *PeerStateSlice) ReloadAll(ctx context.Context, exec boil.ContextExecuto
 }
 
 // PeerStateExists checks if the PeerState row exists.
-func PeerStateExists(ctx context.Context, exec boil.ContextExecutor, provideID int, peerID int) (bool, error) {
+func PeerStateExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"peer_states\" where \"provide_id\"=$1 AND \"peer_id\"=$2 limit 1)"
+	sql := "select exists(select 1 from \"peer_states\" where \"id\"=$1 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, provideID, peerID)
+		fmt.Fprintln(writer, iD)
 	}
-	row := exec.QueryRowContext(ctx, sql, provideID, peerID)
+	row := exec.QueryRowContext(ctx, sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {

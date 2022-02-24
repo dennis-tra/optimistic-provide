@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -24,7 +25,8 @@ import (
 // Connection is an object representing the database table.
 type Connection struct {
 	ID             int       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	ProvideID      int       `boil:"provide_id" json:"provide_id" toml:"provide_id" yaml:"provide_id"`
+	ProvideID      null.Int  `boil:"provide_id" json:"provide_id,omitempty" toml:"provide_id" yaml:"provide_id,omitempty"`
+	RetrievalID    null.Int  `boil:"retrieval_id" json:"retrieval_id,omitempty" toml:"retrieval_id" yaml:"retrieval_id,omitempty"`
 	LocalID        int       `boil:"local_id" json:"local_id" toml:"local_id" yaml:"local_id"`
 	RemoteID       int       `boil:"remote_id" json:"remote_id" toml:"remote_id" yaml:"remote_id"`
 	MultiAddressID int       `boil:"multi_address_id" json:"multi_address_id" toml:"multi_address_id" yaml:"multi_address_id"`
@@ -38,6 +40,7 @@ type Connection struct {
 var ConnectionColumns = struct {
 	ID             string
 	ProvideID      string
+	RetrievalID    string
 	LocalID        string
 	RemoteID       string
 	MultiAddressID string
@@ -46,6 +49,7 @@ var ConnectionColumns = struct {
 }{
 	ID:             "id",
 	ProvideID:      "provide_id",
+	RetrievalID:    "retrieval_id",
 	LocalID:        "local_id",
 	RemoteID:       "remote_id",
 	MultiAddressID: "multi_address_id",
@@ -56,6 +60,7 @@ var ConnectionColumns = struct {
 var ConnectionTableColumns = struct {
 	ID             string
 	ProvideID      string
+	RetrievalID    string
 	LocalID        string
 	RemoteID       string
 	MultiAddressID string
@@ -64,6 +69,7 @@ var ConnectionTableColumns = struct {
 }{
 	ID:             "connections.id",
 	ProvideID:      "connections.provide_id",
+	RetrievalID:    "connections.retrieval_id",
 	LocalID:        "connections.local_id",
 	RemoteID:       "connections.remote_id",
 	MultiAddressID: "connections.multi_address_id",
@@ -73,9 +79,33 @@ var ConnectionTableColumns = struct {
 
 // Generated where
 
+type whereHelpernull_Int struct{ field string }
+
+func (w whereHelpernull_Int) EQ(x null.Int) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Int) NEQ(x null.Int) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Int) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Int) LT(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Int) LTE(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Int) GT(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Int) GTE(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var ConnectionWhere = struct {
 	ID             whereHelperint
-	ProvideID      whereHelperint
+	ProvideID      whereHelpernull_Int
+	RetrievalID    whereHelpernull_Int
 	LocalID        whereHelperint
 	RemoteID       whereHelperint
 	MultiAddressID whereHelperint
@@ -83,7 +113,8 @@ var ConnectionWhere = struct {
 	EndedAt        whereHelpertime_Time
 }{
 	ID:             whereHelperint{field: "\"connections\".\"id\""},
-	ProvideID:      whereHelperint{field: "\"connections\".\"provide_id\""},
+	ProvideID:      whereHelpernull_Int{field: "\"connections\".\"provide_id\""},
+	RetrievalID:    whereHelpernull_Int{field: "\"connections\".\"retrieval_id\""},
 	LocalID:        whereHelperint{field: "\"connections\".\"local_id\""},
 	RemoteID:       whereHelperint{field: "\"connections\".\"remote_id\""},
 	MultiAddressID: whereHelperint{field: "\"connections\".\"multi_address_id\""},
@@ -97,11 +128,13 @@ var ConnectionRels = struct {
 	MultiAddress string
 	Provide      string
 	Remote       string
+	Retrieval    string
 }{
 	Local:        "Local",
 	MultiAddress: "MultiAddress",
 	Provide:      "Provide",
 	Remote:       "Remote",
+	Retrieval:    "Retrieval",
 }
 
 // connectionR is where relationships are stored.
@@ -110,6 +143,7 @@ type connectionR struct {
 	MultiAddress *MultiAddress `boil:"MultiAddress" json:"MultiAddress" toml:"MultiAddress" yaml:"MultiAddress"`
 	Provide      *Provide      `boil:"Provide" json:"Provide" toml:"Provide" yaml:"Provide"`
 	Remote       *Peer         `boil:"Remote" json:"Remote" toml:"Remote" yaml:"Remote"`
+	Retrieval    *Retrieval    `boil:"Retrieval" json:"Retrieval" toml:"Retrieval" yaml:"Retrieval"`
 }
 
 // NewStruct creates a new relationship struct
@@ -121,8 +155,8 @@ func (*connectionR) NewStruct() *connectionR {
 type connectionL struct{}
 
 var (
-	connectionAllColumns            = []string{"id", "provide_id", "local_id", "remote_id", "multi_address_id", "started_at", "ended_at"}
-	connectionColumnsWithoutDefault = []string{"provide_id", "local_id", "remote_id", "multi_address_id", "started_at", "ended_at"}
+	connectionAllColumns            = []string{"id", "provide_id", "retrieval_id", "local_id", "remote_id", "multi_address_id", "started_at", "ended_at"}
+	connectionColumnsWithoutDefault = []string{"provide_id", "retrieval_id", "local_id", "remote_id", "multi_address_id", "started_at", "ended_at"}
 	connectionColumnsWithDefault    = []string{"id"}
 	connectionPrimaryKeyColumns     = []string{"id"}
 )
@@ -458,6 +492,20 @@ func (o *Connection) Remote(mods ...qm.QueryMod) peerQuery {
 	return query
 }
 
+// Retrieval pointed to by the foreign key.
+func (o *Connection) Retrieval(mods ...qm.QueryMod) retrievalQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.RetrievalID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	query := Retrievals(queryMods...)
+	queries.SetFrom(query.Query, "\"retrievals\"")
+
+	return query
+}
+
 // LoadLocal allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (connectionL) LoadLocal(ctx context.Context, e boil.ContextExecutor, singular bool, maybeConnection interface{}, mods queries.Applicator) error {
@@ -683,7 +731,9 @@ func (connectionL) LoadProvide(ctx context.Context, e boil.ContextExecutor, sing
 		if object.R == nil {
 			object.R = &connectionR{}
 		}
-		args = append(args, object.ProvideID)
+		if !queries.IsNil(object.ProvideID) {
+			args = append(args, object.ProvideID)
+		}
 
 	} else {
 	Outer:
@@ -693,12 +743,14 @@ func (connectionL) LoadProvide(ctx context.Context, e boil.ContextExecutor, sing
 			}
 
 			for _, a := range args {
-				if a == obj.ProvideID {
+				if queries.Equal(a, obj.ProvideID) {
 					continue Outer
 				}
 			}
 
-			args = append(args, obj.ProvideID)
+			if !queries.IsNil(obj.ProvideID) {
+				args = append(args, obj.ProvideID)
+			}
 
 		}
 	}
@@ -756,7 +808,7 @@ func (connectionL) LoadProvide(ctx context.Context, e boil.ContextExecutor, sing
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.ProvideID == foreign.ID {
+			if queries.Equal(local.ProvideID, foreign.ID) {
 				local.R.Provide = foreign
 				if foreign.R == nil {
 					foreign.R = &provideR{}
@@ -866,6 +918,114 @@ func (connectionL) LoadRemote(ctx context.Context, e boil.ContextExecutor, singu
 					foreign.R = &peerR{}
 				}
 				foreign.R.RemoteConnections = append(foreign.R.RemoteConnections, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadRetrieval allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (connectionL) LoadRetrieval(ctx context.Context, e boil.ContextExecutor, singular bool, maybeConnection interface{}, mods queries.Applicator) error {
+	var slice []*Connection
+	var object *Connection
+
+	if singular {
+		object = maybeConnection.(*Connection)
+	} else {
+		slice = *maybeConnection.(*[]*Connection)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &connectionR{}
+		}
+		if !queries.IsNil(object.RetrievalID) {
+			args = append(args, object.RetrievalID)
+		}
+
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &connectionR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.RetrievalID) {
+					continue Outer
+				}
+			}
+
+			if !queries.IsNil(obj.RetrievalID) {
+				args = append(args, obj.RetrievalID)
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`retrievals`),
+		qm.WhereIn(`retrievals.id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Retrieval")
+	}
+
+	var resultSlice []*Retrieval
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Retrieval")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for retrievals")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for retrievals")
+	}
+
+	if len(connectionAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Retrieval = foreign
+		if foreign.R == nil {
+			foreign.R = &retrievalR{}
+		}
+		foreign.R.Connections = append(foreign.R.Connections, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.RetrievalID, foreign.ID) {
+				local.R.Retrieval = foreign
+				if foreign.R == nil {
+					foreign.R = &retrievalR{}
+				}
+				foreign.R.Connections = append(foreign.R.Connections, local)
 				break
 			}
 		}
@@ -995,7 +1155,7 @@ func (o *Connection) SetProvide(ctx context.Context, exec boil.ContextExecutor, 
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.ProvideID = related.ID
+	queries.Assign(&o.ProvideID, related.ID)
 	if o.R == nil {
 		o.R = &connectionR{
 			Provide: related,
@@ -1012,6 +1172,39 @@ func (o *Connection) SetProvide(ctx context.Context, exec boil.ContextExecutor, 
 		related.R.Connections = append(related.R.Connections, o)
 	}
 
+	return nil
+}
+
+// RemoveProvide relationship.
+// Sets o.R.Provide to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *Connection) RemoveProvide(ctx context.Context, exec boil.ContextExecutor, related *Provide) error {
+	var err error
+
+	queries.SetScanner(&o.ProvideID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("provide_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.Provide = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.Connections {
+		if queries.Equal(o.ProvideID, ri.ProvideID) {
+			continue
+		}
+
+		ln := len(related.R.Connections)
+		if ln > 1 && i < ln-1 {
+			related.R.Connections[i] = related.R.Connections[ln-1]
+		}
+		related.R.Connections = related.R.Connections[:ln-1]
+		break
+	}
 	return nil
 }
 
@@ -1059,6 +1252,86 @@ func (o *Connection) SetRemote(ctx context.Context, exec boil.ContextExecutor, i
 		related.R.RemoteConnections = append(related.R.RemoteConnections, o)
 	}
 
+	return nil
+}
+
+// SetRetrieval of the connection to the related item.
+// Sets o.R.Retrieval to related.
+// Adds o to related.R.Connections.
+func (o *Connection) SetRetrieval(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Retrieval) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"connections\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"retrieval_id"}),
+		strmangle.WhereClause("\"", "\"", 2, connectionPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.RetrievalID, related.ID)
+	if o.R == nil {
+		o.R = &connectionR{
+			Retrieval: related,
+		}
+	} else {
+		o.R.Retrieval = related
+	}
+
+	if related.R == nil {
+		related.R = &retrievalR{
+			Connections: ConnectionSlice{o},
+		}
+	} else {
+		related.R.Connections = append(related.R.Connections, o)
+	}
+
+	return nil
+}
+
+// RemoveRetrieval relationship.
+// Sets o.R.Retrieval to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *Connection) RemoveRetrieval(ctx context.Context, exec boil.ContextExecutor, related *Retrieval) error {
+	var err error
+
+	queries.SetScanner(&o.RetrievalID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("retrieval_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.Retrieval = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.Connections {
+		if queries.Equal(o.RetrievalID, ri.RetrievalID) {
+			continue
+		}
+
+		ln := len(related.R.Connections)
+		if ln > 1 && i < ln-1 {
+			related.R.Connections[i] = related.R.Connections[ln-1]
+		}
+		related.R.Connections = related.R.Connections[:ln-1]
+		break
+	}
 	return nil
 }
 

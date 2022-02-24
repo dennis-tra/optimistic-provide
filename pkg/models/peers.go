@@ -3260,7 +3260,7 @@ func (o *Peer) AddPeerStates(ctx context.Context, exec boil.ContextExecutor, ins
 				strmangle.SetParamNames("\"", "\"", 1, []string{"peer_id"}),
 				strmangle.WhereClause("\"", "\"", 2, peerStatePrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ProvideID, rel.PeerID}
+			values := []interface{}{o.ID, rel.ID}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)
@@ -3313,7 +3313,7 @@ func (o *Peer) AddReferrerPeerStates(ctx context.Context, exec boil.ContextExecu
 				strmangle.SetParamNames("\"", "\"", 1, []string{"referrer_id"}),
 				strmangle.WhereClause("\"", "\"", 2, peerStatePrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ProvideID, rel.PeerID}
+			values := []interface{}{o.ID, rel.ID}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)

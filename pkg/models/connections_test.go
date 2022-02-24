@@ -605,7 +605,7 @@ func testConnectionToOneProvideUsingProvide(t *testing.T) {
 	var foreign Provide
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, connectionDBTypes, false, connectionColumnsWithDefault...); err != nil {
+	if err := randomize.Struct(seed, &local, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Connection struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
@@ -616,7 +616,7 @@ func testConnectionToOneProvideUsingProvide(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	local.ProvideID = foreign.ID
+	queries.Assign(&local.ProvideID, foreign.ID)
 	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -626,7 +626,7 @@ func testConnectionToOneProvideUsingProvide(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if check.ID != foreign.ID {
+	if !queries.Equal(check.ID, foreign.ID) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
@@ -694,6 +694,57 @@ func testConnectionToOnePeerUsingRemote(t *testing.T) {
 		t.Fatal(err)
 	}
 	if local.R.Remote == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
+func testConnectionToOneRetrievalUsingRetrieval(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local Connection
+	var foreign Retrieval
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Connection struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, retrievalDBTypes, false, retrievalColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Retrieval struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&local.RetrievalID, foreign.ID)
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.Retrieval().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !queries.Equal(check.ID, foreign.ID) {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := ConnectionSlice{&local}
+	if err = local.L.LoadRetrieval(ctx, tx, false, (*[]*Connection)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Retrieval == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.Retrieval = nil
+	if err = local.L.LoadRetrieval(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Retrieval == nil {
 		t.Error("struct should have been eager loaded")
 	}
 }
@@ -853,7 +904,7 @@ func testConnectionToOneSetOpProvideUsingProvide(t *testing.T) {
 		if x.R.Connections[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.ProvideID != x.ID {
+		if !queries.Equal(a.ProvideID, x.ID) {
 			t.Error("foreign key was wrong value", a.ProvideID)
 		}
 
@@ -864,11 +915,63 @@ func testConnectionToOneSetOpProvideUsingProvide(t *testing.T) {
 			t.Fatal("failed to reload", err)
 		}
 
-		if a.ProvideID != x.ID {
+		if !queries.Equal(a.ProvideID, x.ID) {
 			t.Error("foreign key was wrong value", a.ProvideID, x.ID)
 		}
 	}
 }
+
+func testConnectionToOneRemoveOpProvideUsingProvide(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Connection
+	var b Provide
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetProvide(ctx, tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemoveProvide(ctx, tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.Provide().Count(ctx, tx)
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.Provide != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if !queries.IsValuerNil(a.ProvideID) {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.Connections) != 0 {
+		t.Error("failed to remove a from b's relationships")
+	}
+}
+
 func testConnectionToOneSetOpPeerUsingRemote(t *testing.T) {
 	var err error
 
@@ -924,6 +1027,114 @@ func testConnectionToOneSetOpPeerUsingRemote(t *testing.T) {
 		if a.RemoteID != x.ID {
 			t.Error("foreign key was wrong value", a.RemoteID, x.ID)
 		}
+	}
+}
+func testConnectionToOneSetOpRetrievalUsingRetrieval(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Connection
+	var b, c Retrieval
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Retrieval{&b, &c} {
+		err = a.SetRetrieval(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.Retrieval != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.Connections[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if !queries.Equal(a.RetrievalID, x.ID) {
+			t.Error("foreign key was wrong value", a.RetrievalID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.RetrievalID))
+		reflect.Indirect(reflect.ValueOf(&a.RetrievalID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if !queries.Equal(a.RetrievalID, x.ID) {
+			t.Error("foreign key was wrong value", a.RetrievalID, x.ID)
+		}
+	}
+}
+
+func testConnectionToOneRemoveOpRetrievalUsingRetrieval(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Connection
+	var b Retrieval
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetRetrieval(ctx, tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemoveRetrieval(ctx, tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.Retrieval().Count(ctx, tx)
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.Retrieval != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if !queries.IsValuerNil(a.RetrievalID) {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.Connections) != 0 {
+		t.Error("failed to remove a from b's relationships")
 	}
 }
 
@@ -1001,7 +1212,7 @@ func testConnectionsSelect(t *testing.T) {
 }
 
 var (
-	connectionDBTypes = map[string]string{`ID`: `integer`, `ProvideID`: `integer`, `LocalID`: `integer`, `RemoteID`: `integer`, `MultiAddressID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`}
+	connectionDBTypes = map[string]string{`ID`: `integer`, `ProvideID`: `integer`, `RetrievalID`: `integer`, `LocalID`: `integer`, `RemoteID`: `integer`, `MultiAddressID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`}
 	_                 = bytes.MinRead
 )
 
