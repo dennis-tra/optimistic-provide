@@ -402,6 +402,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /hosts/{hostId}/retrievals:
+    post:
+      operationId: startRetrieval
+      tags:
+        - Retrievals
+      summary: Starts retrieving the given content ID.
+      description: Instructs the given host to generate random content and announce its CID to the network.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetrievalRequest'
+      responses:
+        '200':
+          description: The retrieval instance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Retrieval'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     CreateHostRequest:
@@ -587,6 +621,50 @@ components:
         - createdAt
         - bootstrappedAt
         - runningProvidesCount
+    RetrievalRequest:
+      type: object
+      properties:
+        contentId:
+          type: string
+        count:
+          type: integer
+          description: Number of providers to find until the query stops. 0 indicates that the query will run until it completes.
+      required:
+        - contentId
+        - count
+    Retrieval:
+      type: object
+      properties:
+        retrievalId:
+          type: integer
+        hostId:
+          type: string
+        contentId:
+          type: string
+        initialRoutingTableId:
+          type: integer
+        finalRoutingTableId:
+          type: integer
+          nullable: true
+        startedAt:
+          type: string
+          format: date-format
+        endedAt:
+          type: string
+          nullable: true
+          format: date-format
+        error:
+          type: string
+          nullable: true
+      required:
+        - retrievalId
+        - hostId
+        - contentId
+        - initialRoutingTableId
+        - finalRoutingTableId
+        - startedAt
+        - endedAt
+        - error
     Provide:
       type: object
       properties:

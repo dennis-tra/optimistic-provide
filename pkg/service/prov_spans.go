@@ -40,6 +40,14 @@ type FindNodesSpan struct {
 	Error        error
 }
 
+type GetProvidersSpan struct {
+	RemotePeerID peer.ID
+	Start        time.Time
+	End          time.Time
+	CloserPeers  []*peer.AddrInfo
+	Error        error
+}
+
 type AddProvidersSpan struct {
 	RemotePeerID  peer.ID
 	Content       *util.Content

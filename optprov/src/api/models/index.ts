@@ -12,6 +12,8 @@ export * from './Peer';
 export * from './Provide';
 export * from './ProvideDetails';
 export * from './ProvideDetailsAllOf';
+export * from './Retrieval';
+export * from './RetrievalRequest';
 export * from './RoutingTable';
 export * from './RoutingTableDetails';
 export * from './RoutingTableDetailsAllOf';

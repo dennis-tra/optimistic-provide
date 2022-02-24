@@ -16,6 +16,8 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("FindNodes", testFindNodesUpsert)
 
+	t.Run("GetProviders", testGetProvidersUpsert)
+
 	t.Run("IPAddresses", testIPAddressesUpsert)
 
 	t.Run("MultiAddresses", testMultiAddressesUpsert)
@@ -27,6 +29,8 @@ func TestUpsert(t *testing.T) {
 	t.Run("Peers", testPeersUpsert)
 
 	t.Run("Provides", testProvidesUpsert)
+
+	t.Run("Retrievals", testRetrievalsUpsert)
 
 	t.Run("RoutingTableEntries", testRoutingTableEntriesUpsert)
 

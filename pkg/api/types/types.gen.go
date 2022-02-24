@@ -134,6 +134,26 @@ type ProvideDetails struct {
 	FindNodes    []FindNode    `json:"findNodes"`
 }
 
+// Retrieval defines model for Retrieval.
+type Retrieval struct {
+	ContentId             string  `json:"contentId"`
+	EndedAt               *string `json:"endedAt"`
+	Error                 *string `json:"error"`
+	FinalRoutingTableId   *int    `json:"finalRoutingTableId"`
+	HostId                string  `json:"hostId"`
+	InitialRoutingTableId int     `json:"initialRoutingTableId"`
+	RetrievalId           int     `json:"retrievalId"`
+	StartedAt             string  `json:"startedAt"`
+}
+
+// RetrievalRequest defines model for RetrievalRequest.
+type RetrievalRequest struct {
+	ContentId string `json:"contentId"`
+
+	// Number of providers to find until the query stops. 0 indicates that the query will run until it completes.
+	Count int `json:"count"`
+}
+
 // RoutingTable defines model for RoutingTable.
 type RoutingTable struct {
 	BucketSize int    `json:"bucketSize"`
@@ -188,6 +208,12 @@ type RoutingTableUpdateType string
 // CreateHostJSONBody defines parameters for CreateHost.
 type CreateHostJSONBody CreateHostRequest
 
+// StartRetrievalJSONBody defines parameters for StartRetrieval.
+type StartRetrievalJSONBody RetrievalRequest
+
 // CreateHostJSONRequestBody defines body for CreateHost for application/json ContentType.
 type CreateHostJSONRequestBody CreateHostJSONBody
+
+// StartRetrievalJSONRequestBody defines body for StartRetrieval for application/json ContentType.
+type StartRetrievalJSONRequestBody StartRetrievalJSONBody
 

@@ -33,6 +33,7 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 	peerRepo := repo.NewPeerRepo(dbclient)
 	rtRepo := repo.NewRoutingTableRepo(dbclient)
 	provideRepo := repo.NewProvideRepo(dbclient)
+	retrieveRepo := repo.NewRetrievalRepo(dbclient)
 	maRepo := repo.NewMultiAddressRepo(dbclient)
 	iaRepo := repo.NewIPAddressRepo(dbclient)
 	dialRepo := repo.NewDialRepo(dbclient)
@@ -52,10 +53,12 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 	apService := service.NewAddProvidersService(peerService, maService, apRepo, cpRepo)
 	psService := service.NewPeerStateService(peerService, psRepo)
 	provideService := service.NewProvideService(peerService, hostService, rtService, maService, dialService, connService, fnService, psService, apService, provideRepo)
+	retrievalService := service.NewRetrievalService(peerService, hostService, rtService, maService, dialService, connService, fnService, psService, apService, retrieveRepo)
 
 	peerController := controller.NewPeerController(ctx, peerService)
 	hostController := controller.NewHostController(ctx, hostService)
 	provideController := controller.NewProvideController(ctx, provideService, hostService)
+	retrievalController := controller.NewRetrievalController(ctx, retrievalService, hostService)
 	routingTableController := controller.NewRoutingTableController(ctx, rtService, hostService)
 
 	hosts := router.Group("/hosts")
@@ -80,6 +83,17 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 				{
 					provideID.Use(middlewares.ProvideID)
 					provideID.GET("", provideController.Get)
+				}
+			}
+
+			retrievals := hostID.Group("retrievals")
+			{
+				retrievals.POST("", retrievalController.Create)
+
+				provideID := retrievals.Group("/:retrievalID")
+				{
+					provideID.Use(middlewares.ProvideID)
+					// provideID.GET("", retrievalController.Get)
 				}
 			}
 

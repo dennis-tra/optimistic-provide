@@ -9,6 +9,7 @@ var TableNames = struct {
 	Connections                string
 	Dials                      string
 	FindNodes                  string
+	GetProviders               string
 	IPAddresses                string
 	MultiAddresses             string
 	MultiAddressesXIPAddresses string
@@ -16,6 +17,7 @@ var TableNames = struct {
 	PeerStates                 string
 	Peers                      string
 	Provides                   string
+	Retrievals                 string
 	RoutingTableEntries        string
 	RoutingTableSnapshots      string
 }{
@@ -24,6 +26,7 @@ var TableNames = struct {
 	Connections:                "connections",
 	Dials:                      "dials",
 	FindNodes:                  "find_nodes",
+	GetProviders:               "get_providers",
 	IPAddresses:                "ip_addresses",
 	MultiAddresses:             "multi_addresses",
 	MultiAddressesXIPAddresses: "multi_addresses_x_ip_addresses",
@@ -31,6 +34,7 @@ var TableNames = struct {
 	PeerStates:                 "peer_states",
 	Peers:                      "peers",
 	Provides:                   "provides",
+	Retrievals:                 "retrievals",
 	RoutingTableEntries:        "routing_table_entries",
 	RoutingTableSnapshots:      "routing_table_snapshots",
 }
