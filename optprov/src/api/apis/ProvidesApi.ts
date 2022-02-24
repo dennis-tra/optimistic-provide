@@ -21,7 +21,19 @@ import {
     Provide,
     ProvideFromJSON,
     ProvideToJSON,
+    ProvideDetails,
+    ProvideDetailsFromJSON,
+    ProvideDetailsToJSON,
 } from '../models';
+
+export interface GetProvideRequest {
+    hostId: string;
+    provideId: number;
+}
+
+export interface ListProvidesRequest {
+    hostId: string;
+}
 
 export interface StartProvideRequest {
     hostId: string;
@@ -31,6 +43,74 @@ export interface StartProvideRequest {
  * 
  */
 export class ProvidesApi extends runtime.BaseAPI {
+
+    /**
+     * Get details of a single provide operations.
+     * Get details of a single provide operations.
+     */
+    async getProvideRaw(requestParameters: GetProvideRequest, initOverrides?: RequestInit): Promise<runtime.ApiResponse<ProvideDetails>> {
+        if (requestParameters.hostId === null || requestParameters.hostId === undefined) {
+            throw new runtime.RequiredError('hostId','Required parameter requestParameters.hostId was null or undefined when calling getProvide.');
+        }
+
+        if (requestParameters.provideId === null || requestParameters.provideId === undefined) {
+            throw new runtime.RequiredError('provideId','Required parameter requestParameters.provideId was null or undefined when calling getProvide.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/hosts/{hostId}/provides/{provideId}`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))).replace(`{${"provideId"}}`, encodeURIComponent(String(requestParameters.provideId))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => ProvideDetailsFromJSON(jsonValue));
+    }
+
+    /**
+     * Get details of a single provide operations.
+     * Get details of a single provide operations.
+     */
+    async getProvide(requestParameters: GetProvideRequest, initOverrides?: RequestInit): Promise<ProvideDetails> {
+        const response = await this.getProvideRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     * Get a list of provide operations for the given host
+     * Get a list of provide operations.
+     */
+    async listProvidesRaw(requestParameters: ListProvidesRequest, initOverrides?: RequestInit): Promise<runtime.ApiResponse<Array<Provide>>> {
+        if (requestParameters.hostId === null || requestParameters.hostId === undefined) {
+            throw new runtime.RequiredError('hostId','Required parameter requestParameters.hostId was null or undefined when calling listProvides.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/hosts/{hostId}/provides`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(ProvideFromJSON));
+    }
+
+    /**
+     * Get a list of provide operations for the given host
+     * Get a list of provide operations.
+     */
+    async listProvides(requestParameters: ListProvidesRequest, initOverrides?: RequestInit): Promise<Array<Provide>> {
+        const response = await this.listProvidesRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Instructs the given host to generate random content and announce its CID to the network.
@@ -46,7 +126,7 @@ export class ProvidesApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/hosts/{hostId}/provides/`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
+            path: `/hosts/{hostId}/provides`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,

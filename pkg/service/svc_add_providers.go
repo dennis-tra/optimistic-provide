@@ -17,6 +17,7 @@ import (
 
 type AddProvidersService interface {
 	Save(ctx context.Context, h host.Host, provideID int, apReqs []*AddProvidersSpan) error
+	List(ctx context.Context, provideID int) ([]*models.AddProvider, error)
 }
 
 var _ AddProvidersService = &AddProviders{}
@@ -35,6 +36,10 @@ func NewAddProvidersService(peerService PeerService, maService MultiAddressServi
 		apRepo:      apRepo,
 		cpRepo:      cpRepo,
 	}
+}
+
+func (ap *AddProviders) List(ctx context.Context, provideID int) ([]*models.AddProvider, error) {
+	return ap.apRepo.List(ctx, provideID)
 }
 
 func (ap *AddProviders) Save(ctx context.Context, h host.Host, provideID int, apReqs []*AddProvidersSpan) error {

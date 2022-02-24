@@ -29,13 +29,46 @@ const (
 	RoutingTableUpdateTypePEERREMOVED RoutingTableUpdateType = "PEER_REMOVED"
 )
 
+// AddProvider defines model for AddProvider.
+type AddProvider struct {
+	Distance    string  `json:"distance"`
+	DurationInS float32 `json:"durationInS"`
+	EndedAt     string  `json:"endedAt"`
+	Error       *string `json:"error"`
+	Id          int     `json:"id"`
+	RemoteId    string  `json:"remoteId"`
+	StartedAt   string  `json:"startedAt"`
+}
+
 // Can be any value - string, number, boolean, array or object.
 type AnyValue interface{}
+
+// Connection defines model for Connection.
+type Connection struct {
+	DurationInS  float32 `json:"durationInS"`
+	EndedAt      string  `json:"endedAt"`
+	Id           int     `json:"id"`
+	MultiAddress string  `json:"multiAddress"`
+	RemoteId     string  `json:"remoteId"`
+	StartedAt    string  `json:"startedAt"`
+}
 
 // CreateHostRequest defines model for CreateHostRequest.
 type CreateHostRequest struct {
 	// An arbitrary name for this host.
 	Name string `json:"name"`
+}
+
+// Dial defines model for Dial.
+type Dial struct {
+	DurationInS  float32 `json:"durationInS"`
+	EndedAt      string  `json:"endedAt"`
+	Error        *string `json:"error"`
+	Id           int     `json:"id"`
+	MultiAddress string  `json:"multiAddress"`
+	RemoteId     string  `json:"remoteId"`
+	StartedAt    string  `json:"startedAt"`
+	Transport    string  `json:"transport"`
 }
 
 // ErrorCode defines model for ErrorCode.
@@ -50,12 +83,24 @@ type ErrorResponse struct {
 	Message string    `json:"message"`
 }
 
+// FindNode defines model for FindNode.
+type FindNode struct {
+	CloserPeersCount *int    `json:"closerPeersCount"`
+	DurationInS      float32 `json:"durationInS"`
+	EndedAt          string  `json:"endedAt"`
+	Error            *string `json:"error"`
+	Id               int     `json:"id"`
+	RemoteId         string  `json:"remoteId"`
+	StartedAt        string  `json:"startedAt"`
+}
+
 // Host defines model for Host.
 type Host struct {
-	BootstrappedAt *string `json:"bootstrappedAt"`
-	CreatedAt      string  `json:"createdAt"`
-	HostId         string  `json:"hostId"`
-	Name           string  `json:"name"`
+	BootstrappedAt       *string `json:"bootstrappedAt"`
+	CreatedAt            string  `json:"createdAt"`
+	HostId               string  `json:"hostId"`
+	Name                 string  `json:"name"`
+	RunningProvidesCount float32 `json:"runningProvidesCount"`
 }
 
 // Peer defines model for Peer.
@@ -76,6 +121,17 @@ type Provide struct {
 	InitialRoutingTableId int     `json:"initialRoutingTableId"`
 	ProvideId             int     `json:"provideId"`
 	StartedAt             string  `json:"startedAt"`
+}
+
+// ProvideDetails defines model for ProvideDetails.
+type ProvideDetails struct {
+	// Embedded struct due to allOf(#/components/schemas/Provide)
+	Provide `yaml:",inline"`
+	// Embedded fields due to inline allOf schema
+	AddProviders []AddProvider `json:"addProviders"`
+	Connections  []Connection  `json:"connections"`
+	Dials        []Dial        `json:"dials"`
+	FindNodes    []FindNode    `json:"findNodes"`
 }
 
 // RoutingTable defines model for RoutingTable.

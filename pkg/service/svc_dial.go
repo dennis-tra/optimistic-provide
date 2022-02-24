@@ -11,6 +11,7 @@ import (
 
 type DialService interface {
 	Save(ctx context.Context, h host.Host, provideID int, dials []*DialSpan) error
+	List(ctx context.Context, provideID int) ([]*models.Dial, error)
 }
 
 var _ DialService = &Dial{}
@@ -27,6 +28,10 @@ func NewDialService(peerService PeerService, maService MultiAddressService, dial
 		maService:   maService,
 		dialRepo:    dialRepo,
 	}
+}
+
+func (d *Dial) List(ctx context.Context, provideID int) ([]*models.Dial, error) {
+	return d.dialRepo.List(ctx, provideID)
 }
 
 func (d *Dial) Save(ctx context.Context, h host.Host, provideID int, dials []*DialSpan) error {

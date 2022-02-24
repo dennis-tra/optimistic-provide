@@ -46,7 +46,7 @@ export class PeersApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/peers/{peerId}/`.replace(`{${"peerId"}}`, encodeURIComponent(String(requestParameters.peerId))),
+            path: `/peers/{peerId}`.replace(`{${"peerId"}}`, encodeURIComponent(String(requestParameters.peerId))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,

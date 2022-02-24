@@ -10,6 +10,7 @@ import (
 
 type ConnectionService interface {
 	Save(ctx context.Context, h host.Host, provideID int, conns []*ConnectionSpan) error
+	List(ctx context.Context, provideID int) ([]*models.Connection, error)
 }
 
 var _ ConnectionService = &Connection{}
@@ -26,6 +27,10 @@ func NewConnectionService(peerService PeerService, maService MultiAddressService
 		maService:   maService,
 		repo:        repo,
 	}
+}
+
+func (c *Connection) List(ctx context.Context, provideID int) ([]*models.Connection, error) {
+	return c.repo.List(ctx, provideID)
 }
 
 func (c *Connection) Save(ctx context.Context, h host.Host, provideID int, conns []*ConnectionSpan) error {

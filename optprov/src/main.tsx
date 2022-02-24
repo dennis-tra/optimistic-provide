@@ -13,6 +13,7 @@ import en from "javascript-time-ago/locale/en.json";
 import ru from "javascript-time-ago/locale/ru.json";
 import RoutingTablePage from "./pages/RoutingTablePage";
 import ProvidePage from "./pages/ProvidePage";
+import ProvideDetailsPage from "./pages/ProvideDetailsPage";
 
 TimeAgo.addDefaultLocale(en);
 TimeAgo.addLocale(ru);
@@ -28,6 +29,7 @@ ReactDOM.render(
             <Route path="/hosts/:hostId" element={<HostPage />} />
             <Route path="/hosts/:hostId/routing-tables" element={<RoutingTablePage />} />
             <Route path="/hosts/:hostId/provides" element={<ProvidePage />} />
+            <Route path="/hosts/:hostId/provides/:provideId" element={<ProvideDetailsPage />} />
           </Routes>
         </BrowserRouter>
       </Provider>

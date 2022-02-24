@@ -17,7 +17,7 @@ const HostPage: React.FC = (props) => {
 
   if (isLoading) {
     return (
-      <HostDetailsLayout hostId={hostId}>
+      <HostDetailsLayout hostId={hostId} title="General">
         <CircularProgress />
       </HostDetailsLayout>
     );
@@ -26,7 +26,7 @@ const HostPage: React.FC = (props) => {
   const host = data!;
 
   return (
-    <HostDetailsLayout hostId={hostId}>
+    <HostDetailsLayout hostId={hostId} title={`General`}>
       <Grid item xs={12} md={6} lg={4}>
         <HostDetailsOverviewCard host={host} />
       </Grid>

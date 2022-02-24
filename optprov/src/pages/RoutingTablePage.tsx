@@ -22,14 +22,14 @@ const RoutingTablePage: React.FC = (props) => {
   const { data, isLoading, isError, error } = useGetHostQuery(hostId);
   if (isLoading) {
     return (
-      <HostDetailsLayout hostId={hostId}>
+      <HostDetailsLayout hostId={hostId} title="Routing Table">
         <CircularProgress />
       </HostDetailsLayout>
     );
   }
   const host = data!;
   return (
-    <HostDetailsLayout hostId={hostId}>
+    <HostDetailsLayout hostId={hostId} title="Routing Table">
       <Grid item xs={12} md={12} lg={12}>
         <HostDetailsRoutingTableCard host={host} />
       </Grid>

@@ -91,7 +91,7 @@ export class HostsApi extends runtime.BaseAPI {
         headerParameters['Content-Type'] = 'application/json';
 
         const response = await this.request({
-            path: `/hosts/`,
+            path: `/hosts`,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -124,7 +124,7 @@ export class HostsApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/hosts/{hostId}/`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
+            path: `/hosts/{hostId}`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -155,7 +155,7 @@ export class HostsApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/hosts/{hostId}/`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
+            path: `/hosts/{hostId}`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -183,7 +183,7 @@ export class HostsApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/hosts/`,
+            path: `/hosts`,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,

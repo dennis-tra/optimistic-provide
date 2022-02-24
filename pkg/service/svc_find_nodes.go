@@ -12,6 +12,7 @@ import (
 
 type FindNodesService interface {
 	Save(ctx context.Context, h host.Host, provideID int, fnReqs []*FindNodesSpan) error
+	List(ctx context.Context, provideID int) ([]*models.FindNode, error)
 }
 
 var _ FindNodesService = &FindNodes{}
@@ -28,6 +29,10 @@ func NewFindNodesService(peerService PeerService, fnRepo repo.FindNodesRepo, cpR
 		fnRepo:      fnRepo,
 		cpRepo:      cpRepo,
 	}
+}
+
+func (fn *FindNodes) List(ctx context.Context, provideID int) ([]*models.FindNode, error) {
+	return fn.fnRepo.List(ctx, provideID)
 }
 
 func (fn *FindNodes) Save(ctx context.Context, h host.Host, provideID int, fnReqs []*FindNodesSpan) error {

@@ -2,8 +2,13 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"sync"
 	"time"
+
+	"github.com/friendsofgo/errors"
+
+	"golang.org/x/sync/errgroup"
 
 	ks "github.com/whyrusleeping/go-keyspace"
 
@@ -22,6 +27,8 @@ var log = logging.Logger("optprov")
 
 type ProvideService interface {
 	Provide(ctx context.Context, h *dht.Host) (*models.Provide, error)
+	List(ctx context.Context, h *dht.Host) ([]*models.Provide, error)
+	Get(ctx context.Context, h *dht.Host, id int) (*models.Provide, []*models.Connection, []*models.FindNode, []*models.Dial, []*models.AddProvider, error)
 }
 
 var _ ProvideService = &Provide{}
@@ -81,6 +88,71 @@ func (ps *Provide) Provide(ctx context.Context, h *dht.Host) (*models.Provide, e
 	go ps.startProviding(h, provide, content)
 
 	return provide, nil
+}
+
+func (ps *Provide) List(ctx context.Context, h *dht.Host) ([]*models.Provide, error) {
+	return ps.provideRepo.List(ctx, h.ID().Pretty())
+}
+
+func (ps *Provide) Get(ctx context.Context, h *dht.Host, provideID int) (*models.Provide, []*models.Connection, []*models.FindNode, []*models.Dial, []*models.AddProvider, error) {
+	errg, ctx := errgroup.WithContext(ctx)
+	var provide *models.Provide
+	var connections []*models.Connection
+	var findNodes []*models.FindNode
+	var dials []*models.Dial
+	var addProviders []*models.AddProvider
+
+	errg.Go(func() error {
+		var err error
+		provide, err = ps.provideRepo.Get(ctx, h.ID().String(), provideID)
+		return err
+	})
+
+	errg.Go(func() error {
+		var err error
+		connections, err = ps.connService.List(ctx, provideID)
+		if errors.Is(err, sql.ErrNoRows) {
+			connections = []*models.Connection{}
+			return nil
+		}
+		return err
+	})
+
+	errg.Go(func() error {
+		var err error
+		findNodes, err = ps.fnService.List(ctx, provideID)
+		if errors.Is(err, sql.ErrNoRows) {
+			findNodes = []*models.FindNode{}
+			return nil
+		}
+		return err
+	})
+
+	errg.Go(func() error {
+		var err error
+		dials, err = ps.dialService.List(ctx, provideID)
+		if errors.Is(err, sql.ErrNoRows) {
+			dials = []*models.Dial{}
+			return nil
+		}
+		return err
+	})
+
+	errg.Go(func() error {
+		var err error
+		addProviders, err = ps.apService.List(ctx, provideID)
+		if errors.Is(err, sql.ErrNoRows) {
+			addProviders = []*models.AddProvider{}
+			return nil
+		}
+		return err
+	})
+
+	if err := errg.Wait(); err != nil {
+		return nil, nil, nil, nil, nil, err
+	}
+
+	return provide, connections, findNodes, dials, addProviders, nil
 }
 
 func (ps *Provide) startProviding(h *dht.Host, provide *models.Provide, content *util.Content) {

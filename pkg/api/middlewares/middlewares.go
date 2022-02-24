@@ -47,6 +47,30 @@ func HostID(hs service.HostService) gin.HandlerFunc {
 	}
 }
 
+func ProvideID(c *gin.Context) {
+	param, ok := c.Params.Get("provideID")
+	if !ok {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, types.ErrorResponse{
+			Code:    types.ErrorCodeINTERNAL,
+			Message: "Could not get provide ID from endpoint path.",
+		})
+		return
+	}
+
+	provideID, err := strconv.Atoi(param)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, types.ErrorResponse{
+			Code:    types.ErrorCodeROUTINGTABLENOTFOUND,
+			Message: "Could not convert " + param + "to integer",
+		})
+		return
+	}
+
+	c.Set("provideID", provideID)
+
+	c.Next()
+}
+
 func RoutingTableID(c *gin.Context) {
 	param, ok := c.Params.Get("routingTableID")
 	if !ok {

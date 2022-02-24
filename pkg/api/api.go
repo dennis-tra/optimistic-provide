@@ -60,33 +60,40 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 
 	hosts := router.Group("/hosts")
 	{
-		hosts.POST("/", hostController.Create)
-		hosts.GET("/", hostController.List)
+		hosts.POST("", hostController.Create)
+		hosts.GET("", hostController.List)
 
 		hostID := hosts.Group("/:hostID")
 		{
 			hostID.Use(middlewares.HostID(hostService))
-			hostID.GET("/", hostController.Get)
-			hostID.DELETE("/", hostController.Stop)
+			hostID.GET("", hostController.Get)
+			hostID.DELETE("", hostController.Stop)
 			hostID.POST("/bootstrap", hostController.Bootstrap)
 			hostID.GET("/routing-table", routingTableController.Current)
 
 			provides := hostID.Group("provides")
 			{
-				provides.POST("/", provideController.Create)
+				provides.POST("", provideController.Create)
+				provides.GET("", provideController.List)
+
+				provideID := provides.Group("/:provideID")
+				{
+					provideID.Use(middlewares.ProvideID)
+					provideID.GET("", provideController.Get)
+				}
 			}
 
 			routingTables := hostID.Group("routing-tables")
 			{
-				routingTables.POST("/", routingTableController.Create)
-				routingTables.GET("/", routingTableController.List)
+				routingTables.POST("", routingTableController.Create)
+				routingTables.GET("", routingTableController.List)
 				routingTables.GET("/listen", routingTableController.Listen)
 				routingTables.POST("/refresh", routingTableController.Refresh)
 
 				routingTableID := routingTables.Group("/:routingTableID")
 				{
 					routingTableID.Use(middlewares.RoutingTableID)
-					routingTableID.GET("/", routingTableController.Get)
+					routingTableID.GET("", routingTableController.Get)
 				}
 			}
 		}
@@ -97,7 +104,7 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 		peerID := peers.Group("/:peerID")
 		{
 			peerID.Use(middlewares.PeerID)
-			peerID.GET("/", peerController.Get)
+			peerID.GET("", peerController.Get)
 		}
 	}
 

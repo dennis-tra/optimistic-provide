@@ -21,6 +21,7 @@ import ListSubheader from "@mui/material/ListSubheader";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import SendIcon from "@mui/icons-material/Send";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
@@ -74,9 +75,10 @@ const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== "open" 
 
 interface HostDetailsLayoutProps {
   hostId: string;
+  title: string;
 }
 
-const HostDetailsLayout: React.FC<HostDetailsLayoutProps> = ({ hostId, children }) => {
+const HostDetailsLayout: React.FC<HostDetailsLayoutProps> = ({ hostId, title, children }) => {
   const navigate = useNavigate();
 
   const [open, setOpen] = useState(true);
@@ -107,7 +109,7 @@ const HostDetailsLayout: React.FC<HostDetailsLayoutProps> = ({ hostId, children 
               <MenuIcon />
             </IconButton>
             <Typography component="h1" variant="h6" color="inherit" noWrap sx={{ flexGrow: 1 }}>
-              General
+              {title}
             </Typography>
           </Toolbar>
         </AppBar>
@@ -149,7 +151,7 @@ const HostDetailsLayout: React.FC<HostDetailsLayoutProps> = ({ hostId, children 
             </ListItemButton>
             <ListItemButton component={RouterLink} to={`/hosts/${hostId}/provides`}>
               <ListItemIcon>
-                <BarChartIcon />
+                <SendIcon />
               </ListItemIcon>
               <ListItemText primary="Provides" />
             </ListItemButton>

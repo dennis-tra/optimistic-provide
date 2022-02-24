@@ -72,7 +72,7 @@ export class RoutingTableApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/hosts/{hostId}/routing-table/`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
+            path: `/hosts/{hostId}/routing-table`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -108,7 +108,7 @@ export class RoutingTableApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/hosts/{hostId}/routing-tables/{routingTableId}/`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))).replace(`{${"routingTableId"}}`, encodeURIComponent(String(requestParameters.routingTableId))),
+            path: `/hosts/{hostId}/routing-tables/{routingTableId}`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))).replace(`{${"routingTableId"}}`, encodeURIComponent(String(requestParameters.routingTableId))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -140,7 +140,7 @@ export class RoutingTableApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/hosts/{hostId}/routing-tables/`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
+            path: `/hosts/{hostId}/routing-tables`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -204,7 +204,7 @@ export class RoutingTableApi extends runtime.BaseAPI {
         const headerParameters: runtime.HTTPHeaders = {};
 
         const response = await this.request({
-            path: `/hosts/{hostId}/routing-tables/`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
+            path: `/hosts/{hostId}/routing-tables`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,

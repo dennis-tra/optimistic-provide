@@ -8,7 +8,7 @@ info:
 servers:
   - url: http://localhost:7000
 paths:
-  /hosts/:
+  /hosts:
     get:
       operationId: getHosts
       tags:
@@ -54,7 +54,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /hosts/{hostId}/:
+  /hosts/{hostId}:
     get:
       operationId: getHost
       tags:
@@ -133,7 +133,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /hosts/{hostId}/routing-tables/:
+  /hosts/{hostId}/routing-tables:
     get:
       operationId: getRoutingTables
       tags:
@@ -190,7 +190,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /hosts/{hostId}/routing-table/:
+  /hosts/{hostId}/routing-table:
     get:
       operationId: getCurrentRoutingTable
       tags:
@@ -218,7 +218,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /hosts/{hostId}/routing-tables/{routingTableId}/:
+  /hosts/{hostId}/routing-tables/{routingTableId}:
     get:
       operationId: getRoutingTable
       tags:
@@ -282,7 +282,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /hosts/{hostId}/provides/:
+  /hosts/{hostId}/provides:
     post:
       operationId: startProvide
       tags:
@@ -310,7 +310,71 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /peers/{peerId}/:
+    get:
+      operationId: listProvides
+      tags:
+        - Provides
+      summary: Get a list of provide operations.
+      description: Get a list of provide operations for the given host
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The provide instance.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Provide'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}/provides/{provideId}:
+    get:
+      operationId: getProvide
+      tags:
+        - Provides
+      summary: Get details of a single provide operations.
+      description: Get details of a single provide operations.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+        - name: provideId
+          in: path
+          description: The provide operation identifier.
+          required: true
+          example: 2
+          schema:
+            type: number
+      responses:
+        '200':
+          description: The provide instance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvideDetails'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /peers/{peerId}:
     get:
       operationId: getPeer
       tags:
@@ -555,6 +619,146 @@ components:
         - finalRoutingTableId
         - startedAt
         - endedAt
+        - error
+    ProvideDetails:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Provide'
+        - type: object
+          properties:
+            connections:
+              type: array
+              items:
+                $ref: '#/components/schemas/Connection'
+            dials:
+              type: array
+              items:
+                $ref: '#/components/schemas/Dial'
+            findNodes:
+              type: array
+              items:
+                $ref: '#/components/schemas/FindNode'
+            addProviders:
+              type: array
+              items:
+                $ref: '#/components/schemas/AddProvider'
+          required:
+            - dials
+            - connections
+            - findNodes
+            - addProviders
+    AddProvider:
+      type: object
+      properties:
+        id:
+          type: integer
+        remoteId:
+          type: string
+        startedAt:
+          type: string
+          format: date-format
+        endedAt:
+          type: string
+          format: date-format
+        durationInS:
+          type: number
+        distance:
+          type: string
+        error:
+          type: string
+          nullable: true
+      required:
+        - id
+        - remoteId
+        - distance
+        - startedAt
+        - endedAt
+        - durationInS
+        - closerPeersCount
+        - error
+    FindNode:
+      type: object
+      properties:
+        id:
+          type: integer
+        remoteId:
+          type: string
+        startedAt:
+          type: string
+          format: date-format
+        endedAt:
+          type: string
+          format: date-format
+        durationInS:
+          type: number
+        closerPeersCount:
+          type: integer
+          nullable: true
+        error:
+          type: string
+          nullable: true
+      required:
+        - id
+        - remoteId
+        - startedAt
+        - endedAt
+        - durationInS
+        - closerPeersCount
+        - error
+    Connection:
+      type: object
+      properties:
+        id:
+          type: integer
+        remoteId:
+          type: string
+        multiAddress:
+          type: string
+        startedAt:
+          type: string
+          format: date-format
+        endedAt:
+          type: string
+          format: date-format
+        durationInS:
+          type: number
+      required:
+        - id
+        - remoteId
+        - multiAddress
+        - startedAt
+        - endedAt
+        - durationInS
+    Dial:
+      type: object
+      properties:
+        id:
+          type: integer
+        remoteId:
+          type: string
+        transport:
+          type: string
+        multiAddress:
+          type: string
+        startedAt:
+          type: string
+          format: date-format
+        endedAt:
+          type: string
+          format: date-format
+        durationInS:
+          type: number
+        error:
+          type: string
+          nullable: true
+      required:
+        - id
+        - remoteId
+        - transport
+        - multiAddress
+        - startedAt
+        - endedAt
+        - durationInS
         - error
     ErrorResponse:
       type: object
