@@ -48,7 +48,7 @@ func (rtc *RoutingTableController) Create(c *gin.Context) {
 
 	rts, err := rtc.rts.Save(rtc.ctx, h)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, types.Error{
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeSAVINGROUTINGTABLE,
 			Message: "Saving routing table for host " + h.ID().String() + "failed",
 			Details: types.ErrDetails(err),
@@ -72,12 +72,12 @@ func (rtc *RoutingTableController) Get(c *gin.Context) {
 	rts, err := rtc.rts.FindByIDAndHostID(rtc.ctx, routingTableID, h.ID())
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusNotFound, types.Error{
+			c.JSON(http.StatusNotFound, types.ErrorResponse{
 				Code:    types.ErrorCodeROUTINGTABLENOTFOUND,
 				Message: fmt.Sprintf("Routing table with ID %d for host %s was not found", routingTableID, h.ID()),
 			})
 		} else {
-			c.JSON(http.StatusInternalServerError, types.Error{
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 				Code:    types.ErrorCodeINTERNAL,
 				Message: fmt.Sprintf("Error retrieving routing table snapshot for ID %d and host %s", routingTableID, h.ID()),
 				Details: types.ErrDetails(err),
@@ -100,7 +100,7 @@ func (rtc *RoutingTableController) List(c *gin.Context) {
 
 	rts, err := rtc.rts.FindAll(rtc.ctx, h.ID())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, types.Error{
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,
 			Message: fmt.Sprintf("Error retrieving routing table snapshots for host %s", h.ID()),
 			Details: types.ErrDetails(err),
@@ -133,7 +133,7 @@ func (rtc *RoutingTableController) Listen(c *gin.Context) {
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, types.Error{
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,
 			Message: fmt.Sprintf("Error could not upgrade connection"),
 			Details: types.ErrDetails(err),
@@ -164,15 +164,17 @@ func (rtc *RoutingTableController) Listen(c *gin.Context) {
 				log.Warnf("Could not marshal routing table update %v: %s", update, err)
 				continue
 			}
-			log.Infof("Sending %d bytes for %s", len(data), h.ID().String())
 			if err = conn.WriteMessage(websocket.TextMessage, data); err != nil {
 				log.Warn("Could not write websocket message", err)
 				continue
 			}
 		}
+		if err = conn.Close(); err != nil {
+			log.Warnf("Could not close websocket connection: %s", err)
+		}
 	}()
 
-	rtl.SendUpdate()
+	rtl.SendFullUpdate()
 }
 
 func (rtc *RoutingTableController) Refresh(c *gin.Context) {

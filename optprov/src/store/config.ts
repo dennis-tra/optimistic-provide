@@ -1,11 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import { optprovApi } from "./api";
-import hostsReducer from "./hostsSlice";
+import { reducer as bucketsReducer } from "./bucketsSlice";
 
 export const store = configureStore({
   reducer: {
-    hosts: hostsReducer,
+    buckets: bucketsReducer,
     [optprovApi.reducerPath]: optprovApi.reducer,
   },
   middleware: (getDefaultMiddleware) => getDefaultMiddleware().concat(optprovApi.middleware),

@@ -4,14 +4,17 @@ import (
 	"sort"
 	"time"
 
-	"github.com/volatiletech/null/v8"
+	"github.com/libp2p/go-libp2p-core/network"
 
+	kbucket "github.com/libp2p/go-libp2p-kbucket"
+
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/volatiletech/null/v8"
 	"go.uber.org/atomic"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/api/types"
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 	"github.com/dennis-tra/optimistic-provide/pkg/util"
-	"github.com/libp2p/go-libp2p-core/peer"
 )
 
 type RoutingTableListener struct {
@@ -42,46 +45,53 @@ func (r *RoutingTableListener) Stop() {
 	close(r.updateChan)
 }
 
+func (r *RoutingTableListener) OnClose() {
+	r.Stop()
+}
+
 func (r *RoutingTableListener) PeerAdded(p peer.ID) {
-	r.SendUpdate()
-}
-
-func (r *RoutingTableListener) PeerRemoved(p peer.ID) {
-	r.SendUpdate()
-}
-
-func (r *RoutingTableListener) SendUpdate() {
-	r.updateChan <- r.BuildUpdate()
-}
-
-func (r *RoutingTableListener) BuildUpdate() types.RoutingTableUpdate {
 	infos := r.h.DHT.RoutingTable().GetPeerInfos()
 	swarm := r.h.Network()
 
-	var rtp types.RoutingTableUpdate = make([]types.RoutingTablePeer, len(infos))
+	var peerInfo *kbucket.PeerInfo
+	for _, info := range infos {
+		if info.Id == p {
+			peerInfo = &info
+			break
+		}
+	}
+	if peerInfo == nil {
+		// TODO: log
+		return
+	}
+
+	r.updateChan <- types.RoutingTableUpdate{
+		Type:   types.RoutingTableUpdateTypePEERADDED,
+		Update: r.buildRoutingTablePeer(swarm, *peerInfo),
+	}
+}
+
+func (r *RoutingTableListener) PeerRemoved(p peer.ID) {
+	r.updateChan <- types.RoutingTableUpdate{
+		Type:   types.RoutingTableUpdateTypePEERREMOVED,
+		Update: p.String(),
+	}
+}
+
+func (r *RoutingTableListener) SendFullUpdate() {
+	r.updateChan <- types.RoutingTableUpdate{
+		Type:   types.RoutingTableUpdateTypeFULL,
+		Update: r.BuildUpdate(),
+	}
+}
+
+func (r *RoutingTableListener) BuildUpdate() types.RoutingTablePeers {
+	infos := r.h.DHT.RoutingTable().GetPeerInfos()
+	swarm := r.h.Network()
+
+	var rtp types.RoutingTablePeers = make([]types.RoutingTablePeer, len(infos))
 	for i, info := range infos {
-		var connectedAt *time.Time
-		for _, conn := range swarm.ConnsToPeer(info.Id) {
-			opened := conn.Stat().Opened
-			if connectedAt == nil || connectedAt.After(opened) {
-				connectedAt = &opened
-			}
-		}
-
-		av := ""
-		if agent, err := r.h.Peerstore().Get(info.Id, "AgentVersion"); err == nil {
-			av = agent.(string)
-		}
-
-		rtp[i] = types.RoutingTablePeer{
-			PeerId:                        info.Id.String(),
-			AddedAt:                       info.AddedAt.Format(time.RFC3339),
-			AgentVersion:                  null.NewString(av, av != "").Ptr(),
-			Bucket:                        int(util.BucketIdForPeer(r.h.ID(), info.Id)),
-			ConnectedSince:                util.TimeToStr(connectedAt),
-			LastSuccessfulOutboundQueryAt: info.LastSuccessfulOutboundQueryAt.Format(time.RFC3339),
-			LastUsefulAt:                  util.TimeToStr(&info.LastUsefulAt),
-		}
+		rtp[i] = r.buildRoutingTablePeer(swarm, info)
 	}
 
 	sort.Slice(rtp, func(i, j int) bool {
@@ -93,6 +103,27 @@ func (r *RoutingTableListener) BuildUpdate() types.RoutingTableUpdate {
 	return rtp
 }
 
-func (r *RoutingTableListener) OnClose() {
-	r.Stop()
+func (r *RoutingTableListener) buildRoutingTablePeer(swarm network.Network, peerInfo kbucket.PeerInfo) types.RoutingTablePeer {
+	var connectedAt *time.Time
+	for _, conn := range swarm.ConnsToPeer(peerInfo.Id) {
+		opened := conn.Stat().Opened
+		if connectedAt == nil || connectedAt.After(opened) {
+			connectedAt = &opened
+		}
+	}
+
+	av := ""
+	if agent, err := r.h.Peerstore().Get(peerInfo.Id, "AgentVersion"); err == nil {
+		av = agent.(string)
+	}
+
+	return types.RoutingTablePeer{
+		PeerId:                        peerInfo.Id.String(),
+		AddedAt:                       peerInfo.AddedAt.Format(time.RFC3339),
+		AgentVersion:                  null.NewString(av, av != "").Ptr(),
+		Bucket:                        int(util.BucketIdForPeer(r.h.ID(), peerInfo.Id)),
+		ConnectedSince:                util.TimeToStr(connectedAt),
+		LastSuccessfulOutboundQueryAt: peerInfo.LastSuccessfulOutboundQueryAt.Format(time.RFC3339),
+		LastUsefulAt:                  util.TimeToStr(&peerInfo.LastUsefulAt),
+	}
 }

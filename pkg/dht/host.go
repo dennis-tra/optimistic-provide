@@ -42,7 +42,7 @@ type Host struct {
 	rtPeerAdded   func(peer.ID)
 	rtPeerRemoved func(peer.ID)
 	rtListenerslk sync.RWMutex
-	rtListeners   map[RoutingTableListener]struct{}
+	rtListeners   map[RoutingTableListener]*sync.WaitGroup
 }
 
 func New(ctx context.Context, name string) (*Host, error) {
@@ -81,7 +81,7 @@ func New(ctx context.Context, name string) (*Host, error) {
 		MsgSender:     msgSender,
 		CreatedAt:     time.Now(),
 		Transports:    []*wrap.Notifier{tcp.Notifier, ws.Notifier, quic.Notifier},
-		rtListeners:   map[RoutingTableListener]struct{}{},
+		rtListeners:   map[RoutingTableListener]*sync.WaitGroup{},
 		rtPeerAdded:   dht.RoutingTable().PeerAdded,
 		rtPeerRemoved: dht.RoutingTable().PeerRemoved,
 	}
@@ -94,11 +94,18 @@ func New(ctx context.Context, name string) (*Host, error) {
 }
 
 func (h *Host) Close() error {
-	h.rtListenerslk.RLock()
+	h.rtListenerslk.Lock()
 	for listener := range h.rtListeners {
-		go listener.OnClose()
+		wg, ok := h.rtListeners[listener]
+		if !ok {
+			continue
+		}
+		// Wait for all in-flight go-routines to finish before returning
+		wg.Wait()
+		listener.OnClose()
+		delete(h.rtListeners, listener)
 	}
-	h.rtListenerslk.RUnlock()
+	h.rtListenerslk.Unlock()
 	return h.Host.Close()
 }
 
@@ -113,32 +120,62 @@ func (h *Host) Bootstrap(ctx context.Context) error {
 	return nil
 }
 
+func (h *Host) IsRoutingTableListenerRegistered(listener RoutingTableListener) bool {
+	h.rtListenerslk.RLock()
+	defer h.rtListenerslk.RUnlock()
+	_, ok := h.rtListeners[listener]
+	return ok
+}
+
 func (h *Host) RegisterRoutingTableListener(listener RoutingTableListener) {
 	h.rtListenerslk.Lock()
 	defer h.rtListenerslk.Unlock()
-	h.rtListeners[listener] = struct{}{}
+	h.rtListeners[listener] = &sync.WaitGroup{}
 }
 
 func (h *Host) UnregisterRoutingTableListener(listener RoutingTableListener) {
 	h.rtListenerslk.Lock()
 	defer h.rtListenerslk.Unlock()
+	wg, ok := h.rtListeners[listener]
+	if !ok {
+		return
+	}
+	// Wait for all in-flight go-routines to finish before returning
+	defer wg.Wait()
+
 	delete(h.rtListeners, listener)
 }
 
 func (h *Host) peerAdded(p peer.ID) {
-	h.rtListenerslk.RLock()
-	for listener := range h.rtListeners {
-		go listener.PeerAdded(p)
-	}
-	h.rtListenerslk.RUnlock()
 	h.rtPeerAdded(p)
+
+	h.rtListenerslk.RLock()
+	defer h.rtListenerslk.RUnlock()
+
+	for listener, wg := range h.rtListeners {
+		wgCpy := wg
+		listenerCpy := listener
+		wg.Add(1)
+		go func() {
+			listenerCpy.PeerAdded(p)
+			wgCpy.Done()
+		}()
+	}
 }
 
 func (h *Host) peerRemoved(p peer.ID) {
-	h.rtListenerslk.RLock()
-	for listener := range h.rtListeners {
-		go listener.PeerRemoved(p)
-	}
-	h.rtListenerslk.RUnlock()
 	h.rtPeerRemoved(p)
+
+	h.rtListenerslk.RLock()
+	defer h.rtListenerslk.RUnlock()
+
+	for listener, wg := range h.rtListeners {
+		wgCpy := wg
+		listenerCpy := listener
+		wg.Add(1)
+		go func() {
+			listenerCpy.PeerRemoved(p)
+			wgCpy.Done()
+		}()
+	}
 }

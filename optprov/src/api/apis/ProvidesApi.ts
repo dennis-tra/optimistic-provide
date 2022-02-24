@@ -15,6 +15,9 @@
 
 import * as runtime from '../runtime';
 import {
+    ErrorResponse,
+    ErrorResponseFromJSON,
+    ErrorResponseToJSON,
     Provide,
     ProvideFromJSON,
     ProvideToJSON,

@@ -15,7 +15,7 @@ func HostID(hs service.HostService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		param, ok := c.Params.Get("hostID")
 		if !ok {
-			c.AbortWithStatusJSON(http.StatusInternalServerError, types.Error{
+			c.AbortWithStatusJSON(http.StatusInternalServerError, types.ErrorResponse{
 				Code:    types.ErrorCodeINTERNAL,
 				Message: "Could not get host peer ID from endpoint path.",
 			})
@@ -24,7 +24,7 @@ func HostID(hs service.HostService) gin.HandlerFunc {
 
 		peerID, err := peer.Decode(param)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusBadRequest, types.Error{
+			c.AbortWithStatusJSON(http.StatusBadRequest, types.ErrorResponse{
 				Code:    types.ErrorCodeMALFORMEDPEERID,
 				Message: "Could not decode host peer ID: " + param,
 				Details: types.ErrDetails(err),
@@ -34,7 +34,7 @@ func HostID(hs service.HostService) gin.HandlerFunc {
 
 		h, found := hs.Host(peerID)
 		if !found {
-			c.AbortWithStatusJSON(http.StatusNotFound, types.Error{
+			c.AbortWithStatusJSON(http.StatusNotFound, types.ErrorResponse{
 				Code:    types.ErrorCodeHOSTNOTFOUND,
 				Message: "Host with ID " + peerID.String() + " was not found.",
 			})
@@ -50,7 +50,7 @@ func HostID(hs service.HostService) gin.HandlerFunc {
 func RoutingTableID(c *gin.Context) {
 	param, ok := c.Params.Get("routingTableID")
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, types.Error{
+		c.AbortWithStatusJSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,
 			Message: "Could not get routing table ID from endpoint path.",
 		})
@@ -59,7 +59,7 @@ func RoutingTableID(c *gin.Context) {
 
 	routingTableID, err := strconv.Atoi(param)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, types.Error{
+		c.AbortWithStatusJSON(http.StatusBadRequest, types.ErrorResponse{
 			Code:    types.ErrorCodeROUTINGTABLENOTFOUND,
 			Message: "Could not convert " + param + "to integer",
 		})
@@ -74,7 +74,7 @@ func RoutingTableID(c *gin.Context) {
 func PeerID(c *gin.Context) {
 	param, ok := c.Params.Get("peerID")
 	if !ok {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, types.Error{
+		c.AbortWithStatusJSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,
 			Message: "Could not get peer ID from endpoint path.",
 		})
@@ -83,7 +83,7 @@ func PeerID(c *gin.Context) {
 
 	peerID, err := peer.Decode(param)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, types.Error{
+		c.AbortWithStatusJSON(http.StatusBadRequest, types.ErrorResponse{
 			Code:    types.ErrorCodeMALFORMEDPEERID,
 			Message: "Could not decode peer ID: " + param,
 			Details: types.ErrDetails(err),

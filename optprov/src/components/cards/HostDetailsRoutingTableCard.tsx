@@ -2,24 +2,12 @@ import { useTheme } from "@mui/material/styles";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
-import { Host, RoutingTablePeer } from "../../api";
+import { Host } from "../../api";
 import { useGetRoutingTablePeersQuery } from "../../store/api";
 import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-
-interface RoutingTable {
-  [key: number]: RoutingTablePeer[];
-}
-
-const buckets = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18];
-
-const newRoutingTable = (): RoutingTable => {
-  const routingTable: RoutingTable = {};
-  for (const bucket in buckets) {
-    routingTable[bucket] = [];
-  }
-  return routingTable;
-};
+import { useAppSelector } from "../../store/config";
+import { selectHistogramData } from "../../store/bucketsSlice";
 
 interface HostDetailsRoutingTableCardProps {
   host: Host;
@@ -27,17 +15,12 @@ interface HostDetailsRoutingTableCardProps {
 
 const HostDetailsRoutingTableCard: React.FC<HostDetailsRoutingTableCardProps> = ({ host }) => {
   const navigate = useNavigate();
-  const { data, isLoading } = useGetRoutingTablePeersQuery(host.hostId);
+  const bucketData = useAppSelector(selectHistogramData(host.hostId));
+  const { isLoading } = useGetRoutingTablePeersQuery(host.hostId);
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return <CircularProgress />;
   }
-
-  const newRT = newRoutingTable();
-  for (const peer of data!) {
-    newRT[peer.bucket].push(peer);
-  }
-  const bucketLevels = buckets.map((bucket) => ({ bucket: bucket, level: newRT[bucket].length }));
 
   const handleClick = (data: any, index: number) => {
     navigate(`/hosts/${host.hostId}/routing-tables?bucket=${data.bucket}`);
@@ -56,7 +39,7 @@ const HostDetailsRoutingTableCard: React.FC<HostDetailsRoutingTableCardProps> = 
         Routing Table
       </Typography>
       <ResponsiveContainer>
-        <BarChart width={150} height={40} data={bucketLevels}>
+        <BarChart width={150} height={40} data={bucketData}>
           <CartesianGrid strokeDasharray="3 3" />
           <Tooltip />
           <XAxis dataKey="bucket" />

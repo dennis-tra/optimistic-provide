@@ -29,7 +29,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
     post:
       operationId: createHost
       tags:
@@ -53,7 +53,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
   /hosts/{hostId}/:
     get:
       operationId: getHost
@@ -81,7 +81,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
     delete:
       operationId: deleteHost
       tags:
@@ -104,7 +104,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
   /hosts/{hostId}/bootstrap:
     post:
       operationId: bootstrapHost
@@ -132,7 +132,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
   /hosts/{hostId}/routing-tables/:
     get:
       operationId: getRoutingTables
@@ -162,7 +162,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
     post:
       operationId: routingTableCreate
       tags:
@@ -189,14 +189,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-  /hosts/{hostId}/routing-tables/listen/:
+                $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}/routing-table/:
     get:
-      operationId: routingTableListen
+      operationId: getCurrentRoutingTable
       tags:
         - Routing Table
-      summary: Routing Tabel update stream
-      description: Websocket endpoint to listen for routing table updates.
+      summary: Returns the current routing table.
+      description: Returns the current routing table with its entries for the given peer.
       parameters:
         - name: hostId
           in: path
@@ -207,18 +207,17 @@ paths:
             type: string
       responses:
         '200':
-          description: The routing table update
+          description: The routing table.
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/RoutingTableUpdate'
+                $ref: '#/components/schemas/RoutingTablePeers'
         default:
           description: A JSON object with error information.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
   /hosts/{hostId}/routing-tables/{routingTableId}/:
     get:
       operationId: getRoutingTable
@@ -254,7 +253,35 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}/routing-tables/listen:
+    get:
+      operationId: listenRoutingTable
+      tags:
+        - Routing Table
+      summary: Subscribe to real time updates of the routing table.
+      description: Returns routing table updates as they occur for the given host. Prepend is a full update
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The routing table updates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingTableUpdate'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /hosts/{hostId}/provides/:
     post:
       operationId: startProvide
@@ -282,7 +309,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
   /peers/{peerId}/:
     get:
       operationId: getPeer
@@ -310,7 +337,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
     CreateHostRequest:
@@ -395,6 +422,24 @@ components:
         - lastUsefulAt
         - lastSuccessfulOutboundQueryAt
     RoutingTableUpdate:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - FULL
+            - PEER_ADDED
+            - PEER_REMOVED
+        update:
+          oneOf:
+            - $ref: '#/components/schemas/RoutingTablePeer'
+            - $ref: '#/components/schemas/RoutingTablePeers'
+            - type: string
+              description: The Peer ID of the removed peer.
+      required:
+        - type
+        - update
+    RoutingTablePeers:
       type: array
       items:
         $ref: '#/components/schemas/RoutingTablePeer'
@@ -508,7 +553,7 @@ components:
         - startedAt
         - endedAt
         - error
-    Error:
+    ErrorResponse:
       type: object
       properties:
         message:

@@ -20,6 +20,15 @@ const (
 	ErrorCodeSAVINGROUTINGTABLE ErrorCode = "SAVING_ROUTING_TABLE"
 )
 
+// Defines values for RoutingTableUpdateType.
+const (
+	RoutingTableUpdateTypeFULL RoutingTableUpdateType = "FULL"
+
+	RoutingTableUpdateTypePEERADDED RoutingTableUpdateType = "PEER_ADDED"
+
+	RoutingTableUpdateTypePEERREMOVED RoutingTableUpdateType = "PEER_REMOVED"
+)
+
 // Can be any value - string, number, boolean, array or object.
 type AnyValue interface{}
 
@@ -29,17 +38,17 @@ type CreateHostRequest struct {
 	Name string `json:"name"`
 }
 
-// Error defines model for Error.
-type Error struct {
+// ErrorCode defines model for ErrorCode.
+type ErrorCode string
+
+// ErrorResponse defines model for ErrorResponse.
+type ErrorResponse struct {
 	Code ErrorCode `json:"code"`
 
 	// Can be any value - string, number, boolean, array or object.
 	Details *AnyValue `json:"details"`
 	Message string    `json:"message"`
 }
-
-// ErrorCode defines model for ErrorCode.
-type ErrorCode string
 
 // Host defines model for Host.
 type Host struct {
@@ -108,8 +117,17 @@ type RoutingTablePeer struct {
 	Protocols                     []string `json:"protocols"`
 }
 
+// RoutingTablePeers defines model for RoutingTablePeers.
+type RoutingTablePeers []RoutingTablePeer
+
 // RoutingTableUpdate defines model for RoutingTableUpdate.
-type RoutingTableUpdate []RoutingTablePeer
+type RoutingTableUpdate struct {
+	Type   RoutingTableUpdateType `json:"type"`
+	Update interface{}            `json:"update"`
+}
+
+// RoutingTableUpdateType defines model for RoutingTableUpdate.Type.
+type RoutingTableUpdateType string
 
 // CreateHostJSONBody defines parameters for CreateHost.
 type CreateHostJSONBody CreateHostRequest

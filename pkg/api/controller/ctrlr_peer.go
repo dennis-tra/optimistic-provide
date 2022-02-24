@@ -34,12 +34,12 @@ func (pc *PeerController) Get(c *gin.Context) {
 	dbPeer, err := pc.ps.Find(c.Request.Context(), pid)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			c.JSON(http.StatusNotFound, types.Error{
+			c.JSON(http.StatusNotFound, types.ErrorResponse{
 				Code:    types.ErrorCodePEERNOTFOUND,
 				Message: "Peer with ID " + pid.String() + " was not found",
 			})
 		} else {
-			c.JSON(http.StatusInternalServerError, types.Error{
+			c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 				Code:    types.ErrorCodeINTERNAL,
 				Message: "Error retrieving peer with ID " + pid.String(),
 				Details: types.ErrDetails(err),

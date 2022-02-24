@@ -33,7 +33,7 @@ func (pc *ProvideController) Create(c *gin.Context) {
 
 	provide, err := pc.ps.Provide(pc.ctx, h)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, types.Error{
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,
 			Message: "Error starting provide operation",
 			Details: types.ErrDetails(err),

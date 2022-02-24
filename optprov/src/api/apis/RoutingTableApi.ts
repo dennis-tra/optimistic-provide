@@ -15,13 +15,26 @@
 
 import * as runtime from '../runtime';
 import {
+    ErrorResponse,
+    ErrorResponseFromJSON,
+    ErrorResponseToJSON,
     RoutingTable,
     RoutingTableFromJSON,
     RoutingTableToJSON,
     RoutingTableDetails,
     RoutingTableDetailsFromJSON,
     RoutingTableDetailsToJSON,
+    RoutingTablePeer,
+    RoutingTablePeerFromJSON,
+    RoutingTablePeerToJSON,
+    RoutingTableUpdate,
+    RoutingTableUpdateFromJSON,
+    RoutingTableUpdateToJSON,
 } from '../models';
+
+export interface GetCurrentRoutingTableRequest {
+    hostId: string;
+}
 
 export interface GetRoutingTableRequest {
     hostId: string;
@@ -32,11 +45,11 @@ export interface GetRoutingTablesRequest {
     hostId: string;
 }
 
-export interface RoutingTableCreateRequest {
+export interface ListenRoutingTableRequest {
     hostId: string;
 }
 
-export interface RoutingTableListenRequest {
+export interface RoutingTableCreateRequest {
     hostId: string;
 }
 
@@ -44,6 +57,38 @@ export interface RoutingTableListenRequest {
  * 
  */
 export class RoutingTableApi extends runtime.BaseAPI {
+
+    /**
+     * Returns the current routing table with its entries for the given peer.
+     * Returns the current routing table.
+     */
+    async getCurrentRoutingTableRaw(requestParameters: GetCurrentRoutingTableRequest, initOverrides?: RequestInit): Promise<runtime.ApiResponse<Array<RoutingTablePeer>>> {
+        if (requestParameters.hostId === null || requestParameters.hostId === undefined) {
+            throw new runtime.RequiredError('hostId','Required parameter requestParameters.hostId was null or undefined when calling getCurrentRoutingTable.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/hosts/{hostId}/routing-table/`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(RoutingTablePeerFromJSON));
+    }
+
+    /**
+     * Returns the current routing table with its entries for the given peer.
+     * Returns the current routing table.
+     */
+    async getCurrentRoutingTable(requestParameters: GetCurrentRoutingTableRequest, initOverrides?: RequestInit): Promise<Array<RoutingTablePeer>> {
+        const response = await this.getCurrentRoutingTableRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
 
     /**
      * Returns a single routing table with its entries
@@ -114,6 +159,38 @@ export class RoutingTableApi extends runtime.BaseAPI {
     }
 
     /**
+     * Returns routing table updates as they occur for the given host. Prepend is a full update
+     * Subscribe to real time updates of the routing table.
+     */
+    async listenRoutingTableRaw(requestParameters: ListenRoutingTableRequest, initOverrides?: RequestInit): Promise<runtime.ApiResponse<RoutingTableUpdate>> {
+        if (requestParameters.hostId === null || requestParameters.hostId === undefined) {
+            throw new runtime.RequiredError('hostId','Required parameter requestParameters.hostId was null or undefined when calling listenRoutingTable.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/hosts/{hostId}/routing-tables/listen`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => RoutingTableUpdateFromJSON(jsonValue));
+    }
+
+    /**
+     * Returns routing table updates as they occur for the given host. Prepend is a full update
+     * Subscribe to real time updates of the routing table.
+     */
+    async listenRoutingTable(requestParameters: ListenRoutingTableRequest, initOverrides?: RequestInit): Promise<RoutingTableUpdate> {
+        const response = await this.listenRoutingTableRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
      * Saves a current routing table snapshot of the given host.
      * Saves a current routing table snapshot of the given host.
      */
@@ -142,38 +219,6 @@ export class RoutingTableApi extends runtime.BaseAPI {
      */
     async routingTableCreate(requestParameters: RoutingTableCreateRequest, initOverrides?: RequestInit): Promise<RoutingTable> {
         const response = await this.routingTableCreateRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Websocket endpoint to listen for routing table updates.
-     * Routing Tabel update stream
-     */
-    async routingTableListenRaw(requestParameters: RoutingTableListenRequest, initOverrides?: RequestInit): Promise<runtime.ApiResponse<Array>> {
-        if (requestParameters.hostId === null || requestParameters.hostId === undefined) {
-            throw new runtime.RequiredError('hostId','Required parameter requestParameters.hostId was null or undefined when calling routingTableListen.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        const response = await this.request({
-            path: `/hosts/{hostId}/routing-tables/listen/`.replace(`{${"hostId"}}`, encodeURIComponent(String(requestParameters.hostId))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.TextApiResponse(response) as any;
-    }
-
-    /**
-     * Websocket endpoint to listen for routing table updates.
-     * Routing Tabel update stream
-     */
-    async routingTableListen(requestParameters: RoutingTableListenRequest, initOverrides?: RequestInit): Promise<Array> {
-        const response = await this.routingTableListenRaw(requestParameters, initOverrides);
         return await response.value();
     }
 

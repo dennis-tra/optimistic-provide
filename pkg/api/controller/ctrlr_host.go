@@ -31,7 +31,7 @@ func NewHostController(ctx context.Context, hs service.HostService) *HostControl
 func (hc *HostController) Create(c *gin.Context) {
 	chr := &types.CreateHostRequest{}
 	if err := c.BindJSON(chr); err != nil {
-		c.JSON(http.StatusBadRequest, types.Error{
+		c.JSON(http.StatusBadRequest, types.ErrorResponse{
 			Code:    types.ErrorCodeMALFORMEDREQUEST,
 			Message: "Could not create libp2p host because of a malformed JSON request",
 			Details: types.ErrDetails(err),
@@ -41,7 +41,7 @@ func (hc *HostController) Create(c *gin.Context) {
 
 	h, err := hc.hs.Create(hc.ctx, chr.Name)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, types.Error{
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,
 			Message: "Could not create libp2p host",
 			Details: types.ErrDetails(err),
@@ -92,7 +92,7 @@ func (hc *HostController) Stop(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
 
 	if err := hc.hs.Stop(h.ID()); err != nil {
-		c.JSON(http.StatusInternalServerError, types.Error{
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,
 			Message: "Could not stop libp2p host",
 			Details: types.ErrDetails(err),
@@ -107,7 +107,7 @@ func (hc *HostController) Bootstrap(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
 
 	if err := h.Bootstrap(hc.ctx); err != nil {
-		c.JSON(http.StatusInternalServerError, types.Error{
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,
 			Message: "Could not bootstrap host",
 			Details: types.ErrDetails(err),

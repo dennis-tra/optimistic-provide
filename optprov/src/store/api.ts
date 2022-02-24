@@ -1,6 +1,7 @@
 // Need to use the React-specific entry point to import createApi
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { Host, CreateHostRequest, RoutingTablePeer } from "../api";
+import { Host, CreateHostRequest, RoutingTablePeer, RoutingTableUpdate } from "../api";
+import { actions as bucketsActions } from "./bucketsSlice";
 
 // Define a service using a base URL and expected endpoints
 export const optprovApi = createApi({
@@ -32,22 +33,35 @@ export const optprovApi = createApi({
       providesTags: (result, error, arg) => [{ type: "Host", id: arg }],
     }),
     getRoutingTablePeers: builder.query<RoutingTablePeer[], string>({
-      query: (hostId) => `hosts/${hostId}/routing-tables/current`,
-      onCacheEntryAdded: async (arg, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) => {
-        const ws = new WebSocket(`ws://localhost:7000/hosts/${arg}/routing-tables/listen`);
+      query: (hostId) => `hosts/${hostId}/routing-table`,
+      onCacheEntryAdded: async (hostId, { updateCachedData, cacheDataLoaded, cacheEntryRemoved, dispatch }) => {
+        const ws = new WebSocket(`ws://localhost:7000/hosts/${hostId}/routing-tables/listen`);
         try {
-          await cacheDataLoaded;
+          const fullUpdate = await cacheDataLoaded;
+          dispatch(bucketsActions.replace({ hostId, peers: fullUpdate.data }));
           ws.onmessage = (event: MessageEvent) => {
-            const data = JSON.parse(event.data);
-            updateCachedData((draft) => {
-              return data;
-            });
+            const data = JSON.parse(event.data) as RoutingTableUpdate;
+            switch (data.type) {
+              case "PEER_ADDED":
+                const peer = data.update as RoutingTablePeer;
+                dispatch(bucketsActions.addPeer({ hostId, peer }));
+                break;
+              case "PEER_REMOVED":
+                const peerId = data.update as string;
+                dispatch(bucketsActions.removePeer({ hostId, peerId }));
+                break;
+              case "FULL":
+                const peers = data.update as RoutingTablePeer[];
+                dispatch(bucketsActions.replace({ hostId, peers }));
+                break;
+            }
           };
         } catch (err) {
           console.error(err);
+        } finally {
+          await cacheEntryRemoved;
+          ws.close();
         }
-        await cacheEntryRemoved;
-        ws.close();
       },
       providesTags: (result, error, arg) => [{ type: "RoutingTable", id: arg }],
     }),
