@@ -3,6 +3,8 @@ package service
 import (
 	"time"
 
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
+
 	"github.com/libp2p/go-libp2p-core/peer"
 	ma "github.com/multiformats/go-multiaddr"
 )
@@ -36,4 +38,13 @@ type FindNodesSpan struct {
 	End          time.Time
 	CloserPeers  []*peer.AddrInfo
 	Error        error
+}
+
+type AddProvidersSpan struct {
+	RemotePeerID  peer.ID
+	Content       *util.Content
+	Start         time.Time
+	ProviderAddrs []ma.Multiaddr
+	End           time.Time
+	Error         error
 }

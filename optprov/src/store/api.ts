@@ -9,6 +9,10 @@ export const optprovApi = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:7000" }),
   tagTypes: ["Host", "RoutingTable"],
   endpoints: (builder) => ({
+    saveRoutingTable: builder.mutation<Host, string>({
+      query: (hostId) => ({ url: `hosts/${hostId}/routing-tables/`, method: "POST" }),
+      invalidatesTags: [{ type: "RoutingTable", id: "LIST" }],
+    }),
     createHost: builder.mutation<Host, CreateHostRequest>({
       query: (body) => ({ url: `hosts/`, method: "POST", body }),
       invalidatesTags: [{ type: "Host", id: "LIST" }],
@@ -32,9 +36,17 @@ export const optprovApi = createApi({
       query: (hostId) => `hosts/${hostId}/`,
       providesTags: (result, error, arg) => [{ type: "Host", id: arg }],
     }),
-    getRoutingTablePeers: builder.query<RoutingTablePeer[], string>({
+    getCurrentRoutingTablePeers: builder.query<RoutingTablePeer[], string>({
       query: (hostId) => `hosts/${hostId}/routing-table`,
-      onCacheEntryAdded: async (hostId, { updateCachedData, cacheDataLoaded, cacheEntryRemoved, dispatch }) => {
+      onCacheEntryAdded: async (hostId, { cacheDataLoaded, cacheEntryRemoved, dispatch }) => {
+        const fullUpdate = await cacheDataLoaded;
+        dispatch(bucketsActions.replace({ hostId, peers: fullUpdate.data }));
+      },
+      providesTags: (result, error, arg) => [{ type: "RoutingTable", id: arg }],
+    }),
+    listenRoutingTable: builder.query<RoutingTablePeer[], string>({
+      query: (hostId) => `hosts/${hostId}/routing-table`,
+      onCacheEntryAdded: async (hostId, { cacheDataLoaded, cacheEntryRemoved, dispatch }) => {
         const ws = new WebSocket(`ws://localhost:7000/hosts/${hostId}/routing-tables/listen`);
         try {
           const fullUpdate = await cacheDataLoaded;
@@ -71,10 +83,13 @@ export const optprovApi = createApi({
 // Export hooks for usage in functional components, which are
 // auto-generated based on the defined endpoints
 export const {
+  useSaveRoutingTableMutation,
   useGetHostQuery,
   useGetHostsQuery,
   useCreateHostMutation,
   useDeleteHostMutation,
   useBootstrapHostMutation,
-  useGetRoutingTablePeersQuery,
+  useListenRoutingTableQuery,
+  useGetCurrentRoutingTablePeersQuery,
+  useLazyGetCurrentRoutingTablePeersQuery,
 } = optprovApi;

@@ -21,45 +21,41 @@ const HostDetailsBucketPeersCard: React.FC<HostDetailsBucketPeersCardProps> = ({
         p: 2,
         display: "flex",
         flexDirection: "column",
-        height: 300,
       }}
     >
       <Typography component="h2" variant="h6" color="primary" gutterBottom>
-        Routing Table
+        Bucket {bucket}
       </Typography>
-      <>
-        <h3>Bucket {bucket}</h3>
-        <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
-            <TableHead>
-              <TableRow>
-                <TableCell>Peer ID</TableCell>
-                <TableCell>Agent Version</TableCell>
-                <TableCell>Added at</TableCell>
-                <TableCell>Last Outbound</TableCell>
-                <TableCell>Connected since</TableCell>
+      <TableContainer component={Paper}>
+        <Table sx={{ minWidth: 650 }} size="small" aria-label="a dense table">
+          <TableHead>
+            <TableRow>
+              <TableCell>Peer ID</TableCell>
+              <TableCell>Agent Version</TableCell>
+              <TableCell>Added at</TableCell>
+              <TableCell>Last Outbound</TableCell>
+              <TableCell>Connected since</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {peers.map((peer) => (
+              <TableRow key={peer.peerId} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
+                <TableCell sx={{ fontFamily: "Monospace" }}>{peer.peerId}</TableCell>
+                <TableCell sx={{ fontFamily: "Monospace" }}>{peer.agentVersion}</TableCell>
+                <TableCell>
+                  <ReactTimeAgo date={new Date(peer.addedAt)} />
+                </TableCell>
+                <TableCell>
+                  <ReactTimeAgo date={new Date(peer.lastSuccessfulOutboundQueryAt)} />
+                </TableCell>
+                <TableCell>
+                  {peer.connectedSince ? <ReactTimeAgo date={new Date(peer.connectedSince)} /> : "-"}
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {peers.map((peer) => (
-                <TableRow key={peer.peerId} sx={{ "&:last-child td, &:last-child th": { border: 0 } }}>
-                  <TableCell sx={{ fontFamily: "Monospace" }}>{peer.peerId}</TableCell>
-                  <TableCell sx={{ fontFamily: "Monospace" }}>{peer.agentVersion}</TableCell>
-                  <TableCell>
-                    <ReactTimeAgo date={new Date(peer.addedAt)} />
-                  </TableCell>
-                  <TableCell>
-                    <ReactTimeAgo date={new Date(peer.lastSuccessfulOutboundQueryAt)} />
-                  </TableCell>
-                  <TableCell>
-                    {peer.connectedSince ? <ReactTimeAgo date={new Date(peer.connectedSince)} /> : "-"}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>{" "}
-      </>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
     </Paper>
   );
 };

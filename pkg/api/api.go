@@ -38,6 +38,7 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 	dialRepo := repo.NewDialRepo(dbclient)
 	connRepo := repo.NewConnectionRepo(dbclient)
 	fnRepo := repo.NewFindNodesRepo(dbclient)
+	apRepo := repo.NewAddProvidersRepo(dbclient)
 	cpRepo := repo.NewCloserPeersRepo(dbclient)
 	psRepo := repo.NewPeerStateRepo(dbclient)
 
@@ -48,8 +49,9 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 	dialService := service.NewDialService(peerService, maService, dialRepo)
 	connService := service.NewConnectionService(peerService, maService, connRepo)
 	fnService := service.NewFindNodesService(peerService, fnRepo, cpRepo)
+	apService := service.NewAddProvidersService(peerService, maService, apRepo, cpRepo)
 	psService := service.NewPeerStateService(peerService, psRepo)
-	provideService := service.NewProvideService(peerService, hostService, rtService, maService, dialService, connService, fnService, psService, provideRepo)
+	provideService := service.NewProvideService(peerService, hostService, rtService, maService, dialService, connService, fnService, psService, apService, provideRepo)
 
 	peerController := controller.NewPeerController(ctx, peerService)
 	hostController := controller.NewHostController(ctx, hostService)

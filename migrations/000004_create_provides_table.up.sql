@@ -7,6 +7,8 @@ CREATE TABLE provides
     provider_id              INT         NOT NULL,
     -- The content identifier being provided
     content_id               TEXT        NOT NULL,
+    -- The XOR distance from peer ID to content ID
+    distance                 bytea       NOT NULL,
     -- The state of the routing table when the provide operation was started
     initial_routing_table_id INT         NOT NULL,
     -- The state of the routing table when the provide operation ended
@@ -18,7 +20,7 @@ CREATE TABLE provides
     -- The returned error of the provide operation
     error                    TEXT,
     -- Application level timestamp when this provide plus all persistence operations have finished
-    done_at                 TIMESTAMPTZ,
+    done_at                  TIMESTAMPTZ,
 
     -- database timestamps
     updated_at               TIMESTAMPTZ NOT NULL,

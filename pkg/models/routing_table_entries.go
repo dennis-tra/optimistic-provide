@@ -30,7 +30,7 @@ type RoutingTableEntry struct {
 	LastUsefulAt                  null.Time `boil:"last_useful_at" json:"last_useful_at,omitempty" toml:"last_useful_at" yaml:"last_useful_at,omitempty"`
 	LastSuccessfulOutboundQueryAt time.Time `boil:"last_successful_outbound_query_at" json:"last_successful_outbound_query_at" toml:"last_successful_outbound_query_at" yaml:"last_successful_outbound_query_at"`
 	AddedAt                       time.Time `boil:"added_at" json:"added_at" toml:"added_at" yaml:"added_at"`
-	ConnectedAt                   null.Time `boil:"connected_at" json:"connected_at,omitempty" toml:"connected_at" yaml:"connected_at,omitempty"`
+	ConnectedSince                null.Time `boil:"connected_since" json:"connected_since,omitempty" toml:"connected_since" yaml:"connected_since,omitempty"`
 
 	R *routingTableEntryR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L routingTableEntryL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -43,7 +43,7 @@ var RoutingTableEntryColumns = struct {
 	LastUsefulAt                  string
 	LastSuccessfulOutboundQueryAt string
 	AddedAt                       string
-	ConnectedAt                   string
+	ConnectedSince                string
 }{
 	RoutingTableSnapshotID:        "routing_table_snapshot_id",
 	PeerID:                        "peer_id",
@@ -51,7 +51,7 @@ var RoutingTableEntryColumns = struct {
 	LastUsefulAt:                  "last_useful_at",
 	LastSuccessfulOutboundQueryAt: "last_successful_outbound_query_at",
 	AddedAt:                       "added_at",
-	ConnectedAt:                   "connected_at",
+	ConnectedSince:                "connected_since",
 }
 
 var RoutingTableEntryTableColumns = struct {
@@ -61,7 +61,7 @@ var RoutingTableEntryTableColumns = struct {
 	LastUsefulAt                  string
 	LastSuccessfulOutboundQueryAt string
 	AddedAt                       string
-	ConnectedAt                   string
+	ConnectedSince                string
 }{
 	RoutingTableSnapshotID:        "routing_table_entries.routing_table_snapshot_id",
 	PeerID:                        "routing_table_entries.peer_id",
@@ -69,7 +69,7 @@ var RoutingTableEntryTableColumns = struct {
 	LastUsefulAt:                  "routing_table_entries.last_useful_at",
 	LastSuccessfulOutboundQueryAt: "routing_table_entries.last_successful_outbound_query_at",
 	AddedAt:                       "routing_table_entries.added_at",
-	ConnectedAt:                   "routing_table_entries.connected_at",
+	ConnectedSince:                "routing_table_entries.connected_since",
 }
 
 // Generated where
@@ -104,7 +104,7 @@ var RoutingTableEntryWhere = struct {
 	LastUsefulAt                  whereHelpernull_Time
 	LastSuccessfulOutboundQueryAt whereHelpertime_Time
 	AddedAt                       whereHelpertime_Time
-	ConnectedAt                   whereHelpernull_Time
+	ConnectedSince                whereHelpernull_Time
 }{
 	RoutingTableSnapshotID:        whereHelperint{field: "\"routing_table_entries\".\"routing_table_snapshot_id\""},
 	PeerID:                        whereHelperint{field: "\"routing_table_entries\".\"peer_id\""},
@@ -112,7 +112,7 @@ var RoutingTableEntryWhere = struct {
 	LastUsefulAt:                  whereHelpernull_Time{field: "\"routing_table_entries\".\"last_useful_at\""},
 	LastSuccessfulOutboundQueryAt: whereHelpertime_Time{field: "\"routing_table_entries\".\"last_successful_outbound_query_at\""},
 	AddedAt:                       whereHelpertime_Time{field: "\"routing_table_entries\".\"added_at\""},
-	ConnectedAt:                   whereHelpernull_Time{field: "\"routing_table_entries\".\"connected_at\""},
+	ConnectedSince:                whereHelpernull_Time{field: "\"routing_table_entries\".\"connected_since\""},
 }
 
 // RoutingTableEntryRels is where relationship names are stored.
@@ -139,8 +139,8 @@ func (*routingTableEntryR) NewStruct() *routingTableEntryR {
 type routingTableEntryL struct{}
 
 var (
-	routingTableEntryAllColumns            = []string{"routing_table_snapshot_id", "peer_id", "bucket", "last_useful_at", "last_successful_outbound_query_at", "added_at", "connected_at"}
-	routingTableEntryColumnsWithoutDefault = []string{"routing_table_snapshot_id", "peer_id", "bucket", "last_useful_at", "last_successful_outbound_query_at", "added_at", "connected_at"}
+	routingTableEntryAllColumns            = []string{"routing_table_snapshot_id", "peer_id", "bucket", "last_useful_at", "last_successful_outbound_query_at", "added_at", "connected_since"}
+	routingTableEntryColumnsWithoutDefault = []string{"routing_table_snapshot_id", "peer_id", "bucket", "last_useful_at", "last_successful_outbound_query_at", "added_at", "connected_since"}
 	routingTableEntryColumnsWithDefault    = []string{}
 	routingTableEntryPrimaryKeyColumns     = []string{"routing_table_snapshot_id", "peer_id"}
 )

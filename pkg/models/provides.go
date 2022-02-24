@@ -27,6 +27,7 @@ type Provide struct {
 	ID                    int         `boil:"id" json:"id" toml:"id" yaml:"id"`
 	ProviderID            int         `boil:"provider_id" json:"provider_id" toml:"provider_id" yaml:"provider_id"`
 	ContentID             string      `boil:"content_id" json:"content_id" toml:"content_id" yaml:"content_id"`
+	Distance              []byte      `boil:"distance" json:"distance" toml:"distance" yaml:"distance"`
 	InitialRoutingTableID int         `boil:"initial_routing_table_id" json:"initial_routing_table_id" toml:"initial_routing_table_id" yaml:"initial_routing_table_id"`
 	FinalRoutingTableID   null.Int    `boil:"final_routing_table_id" json:"final_routing_table_id,omitempty" toml:"final_routing_table_id" yaml:"final_routing_table_id,omitempty"`
 	StartedAt             time.Time   `boil:"started_at" json:"started_at" toml:"started_at" yaml:"started_at"`
@@ -44,6 +45,7 @@ var ProvideColumns = struct {
 	ID                    string
 	ProviderID            string
 	ContentID             string
+	Distance              string
 	InitialRoutingTableID string
 	FinalRoutingTableID   string
 	StartedAt             string
@@ -56,6 +58,7 @@ var ProvideColumns = struct {
 	ID:                    "id",
 	ProviderID:            "provider_id",
 	ContentID:             "content_id",
+	Distance:              "distance",
 	InitialRoutingTableID: "initial_routing_table_id",
 	FinalRoutingTableID:   "final_routing_table_id",
 	StartedAt:             "started_at",
@@ -70,6 +73,7 @@ var ProvideTableColumns = struct {
 	ID                    string
 	ProviderID            string
 	ContentID             string
+	Distance              string
 	InitialRoutingTableID string
 	FinalRoutingTableID   string
 	StartedAt             string
@@ -82,6 +86,7 @@ var ProvideTableColumns = struct {
 	ID:                    "provides.id",
 	ProviderID:            "provides.provider_id",
 	ContentID:             "provides.content_id",
+	Distance:              "provides.distance",
 	InitialRoutingTableID: "provides.initial_routing_table_id",
 	FinalRoutingTableID:   "provides.final_routing_table_id",
 	StartedAt:             "provides.started_at",
@@ -121,6 +126,7 @@ var ProvideWhere = struct {
 	ID                    whereHelperint
 	ProviderID            whereHelperint
 	ContentID             whereHelperstring
+	Distance              whereHelper__byte
 	InitialRoutingTableID whereHelperint
 	FinalRoutingTableID   whereHelpernull_Int
 	StartedAt             whereHelpertime_Time
@@ -133,6 +139,7 @@ var ProvideWhere = struct {
 	ID:                    whereHelperint{field: "\"provides\".\"id\""},
 	ProviderID:            whereHelperint{field: "\"provides\".\"provider_id\""},
 	ContentID:             whereHelperstring{field: "\"provides\".\"content_id\""},
+	Distance:              whereHelper__byte{field: "\"provides\".\"distance\""},
 	InitialRoutingTableID: whereHelperint{field: "\"provides\".\"initial_routing_table_id\""},
 	FinalRoutingTableID:   whereHelpernull_Int{field: "\"provides\".\"final_routing_table_id\""},
 	StartedAt:             whereHelpertime_Time{field: "\"provides\".\"started_at\""},
@@ -145,29 +152,32 @@ var ProvideWhere = struct {
 
 // ProvideRels is where relationship names are stored.
 var ProvideRels = struct {
-	Provider    string
-	CloserPeers string
-	Connections string
-	Dials       string
-	FindNodes   string
-	PeerStates  string
+	Provider     string
+	AddProviders string
+	CloserPeers  string
+	Connections  string
+	Dials        string
+	FindNodes    string
+	PeerStates   string
 }{
-	Provider:    "Provider",
-	CloserPeers: "CloserPeers",
-	Connections: "Connections",
-	Dials:       "Dials",
-	FindNodes:   "FindNodes",
-	PeerStates:  "PeerStates",
+	Provider:     "Provider",
+	AddProviders: "AddProviders",
+	CloserPeers:  "CloserPeers",
+	Connections:  "Connections",
+	Dials:        "Dials",
+	FindNodes:    "FindNodes",
+	PeerStates:   "PeerStates",
 }
 
 // provideR is where relationships are stored.
 type provideR struct {
-	Provider    *Peer           `boil:"Provider" json:"Provider" toml:"Provider" yaml:"Provider"`
-	CloserPeers CloserPeerSlice `boil:"CloserPeers" json:"CloserPeers" toml:"CloserPeers" yaml:"CloserPeers"`
-	Connections ConnectionSlice `boil:"Connections" json:"Connections" toml:"Connections" yaml:"Connections"`
-	Dials       DialSlice       `boil:"Dials" json:"Dials" toml:"Dials" yaml:"Dials"`
-	FindNodes   FindNodeSlice   `boil:"FindNodes" json:"FindNodes" toml:"FindNodes" yaml:"FindNodes"`
-	PeerStates  PeerStateSlice  `boil:"PeerStates" json:"PeerStates" toml:"PeerStates" yaml:"PeerStates"`
+	Provider     *Peer            `boil:"Provider" json:"Provider" toml:"Provider" yaml:"Provider"`
+	AddProviders AddProviderSlice `boil:"AddProviders" json:"AddProviders" toml:"AddProviders" yaml:"AddProviders"`
+	CloserPeers  CloserPeerSlice  `boil:"CloserPeers" json:"CloserPeers" toml:"CloserPeers" yaml:"CloserPeers"`
+	Connections  ConnectionSlice  `boil:"Connections" json:"Connections" toml:"Connections" yaml:"Connections"`
+	Dials        DialSlice        `boil:"Dials" json:"Dials" toml:"Dials" yaml:"Dials"`
+	FindNodes    FindNodeSlice    `boil:"FindNodes" json:"FindNodes" toml:"FindNodes" yaml:"FindNodes"`
+	PeerStates   PeerStateSlice   `boil:"PeerStates" json:"PeerStates" toml:"PeerStates" yaml:"PeerStates"`
 }
 
 // NewStruct creates a new relationship struct
@@ -179,8 +189,8 @@ func (*provideR) NewStruct() *provideR {
 type provideL struct{}
 
 var (
-	provideAllColumns            = []string{"id", "provider_id", "content_id", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
-	provideColumnsWithoutDefault = []string{"provider_id", "content_id", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
+	provideAllColumns            = []string{"id", "provider_id", "content_id", "distance", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
+	provideColumnsWithoutDefault = []string{"provider_id", "content_id", "distance", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
 	provideColumnsWithDefault    = []string{"id"}
 	providePrimaryKeyColumns     = []string{"id"}
 )
@@ -474,6 +484,27 @@ func (o *Provide) Provider(mods ...qm.QueryMod) peerQuery {
 	return query
 }
 
+// AddProviders retrieves all the add_provider's AddProviders with an executor.
+func (o *Provide) AddProviders(mods ...qm.QueryMod) addProviderQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"add_providers\".\"provide_id\"=?", o.ID),
+	)
+
+	query := AddProviders(queryMods...)
+	queries.SetFrom(query.Query, "\"add_providers\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"add_providers\".*"})
+	}
+
+	return query
+}
+
 // CloserPeers retrieves all the closer_peer's CloserPeers with an executor.
 func (o *Provide) CloserPeers(mods ...qm.QueryMod) closerPeerQuery {
 	var queryMods []qm.QueryMod
@@ -675,6 +706,104 @@ func (provideL) LoadProvider(ctx context.Context, e boil.ContextExecutor, singul
 					foreign.R = &peerR{}
 				}
 				foreign.R.ProviderProvides = append(foreign.R.ProviderProvides, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadAddProviders allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (provideL) LoadAddProviders(ctx context.Context, e boil.ContextExecutor, singular bool, maybeProvide interface{}, mods queries.Applicator) error {
+	var slice []*Provide
+	var object *Provide
+
+	if singular {
+		object = maybeProvide.(*Provide)
+	} else {
+		slice = *maybeProvide.(*[]*Provide)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &provideR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &provideR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`add_providers`),
+		qm.WhereIn(`add_providers.provide_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load add_providers")
+	}
+
+	var resultSlice []*AddProvider
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice add_providers")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on add_providers")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for add_providers")
+	}
+
+	if len(addProviderAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.AddProviders = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &addProviderR{}
+			}
+			foreign.R.Provide = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.ProvideID {
+				local.R.AddProviders = append(local.R.AddProviders, foreign)
+				if foreign.R == nil {
+					foreign.R = &addProviderR{}
+				}
+				foreign.R.Provide = local
 				break
 			}
 		}
@@ -1217,6 +1346,59 @@ func (o *Provide) SetProvider(ctx context.Context, exec boil.ContextExecutor, in
 		related.R.ProviderProvides = append(related.R.ProviderProvides, o)
 	}
 
+	return nil
+}
+
+// AddAddProviders adds the given related objects to the existing relationships
+// of the provide, optionally inserting them as new records.
+// Appends related to o.R.AddProviders.
+// Sets related.R.Provide appropriately.
+func (o *Provide) AddAddProviders(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*AddProvider) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.ProvideID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"add_providers\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"provide_id"}),
+				strmangle.WhereClause("\"", "\"", 2, addProviderPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.ProvideID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &provideR{
+			AddProviders: related,
+		}
+	} else {
+		o.R.AddProviders = append(o.R.AddProviders, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &addProviderR{
+				Provide: o,
+			}
+		} else {
+			rel.R.Provide = o
+		}
+	}
 	return nil
 }
 

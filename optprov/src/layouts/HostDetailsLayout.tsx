@@ -147,6 +147,12 @@ const HostDetailsLayout: React.FC<HostDetailsLayoutProps> = ({ hostId, children 
               </ListItemIcon>
               <ListItemText primary="Routing Table" />
             </ListItemButton>
+            <ListItemButton component={RouterLink} to={`/hosts/${hostId}/provides`}>
+              <ListItemIcon>
+                <BarChartIcon />
+              </ListItemIcon>
+              <ListItemText primary="Provides" />
+            </ListItemButton>
             <Divider sx={{ my: 1 }} />
           </List>
         </Drawer>

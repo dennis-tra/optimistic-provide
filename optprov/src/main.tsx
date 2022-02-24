@@ -11,7 +11,8 @@ import { store } from "./store/config";
 import { Provider } from "react-redux";
 import en from "javascript-time-ago/locale/en.json";
 import ru from "javascript-time-ago/locale/ru.json";
-import RoutingTablesOverview from "./pages/RoutingTablesOverview";
+import RoutingTablePage from "./pages/RoutingTablePage";
+import ProvidePage from "./pages/ProvidePage";
 
 TimeAgo.addDefaultLocale(en);
 TimeAgo.addLocale(ru);
@@ -25,7 +26,8 @@ ReactDOM.render(
           <Routes>
             <Route path="/hosts" element={<HostsPage />} />
             <Route path="/hosts/:hostId" element={<HostPage />} />
-            <Route path="/hosts/:hostId/routing-tables" element={<RoutingTablesOverview />} />
+            <Route path="/hosts/:hostId/routing-tables" element={<RoutingTablePage />} />
+            <Route path="/hosts/:hostId/provides" element={<ProvidePage />} />
           </Routes>
         </BrowserRouter>
       </Provider>

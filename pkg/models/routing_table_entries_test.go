@@ -777,7 +777,7 @@ func testRoutingTableEntriesSelect(t *testing.T) {
 }
 
 var (
-	routingTableEntryDBTypes = map[string]string{`RoutingTableSnapshotID`: `integer`, `PeerID`: `integer`, `Bucket`: `smallint`, `LastUsefulAt`: `timestamp with time zone`, `LastSuccessfulOutboundQueryAt`: `timestamp with time zone`, `AddedAt`: `timestamp with time zone`, `ConnectedAt`: `timestamp with time zone`}
+	routingTableEntryDBTypes = map[string]string{`RoutingTableSnapshotID`: `integer`, `PeerID`: `integer`, `Bucket`: `smallint`, `LastUsefulAt`: `timestamp with time zone`, `LastSuccessfulOutboundQueryAt`: `timestamp with time zone`, `AddedAt`: `timestamp with time zone`, `ConnectedSince`: `timestamp with time zone`}
 	_                        = bytes.MinRead
 )
 

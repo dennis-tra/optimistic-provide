@@ -11,9 +11,9 @@ CREATE TABLE find_nodes
     closer_peers_count INT,
     error              TEXT,
 
-    CONSTRAINT fk_dials_provide_id FOREIGN KEY (provide_id) REFERENCES provides (id),
-    CONSTRAINT fk_dials_local_id FOREIGN KEY (local_id) REFERENCES peers (id),
-    CONSTRAINT fk_dials_remote_id FOREIGN KEY (remote_id) REFERENCES peers (id),
+    CONSTRAINT fk_find_nodes_provide_id FOREIGN KEY (provide_id) REFERENCES provides (id),
+    CONSTRAINT fk_find_nodes_local_id FOREIGN KEY (local_id) REFERENCES peers (id),
+    CONSTRAINT fk_find_nodes_remote_id FOREIGN KEY (remote_id) REFERENCES peers (id),
 
     PRIMARY KEY (id)
 );

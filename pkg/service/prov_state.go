@@ -6,30 +6,32 @@ import (
 	"sync"
 	"time"
 
-	"github.com/libp2p/go-libp2p-kad-dht/qpeerset"
-
-	pb "github.com/libp2p/go-libp2p-kad-dht/pb"
-
-	"github.com/dennis-tra/optimistic-provide/pkg/wrap"
-
-	"github.com/libp2p/go-libp2p-core/peer"
-
-	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 	"github.com/libp2p/go-libp2p-core/network"
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/routing"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
+	pb "github.com/libp2p/go-libp2p-kad-dht/pb"
+	"github.com/libp2p/go-libp2p-kad-dht/qpeerset"
 	ma "github.com/multiformats/go-multiaddr"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/dht"
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
+	"github.com/dennis-tra/optimistic-provide/pkg/wrap"
 )
 
 type ProvideState struct {
-	h      *dht.Host
-	cancel context.CancelFunc
+	h       *dht.Host
+	content *util.Content
+	cancel  context.CancelFunc
 
 	dialsLk sync.RWMutex
 	dials   []*DialSpan
 
 	findNodesLk sync.RWMutex
 	findNodes   []*FindNodesSpan
+
+	addProvidersLk sync.RWMutex
+	addProviders   []*AddProvidersSpan
 
 	connectionsStartedLk sync.RWMutex
 	connectionsStarted   map[peer.ID]time.Time
@@ -39,7 +41,7 @@ type ProvideState struct {
 
 	peerSet *qpeerset.QueryPeerset
 
-	relevantPeers map[peer.ID]struct{}
+	relevantPeers sync.Map
 }
 
 func (ps *ProvideState) Register(ctx context.Context) context.Context {
@@ -124,10 +126,27 @@ func (ps *ProvideState) trackFindNodeRequest(evt *wrap.RPCSendRequestEndedEvent)
 	defer ps.findNodesLk.Unlock()
 
 	ps.findNodes = append(ps.findNodes, fns)
-	ps.relevantPeers[evt.RemotePeer] = struct{}{}
+	ps.relevantPeers.Store(evt.RemotePeer, struct{}{})
 	for _, p := range fns.CloserPeers {
-		ps.relevantPeers[p.ID] = struct{}{}
+		ps.relevantPeers.Store(p.ID, struct{}{})
 	}
+}
+
+func (ps *ProvideState) trackAddProvidersRequest(evt *wrap.RPCSendMessageEndedEvent) {
+	aps := &AddProvidersSpan{
+		Content:       ps.content,
+		RemotePeerID:  evt.RemotePeer,
+		Start:         evt.StartedAt,
+		End:           evt.EndedAt,
+		ProviderAddrs: pb.PBPeersToPeerInfos(evt.Message.ProviderPeers)[0].Addrs,
+		Error:         evt.Error,
+	}
+
+	ps.addProvidersLk.Lock()
+	defer ps.addProvidersLk.Unlock()
+
+	ps.addProviders = append(ps.addProviders, aps)
+	ps.relevantPeers.Store(evt.RemotePeer, struct{}{})
 }
 
 func (ps *ProvideState) filterDials() {
@@ -136,7 +155,7 @@ func (ps *ProvideState) filterDials() {
 
 	var relevantDials []*DialSpan
 	for _, dial := range ps.dials {
-		if _, found := ps.relevantPeers[dial.RemotePeerID]; found {
+		if _, found := ps.relevantPeers.Load(dial.RemotePeerID); found {
 			relevantDials = append(relevantDials, dial)
 		}
 	}
@@ -149,7 +168,7 @@ func (ps *ProvideState) filterConnections() {
 
 	var relevantConnections []*ConnectionSpan
 	for _, conn := range ps.connections {
-		if _, found := ps.relevantPeers[conn.RemotePeerID]; found {
+		if _, found := ps.relevantPeers.Load(conn.RemotePeerID); found {
 			relevantConnections = append(relevantConnections, conn)
 		}
 	}
@@ -175,6 +194,14 @@ func (ps *ProvideState) consumeRPCEvents(rpcEvents <-chan interface{}) {
 			switch evt.Request.Type {
 			case pb.Message_FIND_NODE:
 				ps.trackFindNodeRequest(evt)
+			default:
+				log.Warn(evt)
+			}
+		case *wrap.RPCSendMessageStartedEvent:
+		case *wrap.RPCSendMessageEndedEvent:
+			switch evt.Message.Type {
+			case pb.Message_ADD_PROVIDER:
+				ps.trackAddProvidersRequest(evt)
 			default:
 				log.Warn(evt)
 			}

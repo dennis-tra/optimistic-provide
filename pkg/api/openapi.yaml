@@ -515,11 +515,14 @@ components:
           type: string
           nullable: true
           format: date-format
+        runningProvidesCount:
+          type: number
       required:
         - hostId
         - name
         - createdAt
         - bootstrappedAt
+        - runningProvidesCount
     Provide:
       type: object
       properties:

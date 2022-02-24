@@ -58,6 +58,7 @@ func New(ctx context.Context, name string) (*Host, error) {
 
 	var dht *kaddht.IpfsDHT
 	h, err := libp2p.New(
+		libp2p.DefaultListenAddrs,
 		libp2p.Identity(key),
 		libp2p.Transport(tcpTrpt),
 		libp2p.Transport(wsTrpt),

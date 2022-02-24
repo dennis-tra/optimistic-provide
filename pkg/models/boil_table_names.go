@@ -4,11 +4,11 @@
 package models
 
 var TableNames = struct {
+	AddProviders               string
 	CloserPeers                string
 	Connections                string
 	Dials                      string
 	FindNodes                  string
-	Hosts                      string
 	IPAddresses                string
 	MultiAddresses             string
 	MultiAddressesXIPAddresses string
@@ -19,11 +19,11 @@ var TableNames = struct {
 	RoutingTableEntries        string
 	RoutingTableSnapshots      string
 }{
+	AddProviders:               "add_providers",
 	CloserPeers:                "closer_peers",
 	Connections:                "connections",
 	Dials:                      "dials",
 	FindNodes:                  "find_nodes",
-	Hosts:                      "hosts",
 	IPAddresses:                "ip_addresses",
 	MultiAddresses:             "multi_addresses",
 	MultiAddressesXIPAddresses: "multi_addresses_x_ip_addresses",

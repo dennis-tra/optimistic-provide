@@ -83,7 +83,7 @@ func (rts *RoutingTable) Save(ctx context.Context, h *dht.Host) (*models.Routing
 			LastUsefulAt:                  null.NewTime(peerInfo.LastUsefulAt, !peerInfo.LastUsefulAt.IsZero()),
 			LastSuccessfulOutboundQueryAt: peerInfo.LastSuccessfulOutboundQueryAt,
 			AddedAt:                       peerInfo.AddedAt,
-			ConnectedAt:                   null.TimeFromPtr(connectedAt),
+			ConnectedSince:                null.TimeFromPtr(connectedAt),
 		}
 
 		if _, err = rts.rtRepo.SaveRoutingTableEntry(ctx, rte); err != nil {

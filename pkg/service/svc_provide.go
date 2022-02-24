@@ -5,6 +5,8 @@ import (
 	"sync"
 	"time"
 
+	ks "github.com/whyrusleeping/go-keyspace"
+
 	logging "github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-kad-dht/qpeerset"
@@ -33,20 +35,11 @@ type Provide struct {
 	connService ConnectionService
 	fnService   FindNodesService
 	psService   PeerStateService
+	apService   AddProvidersService
 	provideRepo repo.ProvideRepo
 }
 
-func NewProvideService(
-	peerService PeerService,
-	hostService HostService,
-	rtService RoutingTableService,
-	maService MultiAddressService,
-	dialService DialService,
-	connService ConnectionService,
-	fnService FindNodesService,
-	psService PeerStateService,
-	provideRepo repo.ProvideRepo,
-) *Provide {
+func NewProvideService(peerService PeerService, hostService HostService, rtService RoutingTableService, maService MultiAddressService, dialService DialService, connService ConnectionService, fnService FindNodesService, psService PeerStateService, apService AddProvidersService, provideRepo repo.ProvideRepo) *Provide {
 	return &Provide{
 		peerService: peerService,
 		hostService: hostService,
@@ -56,6 +49,7 @@ func NewProvideService(
 		connService: connService,
 		fnService:   fnService,
 		psService:   psService,
+		apService:   apService,
 		provideRepo: provideRepo,
 	}
 }
@@ -74,6 +68,7 @@ func (ps *Provide) Provide(ctx context.Context, h *dht.Host) (*models.Provide, e
 	provide := &models.Provide{
 		ProviderID:            h.DBPeer.ID,
 		ContentID:             content.CID.String(),
+		Distance:              ks.XORKeySpace.Key([]byte(h.ID())).Distance(ks.XORKeySpace.Key(content.CID.Hash())).Bytes(),
 		InitialRoutingTableID: rts.ID,
 		StartedAt:             time.Now(),
 	}
@@ -93,15 +88,18 @@ func (ps *Provide) startProviding(h *dht.Host, provide *models.Provide, content 
 
 	state := &ProvideState{
 		h:                    h,
+		content:              content,
 		dialsLk:              sync.RWMutex{},
 		dials:                []*DialSpan{},
 		findNodesLk:          sync.RWMutex{},
 		findNodes:            []*FindNodesSpan{},
+		addProvidersLk:       sync.RWMutex{},
+		addProviders:         []*AddProvidersSpan{},
 		connectionsStartedLk: sync.RWMutex{},
 		connectionsStarted:   map[peer.ID]time.Time{},
 		connectionsLk:        sync.RWMutex{},
 		connections:          []*ConnectionSpan{},
-		relevantPeers:        map[peer.ID]struct{}{},
+		relevantPeers:        sync.Map{},
 		peerSet:              qpeerset.NewQueryPeerset(string(content.CID.Hash())),
 	}
 
@@ -131,6 +129,10 @@ func (ps *Provide) startProviding(h *dht.Host, provide *models.Provide, content 
 	}
 
 	if err = ps.fnService.Save(context.Background(), h.Host, provide.ID, state.findNodes); err != nil {
+		log.Warn(err)
+	}
+
+	if err = ps.apService.Save(context.Background(), h.Host, provide.ID, state.addProviders); err != nil {
 		log.Warn(err)
 	}
 

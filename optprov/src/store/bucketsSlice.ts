@@ -50,11 +50,25 @@ const bucketsSlice = createSlice({
   },
 });
 
+export const selectBucketPeers =
+  (hostId: string, bucket: number) =>
+  (state: RootState): RoutingTablePeer[] => {
+    if (
+      !state.buckets[hostId] ||
+      bucket === NaN ||
+      bucket === undefined ||
+      bucket === null ||
+      !state.buckets[hostId].peers[bucket]
+    ) {
+      return [];
+    }
+    return state.buckets[hostId].peers[bucket];
+  };
+
 export interface HistogramData {
   bucket: number;
   level: number;
 }
-
 export const selectHistogramData =
   (hostId: string) =>
   (state: RootState): HistogramData[] => {
