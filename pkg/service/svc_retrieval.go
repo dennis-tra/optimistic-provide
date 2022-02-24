@@ -5,14 +5,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/volatiletech/null/v8"
-
+	"github.com/ipfs/go-cid"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-kad-dht/qpeerset"
-
+	"github.com/volatiletech/null/v8"
 	ks "github.com/whyrusleeping/go-keyspace"
-
-	"github.com/ipfs/go-cid"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
@@ -26,10 +23,9 @@ type RetrievalService interface {
 var _ RetrievalService = &Retrieval{}
 
 type Retrieval struct {
-	peerService  PeerService
 	hostService  HostService
 	rtService    RoutingTableService
-	maService    MultiAddressService
+	provService  ProvidersService
 	dialService  DialService
 	connService  ConnectionService
 	gpService    GetProvidersService
@@ -37,12 +33,11 @@ type Retrieval struct {
 	retrieveRepo repo.RetrievalRepo
 }
 
-func NewRetrievalService(peerService PeerService, hostService HostService, rtService RoutingTableService, maService MultiAddressService, dialService DialService, connService ConnectionService, gpService GetProvidersService, psService PeerStateService, retrieveRepo repo.RetrievalRepo) *Retrieval {
+func NewRetrievalService(hostService HostService, rtService RoutingTableService, provService ProvidersService, dialService DialService, connService ConnectionService, gpService GetProvidersService, psService PeerStateService, retrieveRepo repo.RetrievalRepo) *Retrieval {
 	return &Retrieval{
-		peerService:  peerService,
 		hostService:  hostService,
 		rtService:    rtService,
-		maService:    maService,
+		provService:  provService,
 		dialService:  dialService,
 		connService:  connService,
 		gpService:    gpService,
@@ -88,7 +83,11 @@ func (rs *Retrieval) startRetrieving(h *dht.Host, retrieval *models.Retrieval, c
 	}
 
 	ctx = state.Register(ctx)
-	h.DHT.FindProvidersAsync(ctx, contentID, count)
+	for provider := range h.DHT.FindProvidersAsync(ctx, contentID, count) {
+		if _, err := rs.provService.Save(ctx, h, retrieval.ID, provider); err != nil {
+			log.Warn(err)
+		}
+	}
 	end := time.Now()
 
 	rts, err := rs.rtService.Save(context.Background(), h)

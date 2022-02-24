@@ -803,6 +803,84 @@ func testRetrievalToManyPeerStates(t *testing.T) {
 	}
 }
 
+func testRetrievalToManyProviders(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Retrieval
+	var b, c Provider
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, retrievalDBTypes, true, retrievalColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Retrieval struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, providerDBTypes, false, providerColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, providerDBTypes, false, providerColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.RetrievalID = a.ID
+	c.RetrievalID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.Providers().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.RetrievalID == b.RetrievalID {
+			bFound = true
+		}
+		if v.RetrievalID == c.RetrievalID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := RetrievalSlice{&a}
+	if err = a.L.LoadProviders(ctx, tx, false, (*[]*Retrieval)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Providers); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.Providers = nil
+	if err = a.L.LoadProviders(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Providers); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testRetrievalToManyAddOpConnections(t *testing.T) {
 	var err error
 
@@ -1631,6 +1709,81 @@ func testRetrievalToManyRemoveOpPeerStates(t *testing.T) {
 	}
 }
 
+func testRetrievalToManyAddOpProviders(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Retrieval
+	var b, c, d, e Provider
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Provider{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, providerDBTypes, false, strmangle.SetComplement(providerPrimaryKeyColumns, providerColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Provider{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddProviders(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.RetrievalID {
+			t.Error("foreign key was wrong value", a.ID, first.RetrievalID)
+		}
+		if a.ID != second.RetrievalID {
+			t.Error("foreign key was wrong value", a.ID, second.RetrievalID)
+		}
+
+		if first.R.Retrieval != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Retrieval != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.Providers[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Providers[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Providers().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testRetrievalToOnePeerUsingRetriever(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))

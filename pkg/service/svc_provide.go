@@ -110,7 +110,7 @@ func (ps *Provide) Get(ctx context.Context, h *dht.Host, provideID int) (*models
 
 	errg.Go(func() error {
 		var err error
-		connections, err = ps.connService.List(ctx, provideID)
+		connections, err = ps.connService.List(ctx, HostOperationProvide, provideID)
 		if errors.Is(err, sql.ErrNoRows) {
 			connections = []*models.Connection{}
 			return nil
@@ -130,7 +130,7 @@ func (ps *Provide) Get(ctx context.Context, h *dht.Host, provideID int) (*models
 
 	errg.Go(func() error {
 		var err error
-		dials, err = ps.dialService.List(ctx, provideID)
+		dials, err = ps.dialService.List(ctx, HostOperationProvide, provideID)
 		if errors.Is(err, sql.ErrNoRows) {
 			dials = []*models.Dial{}
 			return nil
@@ -192,11 +192,11 @@ func (ps *Provide) startProviding(h *dht.Host, provide *models.Provide, content 
 		log.Warn(err)
 	}
 
-	if err = ps.dialService.Save(context.Background(), h.Host, provide.ID, state.dials); err != nil {
+	if err = ps.dialService.Save(context.Background(), h.Host, HostOperationProvide, provide.ID, state.dials); err != nil {
 		log.Warn(err)
 	}
 
-	if err = ps.connService.Save(context.Background(), h.Host, provide.ID, state.connections); err != nil {
+	if err = ps.connService.Save(context.Background(), h.Host, HostOperationProvide, provide.ID, state.connections); err != nil {
 		log.Warn(err)
 	}
 
@@ -208,7 +208,7 @@ func (ps *Provide) startProviding(h *dht.Host, provide *models.Provide, content 
 		log.Warn(err)
 	}
 
-	if err = ps.psService.Save(context.Background(), h.Host, provide.ID, state.peerSet.AllStates()); err != nil {
+	if err = ps.psService.Save(context.Background(), h.Host, HostOperationProvide, provide.ID, state.peerSet.AllStates()); err != nil {
 		log.Warn(err)
 	}
 }

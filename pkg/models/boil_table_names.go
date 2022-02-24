@@ -16,6 +16,7 @@ var TableNames = struct {
 	PeerLogs                   string
 	PeerStates                 string
 	Peers                      string
+	Providers                  string
 	Provides                   string
 	Retrievals                 string
 	RoutingTableEntries        string
@@ -33,6 +34,7 @@ var TableNames = struct {
 	PeerLogs:                   "peer_logs",
 	PeerStates:                 "peer_states",
 	Peers:                      "peers",
+	Providers:                  "providers",
 	Provides:                   "provides",
 	Retrievals:                 "retrievals",
 	RoutingTableEntries:        "routing_table_entries",

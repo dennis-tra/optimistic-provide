@@ -127,6 +127,7 @@ var PeerRels = struct {
 	PeerLogs              string
 	PeerStates            string
 	ReferrerPeerStates    string
+	RemoteProviders       string
 	ProviderProvides      string
 	RetrieverRetrievals   string
 	RoutingTableEntries   string
@@ -146,6 +147,7 @@ var PeerRels = struct {
 	PeerLogs:              "PeerLogs",
 	PeerStates:            "PeerStates",
 	ReferrerPeerStates:    "ReferrerPeerStates",
+	RemoteProviders:       "RemoteProviders",
 	ProviderProvides:      "ProviderProvides",
 	RetrieverRetrievals:   "RetrieverRetrievals",
 	RoutingTableEntries:   "RoutingTableEntries",
@@ -168,6 +170,7 @@ type peerR struct {
 	PeerLogs              PeerLogSlice              `boil:"PeerLogs" json:"PeerLogs" toml:"PeerLogs" yaml:"PeerLogs"`
 	PeerStates            PeerStateSlice            `boil:"PeerStates" json:"PeerStates" toml:"PeerStates" yaml:"PeerStates"`
 	ReferrerPeerStates    PeerStateSlice            `boil:"ReferrerPeerStates" json:"ReferrerPeerStates" toml:"ReferrerPeerStates" yaml:"ReferrerPeerStates"`
+	RemoteProviders       ProviderSlice             `boil:"RemoteProviders" json:"RemoteProviders" toml:"RemoteProviders" yaml:"RemoteProviders"`
 	ProviderProvides      ProvideSlice              `boil:"ProviderProvides" json:"ProviderProvides" toml:"ProviderProvides" yaml:"ProviderProvides"`
 	RetrieverRetrievals   RetrievalSlice            `boil:"RetrieverRetrievals" json:"RetrieverRetrievals" toml:"RetrieverRetrievals" yaml:"RetrieverRetrievals"`
 	RoutingTableEntries   RoutingTableEntrySlice    `boil:"RoutingTableEntries" json:"RoutingTableEntries" toml:"RoutingTableEntries" yaml:"RoutingTableEntries"`
@@ -753,6 +756,27 @@ func (o *Peer) ReferrerPeerStates(mods ...qm.QueryMod) peerStateQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"peer_states\".*"})
+	}
+
+	return query
+}
+
+// RemoteProviders retrieves all the provider's Providers with an executor via remote_id column.
+func (o *Peer) RemoteProviders(mods ...qm.QueryMod) providerQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"providers\".\"remote_id\"=?", o.ID),
+	)
+
+	query := Providers(queryMods...)
+	queries.SetFrom(query.Query, "\"providers\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"providers\".*"})
 	}
 
 	return query
@@ -2214,6 +2238,104 @@ func (peerL) LoadReferrerPeerStates(ctx context.Context, e boil.ContextExecutor,
 	return nil
 }
 
+// LoadRemoteProviders allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (peerL) LoadRemoteProviders(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
+	var slice []*Peer
+	var object *Peer
+
+	if singular {
+		object = maybePeer.(*Peer)
+	} else {
+		slice = *maybePeer.(*[]*Peer)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &peerR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &peerR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`providers`),
+		qm.WhereIn(`providers.remote_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load providers")
+	}
+
+	var resultSlice []*Provider
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice providers")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on providers")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for providers")
+	}
+
+	if len(providerAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.RemoteProviders = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &providerR{}
+			}
+			foreign.R.Remote = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.RemoteID {
+				local.R.RemoteProviders = append(local.R.RemoteProviders, foreign)
+				if foreign.R == nil {
+					foreign.R = &providerR{}
+				}
+				foreign.R.Remote = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadProviderProvides allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (peerL) LoadProviderProvides(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
@@ -3343,6 +3465,59 @@ func (o *Peer) AddReferrerPeerStates(ctx context.Context, exec boil.ContextExecu
 			}
 		} else {
 			rel.R.Referrer = o
+		}
+	}
+	return nil
+}
+
+// AddRemoteProviders adds the given related objects to the existing relationships
+// of the peer, optionally inserting them as new records.
+// Appends related to o.R.RemoteProviders.
+// Sets related.R.Remote appropriately.
+func (o *Peer) AddRemoteProviders(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Provider) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.RemoteID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"providers\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"remote_id"}),
+				strmangle.WhereClause("\"", "\"", 2, providerPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.RemoteID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &peerR{
+			RemoteProviders: related,
+		}
+	} else {
+		o.R.RemoteProviders = append(o.R.RemoteProviders, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &providerR{
+				Remote: o,
+			}
+		} else {
+			rel.R.Remote = o
 		}
 	}
 	return nil

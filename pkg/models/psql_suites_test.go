@@ -28,6 +28,8 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("Peers", testPeersUpsert)
 
+	t.Run("Providers", testProvidersUpsert)
+
 	t.Run("Provides", testProvidesUpsert)
 
 	t.Run("Retrievals", testRetrievalsUpsert)
