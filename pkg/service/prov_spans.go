@@ -44,7 +44,7 @@ type GetProvidersSpan struct {
 	RemotePeerID peer.ID
 	Start        time.Time
 	End          time.Time
-	CloserPeers  []*peer.AddrInfo
+	Providers    []*peer.AddrInfo
 	Error        error
 }
 

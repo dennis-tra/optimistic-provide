@@ -24,97 +24,100 @@ import (
 
 // GetProvider is an object representing the database table.
 type GetProvider struct {
-	ID               int         `boil:"id" json:"id" toml:"id" yaml:"id"`
-	RetrievalID      int         `boil:"retrieval_id" json:"retrieval_id" toml:"retrieval_id" yaml:"retrieval_id"`
-	LocalID          int         `boil:"local_id" json:"local_id" toml:"local_id" yaml:"local_id"`
-	RemoteID         int         `boil:"remote_id" json:"remote_id" toml:"remote_id" yaml:"remote_id"`
-	StartedAt        time.Time   `boil:"started_at" json:"started_at" toml:"started_at" yaml:"started_at"`
-	EndedAt          time.Time   `boil:"ended_at" json:"ended_at" toml:"ended_at" yaml:"ended_at"`
-	CloserPeersCount null.Int    `boil:"closer_peers_count" json:"closer_peers_count,omitempty" toml:"closer_peers_count" yaml:"closer_peers_count,omitempty"`
-	Error            null.String `boil:"error" json:"error,omitempty" toml:"error" yaml:"error,omitempty"`
+	ID                 int         `boil:"id" json:"id" toml:"id" yaml:"id"`
+	RetrievalID        int         `boil:"retrieval_id" json:"retrieval_id" toml:"retrieval_id" yaml:"retrieval_id"`
+	LocalID            int         `boil:"local_id" json:"local_id" toml:"local_id" yaml:"local_id"`
+	RemoteID           int         `boil:"remote_id" json:"remote_id" toml:"remote_id" yaml:"remote_id"`
+	StartedAt          time.Time   `boil:"started_at" json:"started_at" toml:"started_at" yaml:"started_at"`
+	EndedAt            time.Time   `boil:"ended_at" json:"ended_at" toml:"ended_at" yaml:"ended_at"`
+	ProviderPeersCount null.Int    `boil:"provider_peers_count" json:"provider_peers_count,omitempty" toml:"provider_peers_count" yaml:"provider_peers_count,omitempty"`
+	Error              null.String `boil:"error" json:"error,omitempty" toml:"error" yaml:"error,omitempty"`
 
 	R *getProviderR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L getProviderL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var GetProviderColumns = struct {
-	ID               string
-	RetrievalID      string
-	LocalID          string
-	RemoteID         string
-	StartedAt        string
-	EndedAt          string
-	CloserPeersCount string
-	Error            string
+	ID                 string
+	RetrievalID        string
+	LocalID            string
+	RemoteID           string
+	StartedAt          string
+	EndedAt            string
+	ProviderPeersCount string
+	Error              string
 }{
-	ID:               "id",
-	RetrievalID:      "retrieval_id",
-	LocalID:          "local_id",
-	RemoteID:         "remote_id",
-	StartedAt:        "started_at",
-	EndedAt:          "ended_at",
-	CloserPeersCount: "closer_peers_count",
-	Error:            "error",
+	ID:                 "id",
+	RetrievalID:        "retrieval_id",
+	LocalID:            "local_id",
+	RemoteID:           "remote_id",
+	StartedAt:          "started_at",
+	EndedAt:            "ended_at",
+	ProviderPeersCount: "provider_peers_count",
+	Error:              "error",
 }
 
 var GetProviderTableColumns = struct {
-	ID               string
-	RetrievalID      string
-	LocalID          string
-	RemoteID         string
-	StartedAt        string
-	EndedAt          string
-	CloserPeersCount string
-	Error            string
+	ID                 string
+	RetrievalID        string
+	LocalID            string
+	RemoteID           string
+	StartedAt          string
+	EndedAt            string
+	ProviderPeersCount string
+	Error              string
 }{
-	ID:               "get_providers.id",
-	RetrievalID:      "get_providers.retrieval_id",
-	LocalID:          "get_providers.local_id",
-	RemoteID:         "get_providers.remote_id",
-	StartedAt:        "get_providers.started_at",
-	EndedAt:          "get_providers.ended_at",
-	CloserPeersCount: "get_providers.closer_peers_count",
-	Error:            "get_providers.error",
+	ID:                 "get_providers.id",
+	RetrievalID:        "get_providers.retrieval_id",
+	LocalID:            "get_providers.local_id",
+	RemoteID:           "get_providers.remote_id",
+	StartedAt:          "get_providers.started_at",
+	EndedAt:            "get_providers.ended_at",
+	ProviderPeersCount: "get_providers.provider_peers_count",
+	Error:              "get_providers.error",
 }
 
 // Generated where
 
 var GetProviderWhere = struct {
-	ID               whereHelperint
-	RetrievalID      whereHelperint
-	LocalID          whereHelperint
-	RemoteID         whereHelperint
-	StartedAt        whereHelpertime_Time
-	EndedAt          whereHelpertime_Time
-	CloserPeersCount whereHelpernull_Int
-	Error            whereHelpernull_String
+	ID                 whereHelperint
+	RetrievalID        whereHelperint
+	LocalID            whereHelperint
+	RemoteID           whereHelperint
+	StartedAt          whereHelpertime_Time
+	EndedAt            whereHelpertime_Time
+	ProviderPeersCount whereHelpernull_Int
+	Error              whereHelpernull_String
 }{
-	ID:               whereHelperint{field: "\"get_providers\".\"id\""},
-	RetrievalID:      whereHelperint{field: "\"get_providers\".\"retrieval_id\""},
-	LocalID:          whereHelperint{field: "\"get_providers\".\"local_id\""},
-	RemoteID:         whereHelperint{field: "\"get_providers\".\"remote_id\""},
-	StartedAt:        whereHelpertime_Time{field: "\"get_providers\".\"started_at\""},
-	EndedAt:          whereHelpertime_Time{field: "\"get_providers\".\"ended_at\""},
-	CloserPeersCount: whereHelpernull_Int{field: "\"get_providers\".\"closer_peers_count\""},
-	Error:            whereHelpernull_String{field: "\"get_providers\".\"error\""},
+	ID:                 whereHelperint{field: "\"get_providers\".\"id\""},
+	RetrievalID:        whereHelperint{field: "\"get_providers\".\"retrieval_id\""},
+	LocalID:            whereHelperint{field: "\"get_providers\".\"local_id\""},
+	RemoteID:           whereHelperint{field: "\"get_providers\".\"remote_id\""},
+	StartedAt:          whereHelpertime_Time{field: "\"get_providers\".\"started_at\""},
+	EndedAt:            whereHelpertime_Time{field: "\"get_providers\".\"ended_at\""},
+	ProviderPeersCount: whereHelpernull_Int{field: "\"get_providers\".\"provider_peers_count\""},
+	Error:              whereHelpernull_String{field: "\"get_providers\".\"error\""},
 }
 
 // GetProviderRels is where relationship names are stored.
 var GetProviderRels = struct {
-	Local     string
-	Remote    string
-	Retrieval string
+	Local         string
+	Remote        string
+	Retrieval     string
+	ProviderPeers string
 }{
-	Local:     "Local",
-	Remote:    "Remote",
-	Retrieval: "Retrieval",
+	Local:         "Local",
+	Remote:        "Remote",
+	Retrieval:     "Retrieval",
+	ProviderPeers: "ProviderPeers",
 }
 
 // getProviderR is where relationships are stored.
 type getProviderR struct {
-	Local     *Peer      `boil:"Local" json:"Local" toml:"Local" yaml:"Local"`
-	Remote    *Peer      `boil:"Remote" json:"Remote" toml:"Remote" yaml:"Remote"`
-	Retrieval *Retrieval `boil:"Retrieval" json:"Retrieval" toml:"Retrieval" yaml:"Retrieval"`
+	Local         *Peer             `boil:"Local" json:"Local" toml:"Local" yaml:"Local"`
+	Remote        *Peer             `boil:"Remote" json:"Remote" toml:"Remote" yaml:"Remote"`
+	Retrieval     *Retrieval        `boil:"Retrieval" json:"Retrieval" toml:"Retrieval" yaml:"Retrieval"`
+	ProviderPeers ProviderPeerSlice `boil:"ProviderPeers" json:"ProviderPeers" toml:"ProviderPeers" yaml:"ProviderPeers"`
 }
 
 // NewStruct creates a new relationship struct
@@ -126,8 +129,8 @@ func (*getProviderR) NewStruct() *getProviderR {
 type getProviderL struct{}
 
 var (
-	getProviderAllColumns            = []string{"id", "retrieval_id", "local_id", "remote_id", "started_at", "ended_at", "closer_peers_count", "error"}
-	getProviderColumnsWithoutDefault = []string{"retrieval_id", "local_id", "remote_id", "started_at", "ended_at", "closer_peers_count", "error"}
+	getProviderAllColumns            = []string{"id", "retrieval_id", "local_id", "remote_id", "started_at", "ended_at", "provider_peers_count", "error"}
+	getProviderColumnsWithoutDefault = []string{"retrieval_id", "local_id", "remote_id", "started_at", "ended_at", "provider_peers_count", "error"}
 	getProviderColumnsWithDefault    = []string{"id"}
 	getProviderPrimaryKeyColumns     = []string{"id"}
 )
@@ -449,6 +452,27 @@ func (o *GetProvider) Retrieval(mods ...qm.QueryMod) retrievalQuery {
 	return query
 }
 
+// ProviderPeers retrieves all the provider_peer's ProviderPeers with an executor.
+func (o *GetProvider) ProviderPeers(mods ...qm.QueryMod) providerPeerQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"provider_peers\".\"get_providers_id\"=?", o.ID),
+	)
+
+	query := ProviderPeers(queryMods...)
+	queries.SetFrom(query.Query, "\"provider_peers\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"provider_peers\".*"})
+	}
+
+	return query
+}
+
 // LoadLocal allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (getProviderL) LoadLocal(ctx context.Context, e boil.ContextExecutor, singular bool, maybeGetProvider interface{}, mods queries.Applicator) error {
@@ -761,6 +785,104 @@ func (getProviderL) LoadRetrieval(ctx context.Context, e boil.ContextExecutor, s
 	return nil
 }
 
+// LoadProviderPeers allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (getProviderL) LoadProviderPeers(ctx context.Context, e boil.ContextExecutor, singular bool, maybeGetProvider interface{}, mods queries.Applicator) error {
+	var slice []*GetProvider
+	var object *GetProvider
+
+	if singular {
+		object = maybeGetProvider.(*GetProvider)
+	} else {
+		slice = *maybeGetProvider.(*[]*GetProvider)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &getProviderR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &getProviderR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`provider_peers`),
+		qm.WhereIn(`provider_peers.get_providers_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load provider_peers")
+	}
+
+	var resultSlice []*ProviderPeer
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice provider_peers")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on provider_peers")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for provider_peers")
+	}
+
+	if len(providerPeerAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ProviderPeers = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &providerPeerR{}
+			}
+			foreign.R.GetProvider = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.GetProvidersID {
+				local.R.ProviderPeers = append(local.R.ProviderPeers, foreign)
+				if foreign.R == nil {
+					foreign.R = &providerPeerR{}
+				}
+				foreign.R.GetProvider = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // SetLocal of the getProvider to the related item.
 // Sets o.R.Local to related.
 // Adds o to related.R.LocalGetProviders.
@@ -899,6 +1021,59 @@ func (o *GetProvider) SetRetrieval(ctx context.Context, exec boil.ContextExecuto
 		related.R.GetProviders = append(related.R.GetProviders, o)
 	}
 
+	return nil
+}
+
+// AddProviderPeers adds the given related objects to the existing relationships
+// of the get_provider, optionally inserting them as new records.
+// Appends related to o.R.ProviderPeers.
+// Sets related.R.GetProvider appropriately.
+func (o *GetProvider) AddProviderPeers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*ProviderPeer) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.GetProvidersID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"provider_peers\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"get_providers_id"}),
+				strmangle.WhereClause("\"", "\"", 2, providerPeerPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.GetProvidersID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &getProviderR{
+			ProviderPeers: related,
+		}
+	} else {
+		o.R.ProviderPeers = append(o.R.ProviderPeers, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &providerPeerR{
+				GetProvider: o,
+			}
+		} else {
+			rel.R.GetProvider = o
+		}
+	}
 	return nil
 }
 

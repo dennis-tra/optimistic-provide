@@ -1,14 +1,13 @@
 BEGIN;
 
-CREATE TABLE providers
+CREATE TABLE provider_peers
 (
     id                INT GENERATED ALWAYS AS IDENTITY,
-    retrieval_id      INT         NOT NULL,
+    get_providers_id  INT         NOT NULL,
     remote_id         INT         NOT NULL,
     multi_address_ids INT[]       NOT NULL,
-    found_at          TIMESTAMPTZ NOT NULL,
 
-    CONSTRAINT fk_get_providers_retrieval_id FOREIGN KEY (retrieval_id) REFERENCES retrievals (id),
+    CONSTRAINT fk_get_providers_get_providers_id FOREIGN KEY (get_providers_id) REFERENCES get_providers (id),
     CONSTRAINT fk_get_providers_remote_id FOREIGN KEY (remote_id) REFERENCES peers (id),
 
     PRIMARY KEY (id)

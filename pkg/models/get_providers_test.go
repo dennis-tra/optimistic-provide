@@ -494,6 +494,159 @@ func testGetProvidersInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testGetProviderToManyProviderPeers(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a GetProvider
+	var b, c ProviderPeer
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, getProviderDBTypes, true, getProviderColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvider struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, providerPeerDBTypes, false, providerPeerColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, providerPeerDBTypes, false, providerPeerColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.GetProvidersID = a.ID
+	c.GetProvidersID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.ProviderPeers().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.GetProvidersID == b.GetProvidersID {
+			bFound = true
+		}
+		if v.GetProvidersID == c.GetProvidersID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := GetProviderSlice{&a}
+	if err = a.L.LoadProviderPeers(ctx, tx, false, (*[]*GetProvider)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ProviderPeers); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.ProviderPeers = nil
+	if err = a.L.LoadProviderPeers(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.ProviderPeers); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testGetProviderToManyAddOpProviderPeers(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a GetProvider
+	var b, c, d, e ProviderPeer
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, getProviderDBTypes, false, strmangle.SetComplement(getProviderPrimaryKeyColumns, getProviderColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*ProviderPeer{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, providerPeerDBTypes, false, strmangle.SetComplement(providerPeerPrimaryKeyColumns, providerPeerColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*ProviderPeer{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddProviderPeers(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.GetProvidersID {
+			t.Error("foreign key was wrong value", a.ID, first.GetProvidersID)
+		}
+		if a.ID != second.GetProvidersID {
+			t.Error("foreign key was wrong value", a.ID, second.GetProvidersID)
+		}
+
+		if first.R.GetProvider != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.GetProvider != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.ProviderPeers[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.ProviderPeers[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.ProviderPeers().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testGetProviderToOnePeerUsingLocal(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -893,7 +1046,7 @@ func testGetProvidersSelect(t *testing.T) {
 }
 
 var (
-	getProviderDBTypes = map[string]string{`ID`: `integer`, `RetrievalID`: `integer`, `LocalID`: `integer`, `RemoteID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `CloserPeersCount`: `integer`, `Error`: `text`}
+	getProviderDBTypes = map[string]string{`ID`: `integer`, `RetrievalID`: `integer`, `LocalID`: `integer`, `RemoteID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `ProviderPeersCount`: `integer`, `Error`: `text`}
 	_                  = bytes.MinRead
 )
 

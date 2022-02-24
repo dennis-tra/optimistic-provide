@@ -25,7 +25,7 @@ var _ RetrievalService = &Retrieval{}
 type Retrieval struct {
 	hostService  HostService
 	rtService    RoutingTableService
-	provService  ProvidersService
+	provService  ProviderPeersService
 	dialService  DialService
 	connService  ConnectionService
 	gpService    GetProvidersService
@@ -33,7 +33,7 @@ type Retrieval struct {
 	retrieveRepo repo.RetrievalRepo
 }
 
-func NewRetrievalService(hostService HostService, rtService RoutingTableService, provService ProvidersService, dialService DialService, connService ConnectionService, gpService GetProvidersService, psService PeerStateService, retrieveRepo repo.RetrievalRepo) *Retrieval {
+func NewRetrievalService(hostService HostService, rtService RoutingTableService, provService ProviderPeersService, dialService DialService, connService ConnectionService, gpService GetProvidersService, psService PeerStateService, retrieveRepo repo.RetrievalRepo) *Retrieval {
 	return &Retrieval{
 		hostService:  hostService,
 		rtService:    rtService,
@@ -59,6 +59,11 @@ func (rs *Retrieval) Retrieve(ctx context.Context, h *dht.Host, contentID cid.Ci
 		InitialRoutingTableID: rts.ID,
 		StartedAt:             time.Now(),
 	}
+
+	if retrieval, err = rs.retrieveRepo.Save(ctx, retrieval); err != nil {
+		return nil, err
+	}
+
 	go rs.startRetrieving(h, retrieval, contentID, count)
 
 	return retrieval, nil
@@ -84,9 +89,7 @@ func (rs *Retrieval) startRetrieving(h *dht.Host, retrieval *models.Retrieval, c
 
 	ctx = state.Register(ctx)
 	for provider := range h.DHT.FindProvidersAsync(ctx, contentID, count) {
-		if _, err := rs.provService.Save(ctx, h, retrieval.ID, provider); err != nil {
-			log.Warn(err)
-		}
+		log.Infow("Found Provider", "providerID", provider.ID.String())
 	}
 	end := time.Now()
 

@@ -200,7 +200,7 @@ func (rs *RetrievalState) consumeRPCEvents(rpcEvents <-chan interface{}) {
 		case *wrap.RPCSendRequestStartedEvent:
 		case *wrap.RPCSendRequestEndedEvent:
 			switch evt.Request.Type {
-			case pb.Message_FIND_NODE:
+			case pb.Message_GET_PROVIDERS:
 				rs.trackGetProvidersRequest(evt)
 			default:
 				log.Warn(evt)
@@ -225,7 +225,7 @@ func (rs *RetrievalState) trackGetProvidersRequest(evt *wrap.RPCSendRequestEnded
 		Error:        evt.Error,
 	}
 	if evt.Response != nil {
-		gps.CloserPeers = pb.PBPeersToPeerInfos(evt.Response.CloserPeers)
+		gps.Providers = pb.PBPeersToPeerInfos(evt.Response.ProviderPeers)
 	}
 
 	rs.getProvidersLk.Lock()
@@ -233,7 +233,7 @@ func (rs *RetrievalState) trackGetProvidersRequest(evt *wrap.RPCSendRequestEnded
 
 	rs.getProviders = append(rs.getProviders, gps)
 	rs.relevantPeers.Store(evt.RemotePeer, struct{}{})
-	for _, p := range gps.CloserPeers {
+	for _, p := range gps.Providers {
 		rs.relevantPeers.Store(p.ID, struct{}{})
 	}
 }

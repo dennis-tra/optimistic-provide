@@ -80,8 +80,7 @@ func (ps *Provide) Provide(ctx context.Context, h *dht.Host) (*models.Provide, e
 		StartedAt:             time.Now(),
 	}
 
-	provide, err = ps.provideRepo.Save(ctx, provide)
-	if err != nil {
+	if provide, err = ps.provideRepo.Save(ctx, provide); err != nil {
 		return nil, err
 	}
 

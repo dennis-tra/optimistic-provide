@@ -19,58 +19,64 @@ var _ GetProvidersService = &GetProviders{}
 
 type GetProviders struct {
 	peerService PeerService
+	ppService   ProviderPeersService
 	gpRepo      repo.GetProvidersRepo
-	cpRepo      repo.CloserPeersRepo
 }
 
-func NewGetProvidersService(peerService PeerService, gpRepo repo.GetProvidersRepo, cpRepo repo.CloserPeersRepo) GetProvidersService {
+func NewGetProvidersService(peerService PeerService, ppService ProviderPeersService, gpRepo repo.GetProvidersRepo) GetProvidersService {
 	return &GetProviders{
 		peerService: peerService,
 		gpRepo:      gpRepo,
-		cpRepo:      cpRepo,
+		ppService:   ppService,
 	}
 }
 
-func (fn *GetProviders) List(ctx context.Context, retrievalID int) ([]*models.GetProvider, error) {
-	return fn.gpRepo.List(ctx, retrievalID)
+func (gp *GetProviders) List(ctx context.Context, retrievalID int) ([]*models.GetProvider, error) {
+	return gp.gpRepo.List(ctx, retrievalID)
 }
 
-func (fn *GetProviders) Save(ctx context.Context, h host.Host, retrievalID int, fnReqs []*GetProvidersSpan) error {
+func (gp *GetProviders) Save(ctx context.Context, h host.Host, retrievalID int, fnReqs []*GetProvidersSpan) error {
 	log.Info("Saving get providers requests...")
 	defer log.Info("Done saving get providers requests")
 
-	localPeer, err := fn.peerService.UpsertLocalPeer(h)
+	localPeer, err := gp.peerService.UpsertLocalPeer(h)
 	if err != nil {
 		return err
 	}
 
-	for _, fnReq := range fnReqs {
+	for _, gpReq := range fnReqs {
 
-		remotePeer, err := fn.peerService.UpsertPeer(h, fnReq.RemotePeerID)
+		remotePeer, err := gp.peerService.UpsertPeer(h, gpReq.RemotePeerID)
 		if err != nil {
 			return err
 		}
 
 		errStr := null.NewString("", false)
-		cpCount := null.NewInt(0, false)
-		if fnReq.Error != nil {
-			errStr = null.StringFrom(fnReq.Error.Error())
+		ppCount := null.NewInt(0, false)
+		if gpReq.Error != nil {
+			errStr = null.StringFrom(gpReq.Error.Error())
 		} else {
-			cpCount = null.IntFrom(len(fnReq.CloserPeers))
+			ppCount = null.IntFrom(len(gpReq.Providers))
 		}
 
-		dbfn := &models.GetProvider{
-			RetrievalID:      retrievalID,
-			LocalID:          localPeer.ID,
-			RemoteID:         remotePeer.ID,
-			StartedAt:        fnReq.Start,
-			EndedAt:          fnReq.End,
-			Error:            errStr,
-			CloserPeersCount: cpCount,
+		dbgp := &models.GetProvider{
+			RetrievalID:        retrievalID,
+			LocalID:            localPeer.ID,
+			RemoteID:           remotePeer.ID,
+			StartedAt:          gpReq.Start,
+			EndedAt:            gpReq.End,
+			Error:              errStr,
+			ProviderPeersCount: ppCount,
 		}
-		dbfn, err = fn.gpRepo.Save(ctx, dbfn)
+		dbgp, err = gp.gpRepo.Save(ctx, dbgp)
 		if err != nil {
 			return err
+		}
+
+		for _, provider := range gpReq.Providers {
+			if _, err = gp.ppService.Save(ctx, h, dbgp.ID, *provider); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

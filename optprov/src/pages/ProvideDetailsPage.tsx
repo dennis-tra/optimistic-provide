@@ -37,6 +37,7 @@ const ProvideDetailsPage: React.FC = (props) => {
     <HostDetailsLayout hostId={hostId!} title="Provide Operations">
       <Grid item xs={12} md={12} lg={12}>
         Data {hostId} {provideId}
+        <h2>CID: {provide.contentId}</h2>
       </Grid>
     </HostDetailsLayout>
   );

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"sort"
-	"time"
 
 	"github.com/libp2p/go-libp2p-core/host"
 
@@ -13,27 +12,27 @@ import (
 	"github.com/dennis-tra/optimistic-provide/pkg/repo"
 )
 
-type ProvidersService interface {
-	Save(ctx context.Context, h host.Host, retrievalID int, provider peer.AddrInfo) (*models.Provider, error)
+type ProviderPeersService interface {
+	Save(ctx context.Context, h host.Host, getProviderID int, provider peer.AddrInfo) (*models.ProviderPeer, error)
 }
 
-var _ ProvidersService = &Providers{}
+var _ ProviderPeersService = &Providers{}
 
 type Providers struct {
 	peerService   PeerService
 	maService     MultiAddressService
-	providersRepo repo.ProvidersRepo
+	providersRepo repo.ProviderPeersRepo
 }
 
-func NewProvidersService(peerService PeerService, maService MultiAddressService) *Providers {
+func NewProviderPeersService(peerService PeerService, maService MultiAddressService, providersRepo repo.ProviderPeersRepo) *Providers {
 	return &Providers{
-		peerService: peerService,
-		maService:   maService,
+		peerService:   peerService,
+		maService:     maService,
+		providersRepo: providersRepo,
 	}
 }
 
-func (p Providers) Save(ctx context.Context, h host.Host, retrievalID int, provider peer.AddrInfo) (*models.Provider, error) {
-	foundAt := time.Now()
+func (p Providers) Save(ctx context.Context, h host.Host, getProvidersID int, provider peer.AddrInfo) (*models.ProviderPeer, error) {
 	dbPeer, err := p.peerService.UpsertPeer(h, provider.ID)
 	if err != nil {
 		return nil, err
@@ -55,11 +54,10 @@ func (p Providers) Save(ctx context.Context, h host.Host, retrievalID int, provi
 		dbMaddrIDsInt64[i] = int64(id)
 	}
 
-	dbProvider := &models.Provider{
-		RetrievalID:     retrievalID,
+	dbProvider := &models.ProviderPeer{
+		GetProvidersID:  getProvidersID,
 		RemoteID:        dbPeer.ID,
 		MultiAddressIds: dbMaddrIDsInt64,
-		FoundAt:         foundAt,
 	}
 
 	return p.providersRepo.Save(ctx, dbProvider)
