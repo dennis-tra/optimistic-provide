@@ -10,8 +10,6 @@ CREATE TYPE dial_transport AS ENUM (
 CREATE TABLE dials
 (
     id               INT GENERATED ALWAYS AS IDENTITY,
-    provide_id       INT,
-    retrieval_id     INT,
     local_id         INT            NOT NULL,
     remote_id        INT            NOT NULL,
     transport        dial_transport NOT NULL,
@@ -20,13 +18,9 @@ CREATE TABLE dials
     ended_at         TIMESTAMPTZ    NOT NULL,
     error            TEXT,
 
-    CONSTRAINT fk_dials_provide_id FOREIGN KEY (provide_id) REFERENCES provides (id),
-    CONSTRAINT fk_dials_retrieval_id FOREIGN KEY (retrieval_id) REFERENCES retrievals (id),
     CONSTRAINT fk_dials_local_id FOREIGN KEY (local_id) REFERENCES peers (id),
     CONSTRAINT fk_dials_remote_id FOREIGN KEY (remote_id) REFERENCES peers (id),
     CONSTRAINT fk_dials_multi_address_id FOREIGN KEY (multi_address_id) REFERENCES multi_addresses (id),
-
-    CHECK ((provide_id IS NULL) != (retrieval_id IS NULL)),
 
     PRIMARY KEY (id)
 );

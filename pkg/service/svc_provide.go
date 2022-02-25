@@ -28,7 +28,7 @@ var log = logging.Logger("optprov")
 type ProvideService interface {
 	Provide(ctx context.Context, h *dht.Host) (*models.Provide, error)
 	List(ctx context.Context, h *dht.Host) ([]*models.Provide, error)
-	Get(ctx context.Context, h *dht.Host, id int) (*models.Provide, []*models.Connection, []*models.FindNode, []*models.Dial, []*models.AddProvider, error)
+	Get(ctx context.Context, h *dht.Host, id int) (*models.Provide, []*models.Connection, []*models.FindNodesRPC, []*models.Dial, []*models.AddProviderRPC, error)
 }
 
 var _ ProvideService = &Provide{}
@@ -93,13 +93,13 @@ func (ps *Provide) List(ctx context.Context, h *dht.Host) ([]*models.Provide, er
 	return ps.provideRepo.List(ctx, h.ID().Pretty())
 }
 
-func (ps *Provide) Get(ctx context.Context, h *dht.Host, provideID int) (*models.Provide, []*models.Connection, []*models.FindNode, []*models.Dial, []*models.AddProvider, error) {
+func (ps *Provide) Get(ctx context.Context, h *dht.Host, provideID int) (*models.Provide, []*models.Connection, []*models.FindNodesRPC, []*models.Dial, []*models.AddProviderRPC, error) {
 	errg, ctx := errgroup.WithContext(ctx)
 	var provide *models.Provide
 	var connections []*models.Connection
-	var findNodes []*models.FindNode
+	var findNodes []*models.FindNodesRPC
 	var dials []*models.Dial
-	var addProviders []*models.AddProvider
+	var addProviders []*models.AddProviderRPC
 
 	errg.Go(func() error {
 		var err error
@@ -121,7 +121,7 @@ func (ps *Provide) Get(ctx context.Context, h *dht.Host, provideID int) (*models
 		var err error
 		findNodes, err = ps.fnService.List(ctx, provideID)
 		if errors.Is(err, sql.ErrNoRows) {
-			findNodes = []*models.FindNode{}
+			findNodes = []*models.FindNodesRPC{}
 			return nil
 		}
 		return err
@@ -141,7 +141,7 @@ func (ps *Provide) Get(ctx context.Context, h *dht.Host, provideID int) (*models
 		var err error
 		addProviders, err = ps.apService.List(ctx, provideID)
 		if errors.Is(err, sql.ErrNoRows) {
-			addProviders = []*models.AddProvider{}
+			addProviders = []*models.AddProviderRPC{}
 			return nil
 		}
 		return err
