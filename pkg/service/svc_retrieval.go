@@ -17,31 +17,36 @@ import (
 )
 
 type RetrievalService interface {
+	List(ctx context.Context, h *dht.Host) ([]*models.Retrieval, error)
 	Retrieve(ctx context.Context, h *dht.Host, id cid.Cid, count int) (*models.Retrieval, error)
 }
 
 var _ RetrievalService = &Retrieval{}
 
 type Retrieval struct {
-	hostService  HostService
-	rtService    RoutingTableService
-	dialService  DialService
-	connService  ConnectionService
-	gpService    GetProvidersService
-	psService    PeerStateService
-	retrieveRepo repo.RetrievalRepo
+	hostService   HostService
+	rtService     RoutingTableService
+	dialService   DialService
+	connService   ConnectionService
+	gpService     GetProvidersService
+	psService     PeerStateService
+	retrievalRepo repo.RetrievalRepo
 }
 
-func NewRetrievalService(hostService HostService, rtService RoutingTableService, dialService DialService, connService ConnectionService, gpService GetProvidersService, psService PeerStateService, retrieveRepo repo.RetrievalRepo) *Retrieval {
+func NewRetrievalService(hostService HostService, rtService RoutingTableService, dialService DialService, connService ConnectionService, gpService GetProvidersService, psService PeerStateService, retrievalRepo repo.RetrievalRepo) *Retrieval {
 	return &Retrieval{
-		hostService:  hostService,
-		rtService:    rtService,
-		dialService:  dialService,
-		connService:  connService,
-		gpService:    gpService,
-		psService:    psService,
-		retrieveRepo: retrieveRepo,
+		hostService:   hostService,
+		rtService:     rtService,
+		dialService:   dialService,
+		connService:   connService,
+		gpService:     gpService,
+		psService:     psService,
+		retrievalRepo: retrievalRepo,
 	}
+}
+
+func (rs *Retrieval) List(ctx context.Context, h *dht.Host) ([]*models.Retrieval, error) {
+	return rs.retrievalRepo.List(ctx, h.ID().Pretty())
 }
 
 func (rs *Retrieval) Retrieve(ctx context.Context, h *dht.Host, contentID cid.Cid, count int) (*models.Retrieval, error) {
@@ -122,9 +127,13 @@ func (rs *Retrieval) saveRetrieval(h *dht.Host, retrieval *models.Retrieval, sta
 		log.Warn(err)
 	}
 
-	peerStates, err := rs.psService.Save(saveCtx, txn, h, state.peerSet.AllStates())
-	if err != nil {
-		return errors.Wrap(err, "saving connections")
+	allPeerState := []*models.PeerState{}
+	for uuid, set := range state.peerSet {
+		peerStates, err := rs.psService.Save(saveCtx, txn, h, uuid, set.AllStates())
+		if err != nil {
+			return errors.Wrap(err, "saving peer states")
+		}
+		allPeerState = append(allPeerState, peerStates...)
 	}
 
 	getProvidersRPCs, err := rs.gpService.Save(saveCtx, txn, h, state.getProviders)
@@ -148,7 +157,7 @@ func (rs *Retrieval) saveRetrieval(h *dht.Host, retrieval *models.Retrieval, sta
 		return errors.Wrap(err, "setting get providers rpcs")
 	}
 
-	if err = retrieval.SetPeerStates(saveCtx, txn, false, peerStates...); err != nil {
+	if err = retrieval.SetPeerStates(saveCtx, txn, false, allPeerState...); err != nil {
 		return errors.Wrap(err, "setting peer states")
 	}
 

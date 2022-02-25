@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
+
 	"github.com/ipfs/go-cid"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/api/types"
@@ -75,4 +77,34 @@ func (rc *RetrievalController) Create(c *gin.Context) {
 		InitialRoutingTableId: retrieval.InitialRoutingTableID,
 		StartedAt:             retrieval.StartedAt.Format(time.RFC3339),
 	})
+}
+
+func (rc *RetrievalController) List(c *gin.Context) {
+	h := c.MustGet("host").(*dht.Host)
+
+	dbRetrievals, err := rc.rs.List(rc.ctx, h)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
+			Code:    types.ErrorCodeINTERNAL,
+			Message: "Error listing provide operations",
+			Details: types.ErrDetails(err),
+		})
+		return
+	}
+
+	retrievals := make([]types.Retrieval, len(dbRetrievals))
+	for i, dbRetrieval := range dbRetrievals {
+		retrievals[i] = types.Retrieval{
+			ContentId:             dbRetrieval.ContentID,
+			EndedAt:               util.TimeToStr(dbRetrieval.EndedAt.Ptr()),
+			Error:                 dbRetrieval.Error.Ptr(),
+			FinalRoutingTableId:   dbRetrieval.FinalRoutingTableID.Ptr(),
+			HostId:                h.ID().String(),
+			InitialRoutingTableId: dbRetrieval.InitialRoutingTableID,
+			RetrievalId:           dbRetrieval.ID,
+			StartedAt:             dbRetrieval.StartedAt.Format(time.RFC3339),
+		}
+	}
+
+	c.JSON(http.StatusCreated, retrievals)
 }

@@ -7,8 +7,8 @@ import {
   Paper,
   List,
   ListItemButton,
-  Breadcrumbs,
-  Link,
+  IconButton,
+  ListItem,
   ListItemText,
   Chip,
   Typography,
@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import { useGetProvidesQuery, useLazyGetProvidesQuery, useStartProvideMutation } from "../store/api";
 import { ProvideType } from "../api/models/ProvideType";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
 const ProvidePage: React.FC = (props) => {
   const { hostId } = useParams();
@@ -74,42 +75,49 @@ const ProvidePage: React.FC = (props) => {
           <List component="nav" dense>
             {provides.length == 0 && "This host did not provide any content."}
             {provides.map((provide) => (
-              <ListItemButton
+              <ListItem
                 key={provide.contentId}
-                component={RouterLink}
-                to={`/hosts/${hostId}/provides/${provide.provideId}`}
+                secondaryAction={
+                  <Tooltip title={"Copy CID"}>
+                    <IconButton edge="end" onClick={() => navigator.clipboard.writeText(provide.contentId)}>
+                      <ContentCopyIcon />
+                    </IconButton>
+                  </Tooltip>
+                }
               >
-                <ListItemText
-                  primary={
-                    <Stack direction="row" spacing={2}>
-                      <span>
-                        <Typography sx={{ fontFamily: "Monospace" }}>CID: {provide.contentId}</Typography>
-                      </span>
-                      {provide.endedAt === null && (
-                        <Chip label="Ongoging" color="success" variant="outlined" size="small" />
-                      )}
-                      {provide.endedAt !== null && provide.error === null && (
-                        <Tooltip
-                          children={<Chip label="Success" color="success" variant="filled" size="small" />}
-                          title={`Ended at ${new Date(provide.endedAt).toLocaleString()}`}
-                        />
-                      )}
-                      {provide.endedAt !== null && provide.error !== null && (
-                        <Tooltip
-                          children={<Chip label="Error" color="success" variant="filled" size="small" />}
-                          title={`Error: ${provide.error}`}
-                        />
-                      )}
-                    </Stack>
-                  }
-                  secondary={
-                    <>
-                      <span>Started </span>
-                      <ReactTimeAgo date={new Date(provide.startedAt)} />
-                    </>
-                  }
-                />
-              </ListItemButton>
+                <ListItemButton component={RouterLink} to={`/hosts/${hostId}/provides/${provide.provideId}`}>
+                  <ListItemText
+                    primary={
+                      <Stack direction="row" spacing={2}>
+                        <span>
+                          <Typography sx={{ fontFamily: "Monospace" }}>CID: {provide.contentId}</Typography>
+                        </span>
+                        {provide.endedAt === null && (
+                          <Chip label="Ongoging" color="success" variant="outlined" size="small" />
+                        )}
+                        {provide.endedAt !== null && provide.error === null && (
+                          <Tooltip
+                            children={<Chip label="Success" color="success" variant="filled" size="small" />}
+                            title={`Ended at ${new Date(provide.endedAt).toLocaleString()}`}
+                          />
+                        )}
+                        {provide.endedAt !== null && provide.error !== null && (
+                          <Tooltip
+                            children={<Chip label="Error" color="error" variant="filled" size="small" />}
+                            title={`Error: ${provide.error}`}
+                          />
+                        )}
+                      </Stack>
+                    }
+                    secondary={
+                      <>
+                        <span>Started </span>
+                        <ReactTimeAgo date={new Date(provide.startedAt)} />
+                      </>
+                    }
+                  />
+                </ListItemButton>
+              </ListItem>
             ))}
           </List>
         </Paper>

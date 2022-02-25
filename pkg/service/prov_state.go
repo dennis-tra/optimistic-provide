@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/routing"
@@ -39,7 +41,7 @@ type ProvideState struct {
 	connectionsLk sync.RWMutex
 	connections   []*ConnectionSpan
 
-	peerSet *qpeerset.QueryPeerset
+	peerSet map[uuid.UUID]*qpeerset.QueryPeerset
 
 	relevantPeers sync.Map
 }
@@ -58,8 +60,8 @@ func NewProvideState(h *dht.Host, content *util.Content) *ProvideState {
 		connectionsStarted:   map[peer.ID]time.Time{},
 		connectionsLk:        sync.RWMutex{},
 		connections:          []*ConnectionSpan{},
+		peerSet:              map[uuid.UUID]*qpeerset.QueryPeerset{},
 		relevantPeers:        sync.Map{},
-		peerSet:              qpeerset.NewQueryPeerset(string(content.CID.Hash())),
 	}
 }
 
@@ -88,29 +90,6 @@ func (ps *ProvideState) Register(ctx context.Context) context.Context {
 	return ctx
 }
 
-func (ps *ProvideState) RegisterMultiQuery(ctx context.Context) context.Context {
-	if ps.cancel != nil {
-		panic("already registered for events")
-	}
-
-	ctx, cancel := context.WithCancel(ctx)
-	ctx, queryEvents := routing.RegisterForQueryEvents(ctx)
-	ctx, rpcEvents := wrap.RegisterForRPCEvents(ctx)
-
-	go ps.consumeQueryEvents(queryEvents)
-	go ps.consumeRPCEvents(rpcEvents)
-
-	for _, notifier := range ps.h.Transports {
-		notifier.Notify(ps)
-	}
-
-	ps.h.Host.Network().Notify(ps)
-
-	ps.cancel = cancel
-
-	return ctx
-}
-
 func (ps *ProvideState) Unregister() {
 	ps.h.Host.Network().StopNotify(ps)
 
@@ -123,6 +102,93 @@ func (ps *ProvideState) Unregister() {
 
 	ps.filterDials()
 	ps.filterConnections()
+}
+
+func (ps *ProvideState) consumeLookupEvents(lookupEvents <-chan *kaddht.LookupEvent) {
+	for event := range lookupEvents {
+		ps.ensurePeerset(event)
+		if event.Response != nil {
+			ps.trackLookupResponse(event)
+		} else if event.Request != nil {
+			ps.trackLookupRequest(event)
+		}
+	}
+}
+
+func (ps *ProvideState) consumeQueryEvents(queryEvents <-chan *routing.QueryEvent) {
+	for event := range queryEvents {
+		switch event.Type {
+		case routing.DialingPeer:
+			ps.trackConnectionStart(event.ID)
+		}
+	}
+}
+
+func (ps *ProvideState) consumeRPCEvents(rpcEvents <-chan interface{}) {
+	for event := range rpcEvents {
+		switch evt := event.(type) {
+		case *wrap.RPCSendRequestStartedEvent:
+		case *wrap.RPCSendRequestEndedEvent:
+			switch evt.Request.Type {
+			case pb.Message_FIND_NODE:
+				ps.trackFindNodeRequest(evt)
+			default:
+				log.Warn(evt)
+			}
+		case *wrap.RPCSendMessageStartedEvent:
+		case *wrap.RPCSendMessageEndedEvent:
+			switch evt.Message.Type {
+			case pb.Message_ADD_PROVIDER:
+				ps.trackAddProvidersRequest(evt)
+			default:
+				log.Warn(evt)
+			}
+		default:
+			log.Warn(event)
+		}
+	}
+}
+
+func (ps *ProvideState) ensurePeerset(evt *kaddht.LookupEvent) {
+	if _, found := ps.peerSet[evt.ID]; !found {
+		ps.peerSet[evt.ID] = qpeerset.NewQueryPeerset(string(ps.content.CID.Hash()))
+	}
+}
+
+func (ps *ProvideState) trackLookupResponse(evt *kaddht.LookupEvent) {
+	for _, p := range evt.Response.Heard {
+		if p.Peer == ps.h.ID() { // don't add self.
+			continue
+		}
+		ps.peerSet[evt.ID].TryAdd(p.Peer, evt.Response.Cause.Peer)
+	}
+	for _, p := range evt.Response.Queried {
+		if p.Peer == ps.h.ID() { // don't add self.
+			continue
+		}
+		if st := ps.peerSet[evt.ID].GetState(p.Peer); st == qpeerset.PeerWaiting {
+			ps.peerSet[evt.ID].SetState(p.Peer, qpeerset.PeerQueried)
+		} else {
+			panic(fmt.Errorf("kademlia protocol error: tried to transition to the queried state from state %v", st))
+		}
+	}
+	for _, p := range evt.Response.Unreachable {
+		if p.Peer == ps.h.ID() { // don't add self.
+			continue
+		}
+
+		if st := ps.peerSet[evt.ID].GetState(p.Peer); st == qpeerset.PeerWaiting {
+			ps.peerSet[evt.ID].SetState(p.Peer, qpeerset.PeerUnreachable)
+		} else {
+			panic(fmt.Errorf("kademlia protocol error: tried to transition to the unreachable state from state %v", st))
+		}
+	}
+}
+
+func (ps *ProvideState) trackLookupRequest(evt *kaddht.LookupEvent) {
+	for _, p := range evt.Request.Waiting {
+		ps.peerSet[evt.ID].SetState(p.Peer, qpeerset.PeerWaiting)
+	}
 }
 
 func (ps *ProvideState) trackConnectionStart(p peer.ID) {
@@ -217,88 +283,6 @@ func (ps *ProvideState) filterConnections() {
 		}
 	}
 	ps.connections = relevantConnections
-}
-
-////
-
-func (ps *ProvideState) consumeQueryEvents(queryEvents <-chan *routing.QueryEvent) {
-	for event := range queryEvents {
-		switch event.Type {
-		case routing.DialingPeer:
-			ps.trackConnectionStart(event.ID)
-		}
-	}
-}
-
-func (ps *ProvideState) consumeRPCEvents(rpcEvents <-chan interface{}) {
-	for event := range rpcEvents {
-		switch evt := event.(type) {
-		case *wrap.RPCSendRequestStartedEvent:
-		case *wrap.RPCSendRequestEndedEvent:
-			switch evt.Request.Type {
-			case pb.Message_FIND_NODE:
-				ps.trackFindNodeRequest(evt)
-			default:
-				log.Warn(evt)
-			}
-		case *wrap.RPCSendMessageStartedEvent:
-		case *wrap.RPCSendMessageEndedEvent:
-			switch evt.Message.Type {
-			case pb.Message_ADD_PROVIDER:
-				ps.trackAddProvidersRequest(evt)
-			default:
-				log.Warn(evt)
-			}
-		default:
-			log.Warn(event)
-		}
-	}
-}
-
-func (ps *ProvideState) trackLookupRequest(evt *kaddht.LookupEvent) {
-	for _, p := range evt.Request.Waiting {
-		ps.peerSet.SetState(p.Peer, qpeerset.PeerWaiting)
-	}
-}
-
-func (ps *ProvideState) trackLookupResponse(evt *kaddht.LookupEvent) {
-	for _, p := range evt.Response.Heard {
-		if p.Peer == ps.h.ID() { // don't add self.
-			continue
-		}
-		ps.peerSet.TryAdd(p.Peer, evt.Response.Cause.Peer)
-	}
-	for _, p := range evt.Response.Queried {
-		if p.Peer == ps.h.ID() { // don't add self.
-			continue
-		}
-		if st := ps.peerSet.GetState(p.Peer); st == qpeerset.PeerWaiting {
-			ps.peerSet.SetState(p.Peer, qpeerset.PeerQueried)
-		} else {
-			panic(fmt.Errorf("kademlia protocol error: tried to transition to the queried state from state %v", st))
-		}
-	}
-	for _, p := range evt.Response.Unreachable {
-		if p.Peer == ps.h.ID() { // don't add self.
-			continue
-		}
-
-		if st := ps.peerSet.GetState(p.Peer); st == qpeerset.PeerWaiting {
-			ps.peerSet.SetState(p.Peer, qpeerset.PeerUnreachable)
-		} else {
-			panic(fmt.Errorf("kademlia protocol error: tried to transition to the unreachable state from state %v", st))
-		}
-	}
-}
-
-func (ps *ProvideState) consumeLookupEvents(lookupEvents <-chan *kaddht.LookupEvent) {
-	for event := range lookupEvents {
-		if event.Response != nil {
-			ps.trackLookupResponse(event)
-		} else if event.Request != nil {
-			ps.trackLookupRequest(event)
-		}
-	}
 }
 
 ////

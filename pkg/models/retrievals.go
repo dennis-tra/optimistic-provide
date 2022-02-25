@@ -1278,7 +1278,7 @@ func (retrievalL) LoadPeerStates(ctx context.Context, e boil.ContextExecutor, si
 	}
 
 	query := NewQuery(
-		qm.Select("\"peer_states\".id, \"peer_states\".peer_id, \"peer_states\".referrer_id, \"peer_states\".state, \"peer_states\".distance, \"a\".\"retrieval_id\""),
+		qm.Select("\"peer_states\".id, \"peer_states\".query_id, \"peer_states\".peer_id, \"peer_states\".referrer_id, \"peer_states\".state, \"peer_states\".distance, \"a\".\"retrieval_id\""),
 		qm.From("\"peer_states\""),
 		qm.InnerJoin("\"retrievals_x_peer_states\" as \"a\" on \"peer_states\".\"id\" = \"a\".\"peer_state_id\""),
 		qm.WhereIn("\"a\".\"retrieval_id\" in ?", args...),
@@ -1299,7 +1299,7 @@ func (retrievalL) LoadPeerStates(ctx context.Context, e boil.ContextExecutor, si
 		one := new(PeerState)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.PeerID, &one.ReferrerID, &one.State, &one.Distance, &localJoinCol)
+		err = results.Scan(&one.ID, &one.QueryID, &one.PeerID, &one.ReferrerID, &one.State, &one.Distance, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for peer_states")
 		}

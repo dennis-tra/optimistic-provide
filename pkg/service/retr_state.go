@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/ipfs/go-cid"
 
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
@@ -38,7 +40,7 @@ type RetrievalState struct {
 	connectionsLk sync.RWMutex
 	connections   []*ConnectionSpan
 
-	peerSet *qpeerset.QueryPeerset
+	peerSet map[uuid.UUID]*qpeerset.QueryPeerset
 
 	relevantPeers sync.Map
 }
@@ -56,7 +58,7 @@ func NewRetrievalState(h *dht.Host, contentID cid.Cid) *RetrievalState {
 		connectionsLk:        sync.RWMutex{},
 		connections:          []*ConnectionSpan{},
 		relevantPeers:        sync.Map{},
-		peerSet:              qpeerset.NewQueryPeerset(string(contentID.Hash())),
+		peerSet:              map[uuid.UUID]*qpeerset.QueryPeerset{},
 	}
 }
 
@@ -64,6 +66,7 @@ func (rs *RetrievalState) Register(ctx context.Context) context.Context {
 	if rs.cancel != nil {
 		panic("already registered for events")
 	}
+
 	ctx, cancel := context.WithCancel(ctx)
 	ctx, lookupEvents := kaddht.RegisterForLookupEvents(ctx)
 	ctx, queryEvents := routing.RegisterForQueryEvents(ctx)
@@ -167,6 +170,7 @@ func (rs *RetrievalState) filterConnections() {
 
 func (rs *RetrievalState) consumeLookupEvents(lookupEvents <-chan *kaddht.LookupEvent) {
 	for event := range lookupEvents {
+		rs.ensurePeerset(event)
 		if event.Response != nil {
 			rs.trackLookupResponse(event)
 		} else if event.Request != nil {
@@ -175,25 +179,19 @@ func (rs *RetrievalState) consumeLookupEvents(lookupEvents <-chan *kaddht.Lookup
 	}
 }
 
-func (rs *RetrievalState) trackLookupRequest(evt *kaddht.LookupEvent) {
-	for _, p := range evt.Request.Waiting {
-		rs.peerSet.SetState(p.Peer, qpeerset.PeerWaiting)
-	}
-}
-
 func (rs *RetrievalState) trackLookupResponse(evt *kaddht.LookupEvent) {
 	for _, p := range evt.Response.Heard {
 		if p.Peer == rs.h.ID() { // don't add self.
 			continue
 		}
-		rs.peerSet.TryAdd(p.Peer, evt.Response.Cause.Peer)
+		rs.peerSet[evt.ID].TryAdd(p.Peer, evt.Response.Cause.Peer)
 	}
 	for _, p := range evt.Response.Queried {
 		if p.Peer == rs.h.ID() { // don't add self.
 			continue
 		}
-		if st := rs.peerSet.GetState(p.Peer); st == qpeerset.PeerWaiting {
-			rs.peerSet.SetState(p.Peer, qpeerset.PeerQueried)
+		if st := rs.peerSet[evt.ID].GetState(p.Peer); st == qpeerset.PeerWaiting {
+			rs.peerSet[evt.ID].SetState(p.Peer, qpeerset.PeerQueried)
 		} else {
 			panic(fmt.Errorf("kademlia protocol error: tried to transition to the queried state from state %v", st))
 		}
@@ -203,11 +201,23 @@ func (rs *RetrievalState) trackLookupResponse(evt *kaddht.LookupEvent) {
 			continue
 		}
 
-		if st := rs.peerSet.GetState(p.Peer); st == qpeerset.PeerWaiting {
-			rs.peerSet.SetState(p.Peer, qpeerset.PeerUnreachable)
+		if st := rs.peerSet[evt.ID].GetState(p.Peer); st == qpeerset.PeerWaiting {
+			rs.peerSet[evt.ID].SetState(p.Peer, qpeerset.PeerUnreachable)
 		} else {
 			panic(fmt.Errorf("kademlia protocol error: tried to transition to the unreachable state from state %v", st))
 		}
+	}
+}
+
+func (rs *RetrievalState) trackLookupRequest(evt *kaddht.LookupEvent) {
+	for _, p := range evt.Request.Waiting {
+		rs.peerSet[evt.ID].SetState(p.Peer, qpeerset.PeerWaiting)
+	}
+}
+
+func (rs *RetrievalState) ensurePeerset(evt *kaddht.LookupEvent) {
+	if _, found := rs.peerSet[evt.ID]; !found {
+		rs.peerSet[evt.ID] = qpeerset.NewQueryPeerset(string(rs.content.Hash()))
 	}
 }
 

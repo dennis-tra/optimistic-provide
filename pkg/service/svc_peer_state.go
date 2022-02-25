@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
@@ -13,7 +15,7 @@ import (
 )
 
 type PeerStateService interface {
-	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, states []qpeerset.QueryPeerState) (models.PeerStateSlice, error)
+	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, uuid uuid.UUID, states []qpeerset.QueryPeerState) (models.PeerStateSlice, error)
 }
 
 var _ PeerStateService = &PeerState{}
@@ -30,7 +32,7 @@ func NewPeerStateService(peerService PeerService, psRepo repo.PeerStateRepo) Pee
 	}
 }
 
-func (ps *PeerState) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, states []qpeerset.QueryPeerState) (models.PeerStateSlice, error) {
+func (ps *PeerState) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, uuid uuid.UUID, states []qpeerset.QueryPeerState) (models.PeerStateSlice, error) {
 	log.Info("Saving Peer State")
 
 	dbStates := make([]*models.PeerState, len(states))
@@ -46,6 +48,7 @@ func (ps *PeerState) Save(ctx context.Context, exec boil.ContextExecutor, h *dht
 		}
 
 		pState := &models.PeerState{
+			QueryID:    uuid.String(),
 			PeerID:     remotePeer.ID,
 			ReferrerID: referrerPeer.ID,
 			State:      ps.mapState(state.State),

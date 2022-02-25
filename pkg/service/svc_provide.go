@@ -79,6 +79,7 @@ func (ps *Provide) Provide(ctx context.Context, h *dht.Host, t types.ProvideType
 	}
 
 	provide := &models.Provide{
+		ProvideType:           string(t),
 		ProviderID:            h.DBPeer.ID,
 		ContentID:             content.CID.String(),
 		Distance:              ks.XORKeySpace.Key([]byte(h.ID())).Distance(ks.XORKeySpace.Key(content.CID.Hash())).Bytes(),
@@ -118,7 +119,7 @@ func (ps *Provide) startProvidingMultiQuery(h *dht.Host, provide *models.Provide
 	ctx := context.Background()
 
 	state := NewProvideState(h, content)
-	ctx = state.RegisterMultiQuery(ctx)
+	ctx = state.Register(ctx)
 	log.Infow("Start providing content multi query", "cid", content.CID.String())
 	err := h.DHT.ProvideMultiQuery(ctx, content.CID)
 	log.Infow("Done providing content multi query", "cid", content.CID.String())
@@ -186,9 +187,13 @@ func (ps *Provide) saveProvide(h *dht.Host, provide *models.Provide, state *Prov
 		return errors.Wrap(err, "saving add provider RPCs")
 	}
 
-	peerStates, err := ps.psService.Save(saveCtx, txn, h, state.peerSet.AllStates())
-	if err != nil {
-		return errors.Wrap(err, "saving peer states")
+	allPeerState := []*models.PeerState{}
+	for uuid, set := range state.peerSet {
+		peerStates, err := ps.psService.Save(saveCtx, txn, h, uuid, set.AllStates())
+		if err != nil {
+			return errors.Wrap(err, "saving peer states")
+		}
+		allPeerState = append(allPeerState, peerStates...)
 	}
 
 	if err = provide.SetFinalRoutingTable(saveCtx, txn, false, rts); err != nil {
@@ -211,7 +216,7 @@ func (ps *Provide) saveProvide(h *dht.Host, provide *models.Provide, state *Prov
 		return errors.Wrap(err, "setting add provider rpcs")
 	}
 
-	if err = provide.SetPeerStates(saveCtx, txn, false, peerStates...); err != nil {
+	if err = provide.SetPeerStates(saveCtx, txn, false, allPeerState...); err != nil {
 		return errors.Wrap(err, "setting peer states")
 	}
 

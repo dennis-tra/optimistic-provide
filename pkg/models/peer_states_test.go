@@ -1409,7 +1409,7 @@ func testPeerStatesSelect(t *testing.T) {
 }
 
 var (
-	peerStateDBTypes = map[string]string{`ID`: `integer`, `PeerID`: `integer`, `ReferrerID`: `integer`, `State`: `enum.peer_state('HEARD','WAITING','QUERIED','UNREACHABLE')`, `Distance`: `bytea`}
+	peerStateDBTypes = map[string]string{`ID`: `integer`, `QueryID`: `character varying`, `PeerID`: `integer`, `ReferrerID`: `integer`, `State`: `enum.peer_state('HEARD','WAITING','QUERIED','UNREACHABLE')`, `Distance`: `bytea`}
 	_                = bytes.MinRead
 )
 

@@ -66,3 +66,9 @@ const (
 	PeerStateQUERIED     = "QUERIED"
 	PeerStateUNREACHABLE = "UNREACHABLE"
 )
+
+// Enum values for provide_type
+const (
+	ProvideTypeSINGLE_QUERY = "SINGLE_QUERY"
+	ProvideTypeMULTI_QUERY  = "MULTI_QUERY"
+)

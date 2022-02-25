@@ -24,6 +24,7 @@ import (
 // PeerState is an object representing the database table.
 type PeerState struct {
 	ID         int    `boil:"id" json:"id" toml:"id" yaml:"id"`
+	QueryID    string `boil:"query_id" json:"query_id" toml:"query_id" yaml:"query_id"`
 	PeerID     int    `boil:"peer_id" json:"peer_id" toml:"peer_id" yaml:"peer_id"`
 	ReferrerID int    `boil:"referrer_id" json:"referrer_id" toml:"referrer_id" yaml:"referrer_id"`
 	State      string `boil:"state" json:"state" toml:"state" yaml:"state"`
@@ -35,12 +36,14 @@ type PeerState struct {
 
 var PeerStateColumns = struct {
 	ID         string
+	QueryID    string
 	PeerID     string
 	ReferrerID string
 	State      string
 	Distance   string
 }{
 	ID:         "id",
+	QueryID:    "query_id",
 	PeerID:     "peer_id",
 	ReferrerID: "referrer_id",
 	State:      "state",
@@ -49,12 +52,14 @@ var PeerStateColumns = struct {
 
 var PeerStateTableColumns = struct {
 	ID         string
+	QueryID    string
 	PeerID     string
 	ReferrerID string
 	State      string
 	Distance   string
 }{
 	ID:         "peer_states.id",
+	QueryID:    "peer_states.query_id",
 	PeerID:     "peer_states.peer_id",
 	ReferrerID: "peer_states.referrer_id",
 	State:      "peer_states.state",
@@ -65,12 +70,14 @@ var PeerStateTableColumns = struct {
 
 var PeerStateWhere = struct {
 	ID         whereHelperint
+	QueryID    whereHelperstring
 	PeerID     whereHelperint
 	ReferrerID whereHelperint
 	State      whereHelperstring
 	Distance   whereHelper__byte
 }{
 	ID:         whereHelperint{field: "\"peer_states\".\"id\""},
+	QueryID:    whereHelperstring{field: "\"peer_states\".\"query_id\""},
 	PeerID:     whereHelperint{field: "\"peer_states\".\"peer_id\""},
 	ReferrerID: whereHelperint{field: "\"peer_states\".\"referrer_id\""},
 	State:      whereHelperstring{field: "\"peer_states\".\"state\""},
@@ -107,8 +114,8 @@ func (*peerStateR) NewStruct() *peerStateR {
 type peerStateL struct{}
 
 var (
-	peerStateAllColumns            = []string{"id", "peer_id", "referrer_id", "state", "distance"}
-	peerStateColumnsWithoutDefault = []string{"peer_id", "referrer_id", "state", "distance"}
+	peerStateAllColumns            = []string{"id", "query_id", "peer_id", "referrer_id", "state", "distance"}
+	peerStateColumnsWithoutDefault = []string{"query_id", "peer_id", "referrer_id", "state", "distance"}
 	peerStateColumnsWithDefault    = []string{"id"}
 	peerStatePrimaryKeyColumns     = []string{"id"}
 )
@@ -708,7 +715,7 @@ func (peerStateL) LoadProvides(ctx context.Context, e boil.ContextExecutor, sing
 	}
 
 	query := NewQuery(
-		qm.Select("\"provides\".id, \"provides\".provider_id, \"provides\".content_id, \"provides\".distance, \"provides\".initial_routing_table_id, \"provides\".final_routing_table_id, \"provides\".started_at, \"provides\".ended_at, \"provides\".error, \"provides\".done_at, \"provides\".updated_at, \"provides\".created_at, \"a\".\"peer_state_id\""),
+		qm.Select("\"provides\".id, \"provides\".provide_type, \"provides\".provider_id, \"provides\".content_id, \"provides\".distance, \"provides\".initial_routing_table_id, \"provides\".final_routing_table_id, \"provides\".started_at, \"provides\".ended_at, \"provides\".error, \"provides\".done_at, \"provides\".updated_at, \"provides\".created_at, \"a\".\"peer_state_id\""),
 		qm.From("\"provides\""),
 		qm.InnerJoin("\"provides_x_peer_states\" as \"a\" on \"provides\".\"id\" = \"a\".\"provide_id\""),
 		qm.WhereIn("\"a\".\"peer_state_id\" in ?", args...),
@@ -729,7 +736,7 @@ func (peerStateL) LoadProvides(ctx context.Context, e boil.ContextExecutor, sing
 		one := new(Provide)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.ProviderID, &one.ContentID, &one.Distance, &one.InitialRoutingTableID, &one.FinalRoutingTableID, &one.StartedAt, &one.EndedAt, &one.Error, &one.DoneAt, &one.UpdatedAt, &one.CreatedAt, &localJoinCol)
+		err = results.Scan(&one.ID, &one.ProvideType, &one.ProviderID, &one.ContentID, &one.Distance, &one.InitialRoutingTableID, &one.FinalRoutingTableID, &one.StartedAt, &one.EndedAt, &one.Error, &one.DoneAt, &one.UpdatedAt, &one.CreatedAt, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for provides")
 		}

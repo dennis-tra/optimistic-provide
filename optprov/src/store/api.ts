@@ -8,12 +8,14 @@ import { Provide } from "../api/models/Provide";
 import { ProvideRequest } from "../api/models/ProvideRequest";
 import { ProvideDetails } from "../api/models/ProvideDetails";
 import { actions as bucketsActions } from "./bucketsSlice";
+import { Retrieval } from "../api/models/Retrieval";
+import { RetrievalRequest } from "../api/models/RetrievalRequest";
 
 // Define a service using a base URL and expected endpoints
 export const optprovApi = createApi({
   reducerPath: "optprovApi",
   baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:7000" }),
-  tagTypes: ["Host", "RoutingTable", "Provide"],
+  tagTypes: ["Host", "RoutingTable", "Provide", "Retrieval"],
   endpoints: (builder) => ({
     startProvide: builder.mutation<Host, { hostId: string; body: ProvideRequest }>({
       query: ({ hostId, body }) => ({ url: `hosts/${hostId}/provides`, method: "POST", body }),
@@ -32,6 +34,20 @@ export const optprovApi = createApi({
     getProvide: builder.query<ProvideDetails, { hostId: string; provideId: string }>({
       query: ({ hostId, provideId }) => `hosts/${hostId}/provides/${provideId}`,
       providesTags: (result, error, { provideId }) => [{ type: "Provide", id: provideId }],
+    }),
+    startRetrieval: builder.mutation<Host, { hostId: string; body: RetrievalRequest }>({
+      query: ({ hostId, body }) => ({ url: `hosts/${hostId}/retrievals`, method: "POST", body }),
+      invalidatesTags: [{ type: "Retrieval", id: "LIST" }],
+    }),
+    getRetrievals: builder.query<Retrieval[], string>({
+      query: (hostId) => `hosts/${hostId}/retrievals`,
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ retrievalId }) => ({ type: "Retrieval", id: retrievalId } as const)),
+              { type: "Retrieval", id: "LIST" },
+            ]
+          : [{ type: "Retrieval", id: "LIST" }],
     }),
     saveRoutingTable: builder.mutation<Host, string>({
       query: (hostId) => ({ url: `hosts/${hostId}/routing-tables`, method: "POST" }),
@@ -112,12 +128,14 @@ export const {
   useGetHostsQuery,
   useGetProvideQuery,
   useGetProvidesQuery,
-  useStartProvideMutation,
   useLazyGetProvidesQuery,
+  useGetRetrievalsQuery,
+  useLazyGetRetrievalsQuery,
+  useStartProvideMutation,
+  useStartRetrievalMutation,
   useCreateHostMutation,
   useDeleteHostMutation,
   useBootstrapHostMutation,
   useListenRoutingTableQuery,
-  useGetCurrentRoutingTablePeersQuery,
   useLazyGetCurrentRoutingTablePeersQuery,
 } = optprovApi;

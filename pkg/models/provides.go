@@ -25,6 +25,7 @@ import (
 // Provide is an object representing the database table.
 type Provide struct {
 	ID                    int         `boil:"id" json:"id" toml:"id" yaml:"id"`
+	ProvideType           string      `boil:"provide_type" json:"provide_type" toml:"provide_type" yaml:"provide_type"`
 	ProviderID            int         `boil:"provider_id" json:"provider_id" toml:"provider_id" yaml:"provider_id"`
 	ContentID             string      `boil:"content_id" json:"content_id" toml:"content_id" yaml:"content_id"`
 	Distance              []byte      `boil:"distance" json:"distance" toml:"distance" yaml:"distance"`
@@ -43,6 +44,7 @@ type Provide struct {
 
 var ProvideColumns = struct {
 	ID                    string
+	ProvideType           string
 	ProviderID            string
 	ContentID             string
 	Distance              string
@@ -56,6 +58,7 @@ var ProvideColumns = struct {
 	CreatedAt             string
 }{
 	ID:                    "id",
+	ProvideType:           "provide_type",
 	ProviderID:            "provider_id",
 	ContentID:             "content_id",
 	Distance:              "distance",
@@ -71,6 +74,7 @@ var ProvideColumns = struct {
 
 var ProvideTableColumns = struct {
 	ID                    string
+	ProvideType           string
 	ProviderID            string
 	ContentID             string
 	Distance              string
@@ -84,6 +88,7 @@ var ProvideTableColumns = struct {
 	CreatedAt             string
 }{
 	ID:                    "provides.id",
+	ProvideType:           "provides.provide_type",
 	ProviderID:            "provides.provider_id",
 	ContentID:             "provides.content_id",
 	Distance:              "provides.distance",
@@ -124,6 +129,7 @@ func (w whereHelpernull_Time) GTE(x null.Time) qm.QueryMod {
 
 var ProvideWhere = struct {
 	ID                    whereHelperint
+	ProvideType           whereHelperstring
 	ProviderID            whereHelperint
 	ContentID             whereHelperstring
 	Distance              whereHelper__byte
@@ -137,6 +143,7 @@ var ProvideWhere = struct {
 	CreatedAt             whereHelpertime_Time
 }{
 	ID:                    whereHelperint{field: "\"provides\".\"id\""},
+	ProvideType:           whereHelperstring{field: "\"provides\".\"provide_type\""},
 	ProviderID:            whereHelperint{field: "\"provides\".\"provider_id\""},
 	ContentID:             whereHelperstring{field: "\"provides\".\"content_id\""},
 	Distance:              whereHelper__byte{field: "\"provides\".\"distance\""},
@@ -192,8 +199,8 @@ func (*provideR) NewStruct() *provideR {
 type provideL struct{}
 
 var (
-	provideAllColumns            = []string{"id", "provider_id", "content_id", "distance", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
-	provideColumnsWithoutDefault = []string{"provider_id", "content_id", "distance", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
+	provideAllColumns            = []string{"id", "provide_type", "provider_id", "content_id", "distance", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
+	provideColumnsWithoutDefault = []string{"provide_type", "provider_id", "content_id", "distance", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
 	provideColumnsWithDefault    = []string{"id"}
 	providePrimaryKeyColumns     = []string{"id"}
 )
@@ -1441,7 +1448,7 @@ func (provideL) LoadPeerStates(ctx context.Context, e boil.ContextExecutor, sing
 	}
 
 	query := NewQuery(
-		qm.Select("\"peer_states\".id, \"peer_states\".peer_id, \"peer_states\".referrer_id, \"peer_states\".state, \"peer_states\".distance, \"a\".\"provide_id\""),
+		qm.Select("\"peer_states\".id, \"peer_states\".query_id, \"peer_states\".peer_id, \"peer_states\".referrer_id, \"peer_states\".state, \"peer_states\".distance, \"a\".\"provide_id\""),
 		qm.From("\"peer_states\""),
 		qm.InnerJoin("\"provides_x_peer_states\" as \"a\" on \"peer_states\".\"id\" = \"a\".\"peer_state_id\""),
 		qm.WhereIn("\"a\".\"provide_id\" in ?", args...),
@@ -1462,7 +1469,7 @@ func (provideL) LoadPeerStates(ctx context.Context, e boil.ContextExecutor, sing
 		one := new(PeerState)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.PeerID, &one.ReferrerID, &one.State, &one.Distance, &localJoinCol)
+		err = results.Scan(&one.ID, &one.QueryID, &one.PeerID, &one.ReferrerID, &one.State, &one.Distance, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for peer_states")
 		}

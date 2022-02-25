@@ -91,10 +91,11 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 			retrievals := hostID.Group("retrievals")
 			{
 				retrievals.POST("", retrievalController.Create)
+				retrievals.GET("", retrievalController.List)
 
-				provideID := retrievals.Group("/:retrievalID")
+				retrievalID := retrievals.Group("/:retrievalID")
 				{
-					provideID.Use(middlewares.ProvideID)
+					retrievalID.Use(middlewares.ProvideID)
 					// provideID.GET("", retrievalController.Get)
 				}
 			}

@@ -10,10 +10,11 @@ CREATE TYPE peer_state AS ENUM (
 CREATE TABLE peer_states
 (
     id          INT GENERATED ALWAYS AS IDENTITY,
-    peer_id     INT        NOT NULL,
-    referrer_id INT        NOT NULL,
-    state       peer_state NOT NULL,
-    distance    bytea      NOT NULL,
+    query_id    VARCHAR(36) NOT NULL,
+    peer_id     INT         NOT NULL,
+    referrer_id INT         NOT NULL,
+    state       peer_state  NOT NULL,
+    distance    bytea       NOT NULL,
 
     CONSTRAINT fk_peer_states_peer_id FOREIGN KEY (peer_id) REFERENCES peers (id),
     CONSTRAINT fk_peer_states_referrer_id FOREIGN KEY (referrer_id) REFERENCES peers (id),

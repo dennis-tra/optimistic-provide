@@ -803,7 +803,7 @@ func (addProviderRPCL) LoadProvides(ctx context.Context, e boil.ContextExecutor,
 	}
 
 	query := NewQuery(
-		qm.Select("\"provides\".id, \"provides\".provider_id, \"provides\".content_id, \"provides\".distance, \"provides\".initial_routing_table_id, \"provides\".final_routing_table_id, \"provides\".started_at, \"provides\".ended_at, \"provides\".error, \"provides\".done_at, \"provides\".updated_at, \"provides\".created_at, \"a\".\"add_provider_rpc_id\""),
+		qm.Select("\"provides\".id, \"provides\".provide_type, \"provides\".provider_id, \"provides\".content_id, \"provides\".distance, \"provides\".initial_routing_table_id, \"provides\".final_routing_table_id, \"provides\".started_at, \"provides\".ended_at, \"provides\".error, \"provides\".done_at, \"provides\".updated_at, \"provides\".created_at, \"a\".\"add_provider_rpc_id\""),
 		qm.From("\"provides\""),
 		qm.InnerJoin("\"provides_x_add_provider_rpcs\" as \"a\" on \"provides\".\"id\" = \"a\".\"provide_id\""),
 		qm.WhereIn("\"a\".\"add_provider_rpc_id\" in ?", args...),
@@ -824,7 +824,7 @@ func (addProviderRPCL) LoadProvides(ctx context.Context, e boil.ContextExecutor,
 		one := new(Provide)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.ProviderID, &one.ContentID, &one.Distance, &one.InitialRoutingTableID, &one.FinalRoutingTableID, &one.StartedAt, &one.EndedAt, &one.Error, &one.DoneAt, &one.UpdatedAt, &one.CreatedAt, &localJoinCol)
+		err = results.Scan(&one.ID, &one.ProvideType, &one.ProviderID, &one.ContentID, &one.Distance, &one.InitialRoutingTableID, &one.FinalRoutingTableID, &one.StartedAt, &one.EndedAt, &one.Error, &one.DoneAt, &one.UpdatedAt, &one.CreatedAt, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for provides")
 		}

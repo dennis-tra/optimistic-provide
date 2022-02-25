@@ -22,6 +22,7 @@ import DashboardIcon from "@mui/icons-material/Dashboard";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import SendIcon from "@mui/icons-material/Send";
+import DownloadIcon from "@mui/icons-material/Download";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
@@ -154,6 +155,12 @@ const HostDetailsLayout: React.FC<HostDetailsLayoutProps> = ({ hostId, title, ch
                 <SendIcon />
               </ListItemIcon>
               <ListItemText primary="Provides" />
+            </ListItemButton>
+            <ListItemButton component={RouterLink} to={`/hosts/${hostId}/retrievals`}>
+              <ListItemIcon>
+                <DownloadIcon />
+              </ListItemIcon>
+              <ListItemText primary="Retrievals" />
             </ListItemButton>
             <Divider sx={{ my: 1 }} />
           </List>
