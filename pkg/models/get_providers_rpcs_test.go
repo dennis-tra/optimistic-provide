@@ -21,24 +21,24 @@ var (
 	_ = queries.Equal
 )
 
-func testConnections(t *testing.T) {
+func testGetProvidersRPCS(t *testing.T) {
 	t.Parallel()
 
-	query := Connections()
+	query := GetProvidersRPCS()
 
 	if query.Query == nil {
 		t.Error("expected a query, got nothing")
 	}
 }
 
-func testConnectionsDelete(t *testing.T) {
+func testGetProvidersRPCSDelete(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -54,7 +54,7 @@ func testConnectionsDelete(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Connections().Count(ctx, tx)
+	count, err := GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -64,14 +64,14 @@ func testConnectionsDelete(t *testing.T) {
 	}
 }
 
-func testConnectionsQueryDeleteAll(t *testing.T) {
+func testGetProvidersRPCSQueryDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -81,13 +81,13 @@ func testConnectionsQueryDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	if rowsAff, err := Connections().DeleteAll(ctx, tx); err != nil {
+	if rowsAff, err := GetProvidersRPCS().DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Connections().Count(ctx, tx)
+	count, err := GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -97,14 +97,14 @@ func testConnectionsQueryDeleteAll(t *testing.T) {
 	}
 }
 
-func testConnectionsSliceDeleteAll(t *testing.T) {
+func testGetProvidersRPCSSliceDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -114,7 +114,7 @@ func testConnectionsSliceDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := ConnectionSlice{o}
+	slice := GetProvidersRPCSlice{o}
 
 	if rowsAff, err := slice.DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
@@ -122,7 +122,7 @@ func testConnectionsSliceDeleteAll(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := Connections().Count(ctx, tx)
+	count, err := GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -132,14 +132,14 @@ func testConnectionsSliceDeleteAll(t *testing.T) {
 	}
 }
 
-func testConnectionsExists(t *testing.T) {
+func testGetProvidersRPCSExists(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -149,23 +149,23 @@ func testConnectionsExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := ConnectionExists(ctx, tx, o.ID)
+	e, err := GetProvidersRPCExists(ctx, tx, o.ID)
 	if err != nil {
-		t.Errorf("Unable to check if Connection exists: %s", err)
+		t.Errorf("Unable to check if GetProvidersRPC exists: %s", err)
 	}
 	if !e {
-		t.Errorf("Expected ConnectionExists to return true, but got false.")
+		t.Errorf("Expected GetProvidersRPCExists to return true, but got false.")
 	}
 }
 
-func testConnectionsFind(t *testing.T) {
+func testGetProvidersRPCSFind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -175,24 +175,24 @@ func testConnectionsFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	connectionFound, err := FindConnection(ctx, tx, o.ID)
+	getProvidersRPCFound, err := FindGetProvidersRPC(ctx, tx, o.ID)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if connectionFound == nil {
+	if getProvidersRPCFound == nil {
 		t.Error("want a record, got nil")
 	}
 }
 
-func testConnectionsBind(t *testing.T) {
+func testGetProvidersRPCSBind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -202,19 +202,19 @@ func testConnectionsBind(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err = Connections().Bind(ctx, tx, o); err != nil {
+	if err = GetProvidersRPCS().Bind(ctx, tx, o); err != nil {
 		t.Error(err)
 	}
 }
 
-func testConnectionsOne(t *testing.T) {
+func testGetProvidersRPCSOne(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -224,38 +224,38 @@ func testConnectionsOne(t *testing.T) {
 		t.Error(err)
 	}
 
-	if x, err := Connections().One(ctx, tx); err != nil {
+	if x, err := GetProvidersRPCS().One(ctx, tx); err != nil {
 		t.Error(err)
 	} else if x == nil {
 		t.Error("expected to get a non nil record")
 	}
 }
 
-func testConnectionsAll(t *testing.T) {
+func testGetProvidersRPCSAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	connectionOne := &Connection{}
-	connectionTwo := &Connection{}
-	if err = randomize.Struct(seed, connectionOne, connectionDBTypes, false, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	getProvidersRPCOne := &GetProvidersRPC{}
+	getProvidersRPCTwo := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, getProvidersRPCOne, getProvidersRPCDBTypes, false, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
-	if err = randomize.Struct(seed, connectionTwo, connectionDBTypes, false, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	if err = randomize.Struct(seed, getProvidersRPCTwo, getProvidersRPCDBTypes, false, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = connectionOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = getProvidersRPCOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = connectionTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = getProvidersRPCTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := Connections().All(ctx, tx)
+	slice, err := GetProvidersRPCS().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -265,31 +265,31 @@ func testConnectionsAll(t *testing.T) {
 	}
 }
 
-func testConnectionsCount(t *testing.T) {
+func testGetProvidersRPCSCount(t *testing.T) {
 	t.Parallel()
 
 	var err error
 	seed := randomize.NewSeed()
-	connectionOne := &Connection{}
-	connectionTwo := &Connection{}
-	if err = randomize.Struct(seed, connectionOne, connectionDBTypes, false, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	getProvidersRPCOne := &GetProvidersRPC{}
+	getProvidersRPCTwo := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, getProvidersRPCOne, getProvidersRPCDBTypes, false, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
-	if err = randomize.Struct(seed, connectionTwo, connectionDBTypes, false, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	if err = randomize.Struct(seed, getProvidersRPCTwo, getProvidersRPCDBTypes, false, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = connectionOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = getProvidersRPCOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = connectionTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = getProvidersRPCTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := Connections().Count(ctx, tx)
+	count, err := GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -299,155 +299,155 @@ func testConnectionsCount(t *testing.T) {
 	}
 }
 
-func connectionBeforeInsertHook(ctx context.Context, e boil.ContextExecutor, o *Connection) error {
-	*o = Connection{}
+func getProvidersRPCBeforeInsertHook(ctx context.Context, e boil.ContextExecutor, o *GetProvidersRPC) error {
+	*o = GetProvidersRPC{}
 	return nil
 }
 
-func connectionAfterInsertHook(ctx context.Context, e boil.ContextExecutor, o *Connection) error {
-	*o = Connection{}
+func getProvidersRPCAfterInsertHook(ctx context.Context, e boil.ContextExecutor, o *GetProvidersRPC) error {
+	*o = GetProvidersRPC{}
 	return nil
 }
 
-func connectionAfterSelectHook(ctx context.Context, e boil.ContextExecutor, o *Connection) error {
-	*o = Connection{}
+func getProvidersRPCAfterSelectHook(ctx context.Context, e boil.ContextExecutor, o *GetProvidersRPC) error {
+	*o = GetProvidersRPC{}
 	return nil
 }
 
-func connectionBeforeUpdateHook(ctx context.Context, e boil.ContextExecutor, o *Connection) error {
-	*o = Connection{}
+func getProvidersRPCBeforeUpdateHook(ctx context.Context, e boil.ContextExecutor, o *GetProvidersRPC) error {
+	*o = GetProvidersRPC{}
 	return nil
 }
 
-func connectionAfterUpdateHook(ctx context.Context, e boil.ContextExecutor, o *Connection) error {
-	*o = Connection{}
+func getProvidersRPCAfterUpdateHook(ctx context.Context, e boil.ContextExecutor, o *GetProvidersRPC) error {
+	*o = GetProvidersRPC{}
 	return nil
 }
 
-func connectionBeforeDeleteHook(ctx context.Context, e boil.ContextExecutor, o *Connection) error {
-	*o = Connection{}
+func getProvidersRPCBeforeDeleteHook(ctx context.Context, e boil.ContextExecutor, o *GetProvidersRPC) error {
+	*o = GetProvidersRPC{}
 	return nil
 }
 
-func connectionAfterDeleteHook(ctx context.Context, e boil.ContextExecutor, o *Connection) error {
-	*o = Connection{}
+func getProvidersRPCAfterDeleteHook(ctx context.Context, e boil.ContextExecutor, o *GetProvidersRPC) error {
+	*o = GetProvidersRPC{}
 	return nil
 }
 
-func connectionBeforeUpsertHook(ctx context.Context, e boil.ContextExecutor, o *Connection) error {
-	*o = Connection{}
+func getProvidersRPCBeforeUpsertHook(ctx context.Context, e boil.ContextExecutor, o *GetProvidersRPC) error {
+	*o = GetProvidersRPC{}
 	return nil
 }
 
-func connectionAfterUpsertHook(ctx context.Context, e boil.ContextExecutor, o *Connection) error {
-	*o = Connection{}
+func getProvidersRPCAfterUpsertHook(ctx context.Context, e boil.ContextExecutor, o *GetProvidersRPC) error {
+	*o = GetProvidersRPC{}
 	return nil
 }
 
-func testConnectionsHooks(t *testing.T) {
+func testGetProvidersRPCSHooks(t *testing.T) {
 	t.Parallel()
 
 	var err error
 
 	ctx := context.Background()
-	empty := &Connection{}
-	o := &Connection{}
+	empty := &GetProvidersRPC{}
+	o := &GetProvidersRPC{}
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, o, connectionDBTypes, false); err != nil {
-		t.Errorf("Unable to randomize Connection object: %s", err)
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, false); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC object: %s", err)
 	}
 
-	AddConnectionHook(boil.BeforeInsertHook, connectionBeforeInsertHook)
+	AddGetProvidersRPCHook(boil.BeforeInsertHook, getProvidersRPCBeforeInsertHook)
 	if err = o.doBeforeInsertHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doBeforeInsertHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected BeforeInsertHook function to empty object, but got: %#v", o)
 	}
-	connectionBeforeInsertHooks = []ConnectionHook{}
+	getProvidersRPCBeforeInsertHooks = []GetProvidersRPCHook{}
 
-	AddConnectionHook(boil.AfterInsertHook, connectionAfterInsertHook)
+	AddGetProvidersRPCHook(boil.AfterInsertHook, getProvidersRPCAfterInsertHook)
 	if err = o.doAfterInsertHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doAfterInsertHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected AfterInsertHook function to empty object, but got: %#v", o)
 	}
-	connectionAfterInsertHooks = []ConnectionHook{}
+	getProvidersRPCAfterInsertHooks = []GetProvidersRPCHook{}
 
-	AddConnectionHook(boil.AfterSelectHook, connectionAfterSelectHook)
+	AddGetProvidersRPCHook(boil.AfterSelectHook, getProvidersRPCAfterSelectHook)
 	if err = o.doAfterSelectHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doAfterSelectHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected AfterSelectHook function to empty object, but got: %#v", o)
 	}
-	connectionAfterSelectHooks = []ConnectionHook{}
+	getProvidersRPCAfterSelectHooks = []GetProvidersRPCHook{}
 
-	AddConnectionHook(boil.BeforeUpdateHook, connectionBeforeUpdateHook)
+	AddGetProvidersRPCHook(boil.BeforeUpdateHook, getProvidersRPCBeforeUpdateHook)
 	if err = o.doBeforeUpdateHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doBeforeUpdateHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected BeforeUpdateHook function to empty object, but got: %#v", o)
 	}
-	connectionBeforeUpdateHooks = []ConnectionHook{}
+	getProvidersRPCBeforeUpdateHooks = []GetProvidersRPCHook{}
 
-	AddConnectionHook(boil.AfterUpdateHook, connectionAfterUpdateHook)
+	AddGetProvidersRPCHook(boil.AfterUpdateHook, getProvidersRPCAfterUpdateHook)
 	if err = o.doAfterUpdateHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doAfterUpdateHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected AfterUpdateHook function to empty object, but got: %#v", o)
 	}
-	connectionAfterUpdateHooks = []ConnectionHook{}
+	getProvidersRPCAfterUpdateHooks = []GetProvidersRPCHook{}
 
-	AddConnectionHook(boil.BeforeDeleteHook, connectionBeforeDeleteHook)
+	AddGetProvidersRPCHook(boil.BeforeDeleteHook, getProvidersRPCBeforeDeleteHook)
 	if err = o.doBeforeDeleteHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doBeforeDeleteHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected BeforeDeleteHook function to empty object, but got: %#v", o)
 	}
-	connectionBeforeDeleteHooks = []ConnectionHook{}
+	getProvidersRPCBeforeDeleteHooks = []GetProvidersRPCHook{}
 
-	AddConnectionHook(boil.AfterDeleteHook, connectionAfterDeleteHook)
+	AddGetProvidersRPCHook(boil.AfterDeleteHook, getProvidersRPCAfterDeleteHook)
 	if err = o.doAfterDeleteHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doAfterDeleteHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected AfterDeleteHook function to empty object, but got: %#v", o)
 	}
-	connectionAfterDeleteHooks = []ConnectionHook{}
+	getProvidersRPCAfterDeleteHooks = []GetProvidersRPCHook{}
 
-	AddConnectionHook(boil.BeforeUpsertHook, connectionBeforeUpsertHook)
+	AddGetProvidersRPCHook(boil.BeforeUpsertHook, getProvidersRPCBeforeUpsertHook)
 	if err = o.doBeforeUpsertHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doBeforeUpsertHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected BeforeUpsertHook function to empty object, but got: %#v", o)
 	}
-	connectionBeforeUpsertHooks = []ConnectionHook{}
+	getProvidersRPCBeforeUpsertHooks = []GetProvidersRPCHook{}
 
-	AddConnectionHook(boil.AfterUpsertHook, connectionAfterUpsertHook)
+	AddGetProvidersRPCHook(boil.AfterUpsertHook, getProvidersRPCAfterUpsertHook)
 	if err = o.doAfterUpsertHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doAfterUpsertHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected AfterUpsertHook function to empty object, but got: %#v", o)
 	}
-	connectionAfterUpsertHooks = []ConnectionHook{}
+	getProvidersRPCAfterUpsertHooks = []GetProvidersRPCHook{}
 }
 
-func testConnectionsInsert(t *testing.T) {
+func testGetProvidersRPCSInsert(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -457,7 +457,7 @@ func testConnectionsInsert(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := Connections().Count(ctx, tx)
+	count, err := GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -467,24 +467,24 @@ func testConnectionsInsert(t *testing.T) {
 	}
 }
 
-func testConnectionsInsertWhitelist(t *testing.T) {
+func testGetProvidersRPCSInsertWhitelist(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(ctx, tx, boil.Whitelist(connectionColumnsWithoutDefault...)); err != nil {
+	if err = o.Insert(ctx, tx, boil.Whitelist(getProvidersRPCColumnsWithoutDefault...)); err != nil {
 		t.Error(err)
 	}
 
-	count, err := Connections().Count(ctx, tx)
+	count, err := GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -494,30 +494,33 @@ func testConnectionsInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testConnectionToManyProvides(t *testing.T) {
+func testGetProvidersRPCToManyProviderPeers(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a Connection
-	var b, c Provide
+	var a GetProvidersRPC
+	var b, c ProviderPeer
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	if err = randomize.Struct(seed, &a, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	if err = randomize.Struct(seed, &b, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &b, providerPeerDBTypes, false, providerPeerColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &c, providerPeerDBTypes, false, providerPeerColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
+
+	b.GetProvidersRPCID = a.ID
+	c.GetProvidersRPCID = a.ID
 
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
@@ -526,26 +529,17 @@ func testConnectionToManyProvides(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = tx.Exec("insert into \"provides_x_connections\" (\"connection_id\", \"provide_id\") values ($1, $2)", a.ID, b.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = tx.Exec("insert into \"provides_x_connections\" (\"connection_id\", \"provide_id\") values ($1, $2)", a.ID, c.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.Provides().All(ctx, tx)
+	check, err := a.ProviderPeers().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
 	for _, v := range check {
-		if v.ID == b.ID {
+		if v.GetProvidersRPCID == b.GetProvidersRPCID {
 			bFound = true
 		}
-		if v.ID == c.ID {
+		if v.GetProvidersRPCID == c.GetProvidersRPCID {
 			cFound = true
 		}
 	}
@@ -557,19 +551,19 @@ func testConnectionToManyProvides(t *testing.T) {
 		t.Error("expected to find c")
 	}
 
-	slice := ConnectionSlice{&a}
-	if err = a.L.LoadProvides(ctx, tx, false, (*[]*Connection)(&slice), nil); err != nil {
+	slice := GetProvidersRPCSlice{&a}
+	if err = a.L.LoadProviderPeers(ctx, tx, false, (*[]*GetProvidersRPC)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.Provides); got != 2 {
+	if got := len(a.R.ProviderPeers); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.Provides = nil
-	if err = a.L.LoadProvides(ctx, tx, true, &a, nil); err != nil {
+	a.R.ProviderPeers = nil
+	if err = a.L.LoadProviderPeers(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.Provides); got != 2 {
+	if got := len(a.R.ProviderPeers); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -578,18 +572,18 @@ func testConnectionToManyProvides(t *testing.T) {
 	}
 }
 
-func testConnectionToManyRetrievals(t *testing.T) {
+func testGetProvidersRPCToManyRetrievals(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a Connection
+	var a GetProvidersRPC
 	var b, c Retrieval
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	if err = randomize.Struct(seed, &a, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
@@ -610,11 +604,11 @@ func testConnectionToManyRetrievals(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = tx.Exec("insert into \"retrievals_x_connections\" (\"connection_id\", \"retrieval_id\") values ($1, $2)", a.ID, b.ID)
+	_, err = tx.Exec("insert into \"retrievals_x_get_providers_rpcs\" (\"get_provider_rpc_id\", \"retrieval_id\") values ($1, $2)", a.ID, b.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = tx.Exec("insert into \"retrievals_x_connections\" (\"connection_id\", \"retrieval_id\") values ($1, $2)", a.ID, c.ID)
+	_, err = tx.Exec("insert into \"retrievals_x_get_providers_rpcs\" (\"get_provider_rpc_id\", \"retrieval_id\") values ($1, $2)", a.ID, c.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -641,8 +635,8 @@ func testConnectionToManyRetrievals(t *testing.T) {
 		t.Error("expected to find c")
 	}
 
-	slice := ConnectionSlice{&a}
-	if err = a.L.LoadRetrievals(ctx, tx, false, (*[]*Connection)(&slice), nil); err != nil {
+	slice := GetProvidersRPCSlice{&a}
+	if err = a.L.LoadRetrievals(ctx, tx, false, (*[]*GetProvidersRPC)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(a.R.Retrievals); got != 2 {
@@ -662,23 +656,23 @@ func testConnectionToManyRetrievals(t *testing.T) {
 	}
 }
 
-func testConnectionToManyAddOpProvides(t *testing.T) {
+func testGetProvidersRPCToManyAddOpProviderPeers(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a Connection
-	var b, c, d, e Provide
+	var a GetProvidersRPC
+	var b, c, d, e ProviderPeer
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, getProvidersRPCDBTypes, false, strmangle.SetComplement(getProvidersRPCPrimaryKeyColumns, getProvidersRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*Provide{&b, &c, &d, &e}
+	foreigners := []*ProviderPeer{&b, &c, &d, &e}
 	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		if err = randomize.Struct(seed, x, providerPeerDBTypes, false, strmangle.SetComplement(providerPeerPrimaryKeyColumns, providerPeerColumnsWithoutDefault)...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -693,13 +687,13 @@ func testConnectionToManyAddOpProvides(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*Provide{
+	foreignersSplitByInsertion := [][]*ProviderPeer{
 		{&b, &c},
 		{&d, &e},
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddProvides(ctx, tx, i != 0, x...)
+		err = a.AddProviderPeers(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -707,21 +701,28 @@ func testConnectionToManyAddOpProvides(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if first.R.Connections[0] != &a {
-			t.Error("relationship was not added properly to the slice")
+		if a.ID != first.GetProvidersRPCID {
+			t.Error("foreign key was wrong value", a.ID, first.GetProvidersRPCID)
 		}
-		if second.R.Connections[0] != &a {
-			t.Error("relationship was not added properly to the slice")
-		}
-
-		if a.R.Provides[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.Provides[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
+		if a.ID != second.GetProvidersRPCID {
+			t.Error("foreign key was wrong value", a.ID, second.GetProvidersRPCID)
 		}
 
-		count, err := a.Provides().Count(ctx, tx)
+		if first.R.GetProvidersRPC != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.GetProvidersRPC != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.ProviderPeers[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.ProviderPeers[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.ProviderPeers().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -730,178 +731,18 @@ func testConnectionToManyAddOpProvides(t *testing.T) {
 		}
 	}
 }
-
-func testConnectionToManySetOpProvides(t *testing.T) {
+func testGetProvidersRPCToManyAddOpRetrievals(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a Connection
-	var b, c, d, e Provide
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Provide{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetProvides(ctx, tx, false, &b, &c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.Provides().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetProvides(ctx, tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.Provides().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	// The following checks cannot be implemented since we have no handle
-	// to these when we call Set(). Leaving them here as wishful thinking
-	// and to let people know there's dragons.
-	//
-	// if len(b.R.Connections) != 0 {
-	// 	t.Error("relationship was not removed properly from the slice")
-	// }
-	// if len(c.R.Connections) != 0 {
-	// 	t.Error("relationship was not removed properly from the slice")
-	// }
-	if d.R.Connections[0] != &a {
-		t.Error("relationship was not added properly to the slice")
-	}
-	if e.R.Connections[0] != &a {
-		t.Error("relationship was not added properly to the slice")
-	}
-
-	if a.R.Provides[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.Provides[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testConnectionToManyRemoveOpProvides(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Connection
-	var b, c, d, e Provide
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Provide{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.AddProvides(ctx, tx, true, foreigners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.Provides().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemoveProvides(ctx, tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.Provides().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if len(b.R.Connections) != 0 {
-		t.Error("relationship was not removed properly from the slice")
-	}
-	if len(c.R.Connections) != 0 {
-		t.Error("relationship was not removed properly from the slice")
-	}
-	if d.R.Connections[0] != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Connections[0] != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if len(a.R.Provides) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.Provides[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.Provides[0] != &e {
-		t.Error("relationship to e should have been preserved")
-	}
-}
-
-func testConnectionToManyAddOpRetrievals(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Connection
+	var a GetProvidersRPC
 	var b, c, d, e Retrieval
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, getProvidersRPCDBTypes, false, strmangle.SetComplement(getProvidersRPCPrimaryKeyColumns, getProvidersRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 	foreigners := []*Retrieval{&b, &c, &d, &e}
@@ -935,10 +776,10 @@ func testConnectionToManyAddOpRetrievals(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if first.R.Connections[0] != &a {
+		if first.R.GetProviderRPCGetProvidersRPCS[0] != &a {
 			t.Error("relationship was not added properly to the slice")
 		}
-		if second.R.Connections[0] != &a {
+		if second.R.GetProviderRPCGetProvidersRPCS[0] != &a {
 			t.Error("relationship was not added properly to the slice")
 		}
 
@@ -959,18 +800,18 @@ func testConnectionToManyAddOpRetrievals(t *testing.T) {
 	}
 }
 
-func testConnectionToManySetOpRetrievals(t *testing.T) {
+func testGetProvidersRPCToManySetOpRetrievals(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a Connection
+	var a GetProvidersRPC
 	var b, c, d, e Retrieval
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, getProvidersRPCDBTypes, false, strmangle.SetComplement(getProvidersRPCPrimaryKeyColumns, getProvidersRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 	foreigners := []*Retrieval{&b, &c, &d, &e}
@@ -1020,16 +861,16 @@ func testConnectionToManySetOpRetrievals(t *testing.T) {
 	// to these when we call Set(). Leaving them here as wishful thinking
 	// and to let people know there's dragons.
 	//
-	// if len(b.R.Connections) != 0 {
+	// if len(b.R.GetProviderRPCGetProvidersRPCS) != 0 {
 	// 	t.Error("relationship was not removed properly from the slice")
 	// }
-	// if len(c.R.Connections) != 0 {
+	// if len(c.R.GetProviderRPCGetProvidersRPCS) != 0 {
 	// 	t.Error("relationship was not removed properly from the slice")
 	// }
-	if d.R.Connections[0] != &a {
+	if d.R.GetProviderRPCGetProvidersRPCS[0] != &a {
 		t.Error("relationship was not added properly to the slice")
 	}
-	if e.R.Connections[0] != &a {
+	if e.R.GetProviderRPCGetProvidersRPCS[0] != &a {
 		t.Error("relationship was not added properly to the slice")
 	}
 
@@ -1041,18 +882,18 @@ func testConnectionToManySetOpRetrievals(t *testing.T) {
 	}
 }
 
-func testConnectionToManyRemoveOpRetrievals(t *testing.T) {
+func testGetProvidersRPCToManyRemoveOpRetrievals(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a Connection
+	var a GetProvidersRPC
 	var b, c, d, e Retrieval
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, getProvidersRPCDBTypes, false, strmangle.SetComplement(getProvidersRPCPrimaryKeyColumns, getProvidersRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 	foreigners := []*Retrieval{&b, &c, &d, &e}
@@ -1092,16 +933,16 @@ func testConnectionToManyRemoveOpRetrievals(t *testing.T) {
 		t.Error("count was wrong:", count)
 	}
 
-	if len(b.R.Connections) != 0 {
+	if len(b.R.GetProviderRPCGetProvidersRPCS) != 0 {
 		t.Error("relationship was not removed properly from the slice")
 	}
-	if len(c.R.Connections) != 0 {
+	if len(c.R.GetProviderRPCGetProvidersRPCS) != 0 {
 		t.Error("relationship was not removed properly from the slice")
 	}
-	if d.R.Connections[0] != &a {
+	if d.R.GetProviderRPCGetProvidersRPCS[0] != &a {
 		t.Error("relationship was not added properly to the foreign struct")
 	}
-	if e.R.Connections[0] != &a {
+	if e.R.GetProviderRPCGetProvidersRPCS[0] != &a {
 		t.Error("relationship was not added properly to the foreign struct")
 	}
 
@@ -1118,17 +959,17 @@ func testConnectionToManyRemoveOpRetrievals(t *testing.T) {
 	}
 }
 
-func testConnectionToOnePeerUsingLocal(t *testing.T) {
+func testGetProvidersRPCToOnePeerUsingLocal(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var local Connection
+	var local GetProvidersRPC
 	var foreign Peer
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, connectionDBTypes, false, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	if err := randomize.Struct(seed, &local, getProvidersRPCDBTypes, false, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, peerDBTypes, false, peerColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Peer struct: %s", err)
@@ -1152,8 +993,8 @@ func testConnectionToOnePeerUsingLocal(t *testing.T) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
-	slice := ConnectionSlice{&local}
-	if err = local.L.LoadLocal(ctx, tx, false, (*[]*Connection)(&slice), nil); err != nil {
+	slice := GetProvidersRPCSlice{&local}
+	if err = local.L.LoadLocal(ctx, tx, false, (*[]*GetProvidersRPC)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.Local == nil {
@@ -1169,68 +1010,17 @@ func testConnectionToOnePeerUsingLocal(t *testing.T) {
 	}
 }
 
-func testConnectionToOneMultiAddressUsingMultiAddress(t *testing.T) {
+func testGetProvidersRPCToOnePeerUsingRemote(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var local Connection
-	var foreign MultiAddress
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, connectionDBTypes, false, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &foreign, multiAddressDBTypes, false, multiAddressColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize MultiAddress struct: %s", err)
-	}
-
-	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	local.MultiAddressID = foreign.ID
-	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.MultiAddress().One(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if check.ID != foreign.ID {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
-
-	slice := ConnectionSlice{&local}
-	if err = local.L.LoadMultiAddress(ctx, tx, false, (*[]*Connection)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.MultiAddress == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.MultiAddress = nil
-	if err = local.L.LoadMultiAddress(ctx, tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.MultiAddress == nil {
-		t.Error("struct should have been eager loaded")
-	}
-}
-
-func testConnectionToOnePeerUsingRemote(t *testing.T) {
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var local Connection
+	var local GetProvidersRPC
 	var foreign Peer
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, connectionDBTypes, false, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	if err := randomize.Struct(seed, &local, getProvidersRPCDBTypes, false, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, peerDBTypes, false, peerColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Peer struct: %s", err)
@@ -1254,8 +1044,8 @@ func testConnectionToOnePeerUsingRemote(t *testing.T) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
-	slice := ConnectionSlice{&local}
-	if err = local.L.LoadRemote(ctx, tx, false, (*[]*Connection)(&slice), nil); err != nil {
+	slice := GetProvidersRPCSlice{&local}
+	if err = local.L.LoadRemote(ctx, tx, false, (*[]*GetProvidersRPC)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.Remote == nil {
@@ -1271,18 +1061,18 @@ func testConnectionToOnePeerUsingRemote(t *testing.T) {
 	}
 }
 
-func testConnectionToOneSetOpPeerUsingLocal(t *testing.T) {
+func testGetProvidersRPCToOneSetOpPeerUsingLocal(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a Connection
+	var a GetProvidersRPC
 	var b, c Peer
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, getProvidersRPCDBTypes, false, strmangle.SetComplement(getProvidersRPCPrimaryKeyColumns, getProvidersRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 	if err = randomize.Struct(seed, &b, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
@@ -1309,7 +1099,7 @@ func testConnectionToOneSetOpPeerUsingLocal(t *testing.T) {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.LocalConnections[0] != &a {
+		if x.R.LocalGetProvidersRPCS[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
 		if a.LocalID != x.ID {
@@ -1328,75 +1118,18 @@ func testConnectionToOneSetOpPeerUsingLocal(t *testing.T) {
 		}
 	}
 }
-func testConnectionToOneSetOpMultiAddressUsingMultiAddress(t *testing.T) {
+func testGetProvidersRPCToOneSetOpPeerUsingRemote(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a Connection
-	var b, c MultiAddress
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, multiAddressDBTypes, false, strmangle.SetComplement(multiAddressPrimaryKeyColumns, multiAddressColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, multiAddressDBTypes, false, strmangle.SetComplement(multiAddressPrimaryKeyColumns, multiAddressColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	for i, x := range []*MultiAddress{&b, &c} {
-		err = a.SetMultiAddress(ctx, tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if a.R.MultiAddress != x {
-			t.Error("relationship struct not set to correct value")
-		}
-
-		if x.R.Connections[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if a.MultiAddressID != x.ID {
-			t.Error("foreign key was wrong value", a.MultiAddressID)
-		}
-
-		zero := reflect.Zero(reflect.TypeOf(a.MultiAddressID))
-		reflect.Indirect(reflect.ValueOf(&a.MultiAddressID)).Set(zero)
-
-		if err = a.Reload(ctx, tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if a.MultiAddressID != x.ID {
-			t.Error("foreign key was wrong value", a.MultiAddressID, x.ID)
-		}
-	}
-}
-func testConnectionToOneSetOpPeerUsingRemote(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Connection
+	var a GetProvidersRPC
 	var b, c Peer
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, getProvidersRPCDBTypes, false, strmangle.SetComplement(getProvidersRPCPrimaryKeyColumns, getProvidersRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 	if err = randomize.Struct(seed, &b, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
@@ -1423,7 +1156,7 @@ func testConnectionToOneSetOpPeerUsingRemote(t *testing.T) {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.RemoteConnections[0] != &a {
+		if x.R.RemoteGetProvidersRPCS[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
 		if a.RemoteID != x.ID {
@@ -1443,14 +1176,14 @@ func testConnectionToOneSetOpPeerUsingRemote(t *testing.T) {
 	}
 }
 
-func testConnectionsReload(t *testing.T) {
+func testGetProvidersRPCSReload(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -1465,14 +1198,14 @@ func testConnectionsReload(t *testing.T) {
 	}
 }
 
-func testConnectionsReloadAll(t *testing.T) {
+func testGetProvidersRPCSReloadAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -1482,21 +1215,21 @@ func testConnectionsReloadAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := ConnectionSlice{o}
+	slice := GetProvidersRPCSlice{o}
 
 	if err = slice.ReloadAll(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
 
-func testConnectionsSelect(t *testing.T) {
+func testGetProvidersRPCSSelect(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -1506,7 +1239,7 @@ func testConnectionsSelect(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice, err := Connections().All(ctx, tx)
+	slice, err := GetProvidersRPCS().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1517,25 +1250,25 @@ func testConnectionsSelect(t *testing.T) {
 }
 
 var (
-	connectionDBTypes = map[string]string{`ID`: `integer`, `LocalID`: `integer`, `RemoteID`: `integer`, `MultiAddressID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`}
-	_                 = bytes.MinRead
+	getProvidersRPCDBTypes = map[string]string{`ID`: `integer`, `LocalID`: `integer`, `RemoteID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `ProviderPeersCount`: `integer`, `Error`: `text`}
+	_                      = bytes.MinRead
 )
 
-func testConnectionsUpdate(t *testing.T) {
+func testGetProvidersRPCSUpdate(t *testing.T) {
 	t.Parallel()
 
-	if 0 == len(connectionPrimaryKeyColumns) {
+	if 0 == len(getProvidersRPCPrimaryKeyColumns) {
 		t.Skip("Skipping table with no primary key columns")
 	}
-	if len(connectionAllColumns) == len(connectionPrimaryKeyColumns) {
+	if len(getProvidersRPCAllColumns) == len(getProvidersRPCPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -1545,7 +1278,7 @@ func testConnectionsUpdate(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := Connections().Count(ctx, tx)
+	count, err := GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1554,8 +1287,8 @@ func testConnectionsUpdate(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	if rowsAff, err := o.Update(ctx, tx, boil.Infer()); err != nil {
@@ -1565,18 +1298,18 @@ func testConnectionsUpdate(t *testing.T) {
 	}
 }
 
-func testConnectionsSliceUpdateAll(t *testing.T) {
+func testGetProvidersRPCSSliceUpdateAll(t *testing.T) {
 	t.Parallel()
 
-	if len(connectionAllColumns) == len(connectionPrimaryKeyColumns) {
+	if len(getProvidersRPCAllColumns) == len(getProvidersRPCPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &Connection{}
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := &GetProvidersRPC{}
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -1586,7 +1319,7 @@ func testConnectionsSliceUpdateAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := Connections().Count(ctx, tx)
+	count, err := GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1595,18 +1328,18 @@ func testConnectionsSliceUpdateAll(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, connectionDBTypes, true, connectionPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	if err = randomize.Struct(seed, o, getProvidersRPCDBTypes, true, getProvidersRPCPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	// Remove Primary keys and unique columns from what we plan to update
 	var fields []string
-	if strmangle.StringSliceMatch(connectionAllColumns, connectionPrimaryKeyColumns) {
-		fields = connectionAllColumns
+	if strmangle.StringSliceMatch(getProvidersRPCAllColumns, getProvidersRPCPrimaryKeyColumns) {
+		fields = getProvidersRPCAllColumns
 	} else {
 		fields = strmangle.SetComplement(
-			connectionAllColumns,
-			connectionPrimaryKeyColumns,
+			getProvidersRPCAllColumns,
+			getProvidersRPCPrimaryKeyColumns,
 		)
 	}
 
@@ -1624,7 +1357,7 @@ func testConnectionsSliceUpdateAll(t *testing.T) {
 		}
 	}
 
-	slice := ConnectionSlice{o}
+	slice := GetProvidersRPCSlice{o}
 	if rowsAff, err := slice.UpdateAll(ctx, tx, updateMap); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
@@ -1632,29 +1365,29 @@ func testConnectionsSliceUpdateAll(t *testing.T) {
 	}
 }
 
-func testConnectionsUpsert(t *testing.T) {
+func testGetProvidersRPCSUpsert(t *testing.T) {
 	t.Parallel()
 
-	if len(connectionAllColumns) == len(connectionPrimaryKeyColumns) {
+	if len(getProvidersRPCAllColumns) == len(getProvidersRPCPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
-	o := Connection{}
-	if err = randomize.Struct(seed, &o, connectionDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	o := GetProvidersRPC{}
+	if err = randomize.Struct(seed, &o, getProvidersRPCDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert Connection: %s", err)
+		t.Errorf("Unable to upsert GetProvidersRPC: %s", err)
 	}
 
-	count, err := Connections().Count(ctx, tx)
+	count, err := GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1663,15 +1396,15 @@ func testConnectionsUpsert(t *testing.T) {
 	}
 
 	// Attempt the UPDATE side of an UPSERT
-	if err = randomize.Struct(seed, &o, connectionDBTypes, false, connectionPrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize Connection struct: %s", err)
+	if err = randomize.Struct(seed, &o, getProvidersRPCDBTypes, false, getProvidersRPCPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert Connection: %s", err)
+		t.Errorf("Unable to upsert GetProvidersRPC: %s", err)
 	}
 
-	count, err = Connections().Count(ctx, tx)
+	count, err = GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}

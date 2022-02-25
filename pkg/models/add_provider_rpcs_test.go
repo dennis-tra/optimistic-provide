@@ -21,24 +21,24 @@ var (
 	_ = queries.Equal
 )
 
-func testFindNodes(t *testing.T) {
+func testAddProviderRPCS(t *testing.T) {
 	t.Parallel()
 
-	query := FindNodes()
+	query := AddProviderRPCS()
 
 	if query.Query == nil {
 		t.Error("expected a query, got nothing")
 	}
 }
 
-func testFindNodesDelete(t *testing.T) {
+func testAddProviderRPCSDelete(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -54,7 +54,7 @@ func testFindNodesDelete(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := FindNodes().Count(ctx, tx)
+	count, err := AddProviderRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -64,14 +64,14 @@ func testFindNodesDelete(t *testing.T) {
 	}
 }
 
-func testFindNodesQueryDeleteAll(t *testing.T) {
+func testAddProviderRPCSQueryDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -81,13 +81,13 @@ func testFindNodesQueryDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	if rowsAff, err := FindNodes().DeleteAll(ctx, tx); err != nil {
+	if rowsAff, err := AddProviderRPCS().DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := FindNodes().Count(ctx, tx)
+	count, err := AddProviderRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -97,14 +97,14 @@ func testFindNodesQueryDeleteAll(t *testing.T) {
 	}
 }
 
-func testFindNodesSliceDeleteAll(t *testing.T) {
+func testAddProviderRPCSSliceDeleteAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -114,7 +114,7 @@ func testFindNodesSliceDeleteAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := FindNodeSlice{o}
+	slice := AddProviderRPCSlice{o}
 
 	if rowsAff, err := slice.DeleteAll(ctx, tx); err != nil {
 		t.Error(err)
@@ -122,7 +122,7 @@ func testFindNodesSliceDeleteAll(t *testing.T) {
 		t.Error("should only have deleted one row, but affected:", rowsAff)
 	}
 
-	count, err := FindNodes().Count(ctx, tx)
+	count, err := AddProviderRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -132,14 +132,14 @@ func testFindNodesSliceDeleteAll(t *testing.T) {
 	}
 }
 
-func testFindNodesExists(t *testing.T) {
+func testAddProviderRPCSExists(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -149,23 +149,23 @@ func testFindNodesExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := FindNodeExists(ctx, tx, o.ID)
+	e, err := AddProviderRPCExists(ctx, tx, o.ID)
 	if err != nil {
-		t.Errorf("Unable to check if FindNode exists: %s", err)
+		t.Errorf("Unable to check if AddProviderRPC exists: %s", err)
 	}
 	if !e {
-		t.Errorf("Expected FindNodeExists to return true, but got false.")
+		t.Errorf("Expected AddProviderRPCExists to return true, but got false.")
 	}
 }
 
-func testFindNodesFind(t *testing.T) {
+func testAddProviderRPCSFind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -175,24 +175,24 @@ func testFindNodesFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	findNodeFound, err := FindFindNode(ctx, tx, o.ID)
+	addProviderRPCFound, err := FindAddProviderRPC(ctx, tx, o.ID)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if findNodeFound == nil {
+	if addProviderRPCFound == nil {
 		t.Error("want a record, got nil")
 	}
 }
 
-func testFindNodesBind(t *testing.T) {
+func testAddProviderRPCSBind(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -202,19 +202,19 @@ func testFindNodesBind(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err = FindNodes().Bind(ctx, tx, o); err != nil {
+	if err = AddProviderRPCS().Bind(ctx, tx, o); err != nil {
 		t.Error(err)
 	}
 }
 
-func testFindNodesOne(t *testing.T) {
+func testAddProviderRPCSOne(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -224,38 +224,38 @@ func testFindNodesOne(t *testing.T) {
 		t.Error(err)
 	}
 
-	if x, err := FindNodes().One(ctx, tx); err != nil {
+	if x, err := AddProviderRPCS().One(ctx, tx); err != nil {
 		t.Error(err)
 	} else if x == nil {
 		t.Error("expected to get a non nil record")
 	}
 }
 
-func testFindNodesAll(t *testing.T) {
+func testAddProviderRPCSAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	findNodeOne := &FindNode{}
-	findNodeTwo := &FindNode{}
-	if err = randomize.Struct(seed, findNodeOne, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	addProviderRPCOne := &AddProviderRPC{}
+	addProviderRPCTwo := &AddProviderRPC{}
+	if err = randomize.Struct(seed, addProviderRPCOne, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
-	if err = randomize.Struct(seed, findNodeTwo, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	if err = randomize.Struct(seed, addProviderRPCTwo, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = findNodeOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = addProviderRPCOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = findNodeTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = addProviderRPCTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	slice, err := FindNodes().All(ctx, tx)
+	slice, err := AddProviderRPCS().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -265,31 +265,31 @@ func testFindNodesAll(t *testing.T) {
 	}
 }
 
-func testFindNodesCount(t *testing.T) {
+func testAddProviderRPCSCount(t *testing.T) {
 	t.Parallel()
 
 	var err error
 	seed := randomize.NewSeed()
-	findNodeOne := &FindNode{}
-	findNodeTwo := &FindNode{}
-	if err = randomize.Struct(seed, findNodeOne, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	addProviderRPCOne := &AddProviderRPC{}
+	addProviderRPCTwo := &AddProviderRPC{}
+	if err = randomize.Struct(seed, addProviderRPCOne, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
-	if err = randomize.Struct(seed, findNodeTwo, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	if err = randomize.Struct(seed, addProviderRPCTwo, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = findNodeOne.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = addProviderRPCOne.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
-	if err = findNodeTwo.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = addProviderRPCTwo.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Error(err)
 	}
 
-	count, err := FindNodes().Count(ctx, tx)
+	count, err := AddProviderRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -299,155 +299,155 @@ func testFindNodesCount(t *testing.T) {
 	}
 }
 
-func findNodeBeforeInsertHook(ctx context.Context, e boil.ContextExecutor, o *FindNode) error {
-	*o = FindNode{}
+func addProviderRPCBeforeInsertHook(ctx context.Context, e boil.ContextExecutor, o *AddProviderRPC) error {
+	*o = AddProviderRPC{}
 	return nil
 }
 
-func findNodeAfterInsertHook(ctx context.Context, e boil.ContextExecutor, o *FindNode) error {
-	*o = FindNode{}
+func addProviderRPCAfterInsertHook(ctx context.Context, e boil.ContextExecutor, o *AddProviderRPC) error {
+	*o = AddProviderRPC{}
 	return nil
 }
 
-func findNodeAfterSelectHook(ctx context.Context, e boil.ContextExecutor, o *FindNode) error {
-	*o = FindNode{}
+func addProviderRPCAfterSelectHook(ctx context.Context, e boil.ContextExecutor, o *AddProviderRPC) error {
+	*o = AddProviderRPC{}
 	return nil
 }
 
-func findNodeBeforeUpdateHook(ctx context.Context, e boil.ContextExecutor, o *FindNode) error {
-	*o = FindNode{}
+func addProviderRPCBeforeUpdateHook(ctx context.Context, e boil.ContextExecutor, o *AddProviderRPC) error {
+	*o = AddProviderRPC{}
 	return nil
 }
 
-func findNodeAfterUpdateHook(ctx context.Context, e boil.ContextExecutor, o *FindNode) error {
-	*o = FindNode{}
+func addProviderRPCAfterUpdateHook(ctx context.Context, e boil.ContextExecutor, o *AddProviderRPC) error {
+	*o = AddProviderRPC{}
 	return nil
 }
 
-func findNodeBeforeDeleteHook(ctx context.Context, e boil.ContextExecutor, o *FindNode) error {
-	*o = FindNode{}
+func addProviderRPCBeforeDeleteHook(ctx context.Context, e boil.ContextExecutor, o *AddProviderRPC) error {
+	*o = AddProviderRPC{}
 	return nil
 }
 
-func findNodeAfterDeleteHook(ctx context.Context, e boil.ContextExecutor, o *FindNode) error {
-	*o = FindNode{}
+func addProviderRPCAfterDeleteHook(ctx context.Context, e boil.ContextExecutor, o *AddProviderRPC) error {
+	*o = AddProviderRPC{}
 	return nil
 }
 
-func findNodeBeforeUpsertHook(ctx context.Context, e boil.ContextExecutor, o *FindNode) error {
-	*o = FindNode{}
+func addProviderRPCBeforeUpsertHook(ctx context.Context, e boil.ContextExecutor, o *AddProviderRPC) error {
+	*o = AddProviderRPC{}
 	return nil
 }
 
-func findNodeAfterUpsertHook(ctx context.Context, e boil.ContextExecutor, o *FindNode) error {
-	*o = FindNode{}
+func addProviderRPCAfterUpsertHook(ctx context.Context, e boil.ContextExecutor, o *AddProviderRPC) error {
+	*o = AddProviderRPC{}
 	return nil
 }
 
-func testFindNodesHooks(t *testing.T) {
+func testAddProviderRPCSHooks(t *testing.T) {
 	t.Parallel()
 
 	var err error
 
 	ctx := context.Background()
-	empty := &FindNode{}
-	o := &FindNode{}
+	empty := &AddProviderRPC{}
+	o := &AddProviderRPC{}
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, o, findNodeDBTypes, false); err != nil {
-		t.Errorf("Unable to randomize FindNode object: %s", err)
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, false); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC object: %s", err)
 	}
 
-	AddFindNodeHook(boil.BeforeInsertHook, findNodeBeforeInsertHook)
+	AddAddProviderRPCHook(boil.BeforeInsertHook, addProviderRPCBeforeInsertHook)
 	if err = o.doBeforeInsertHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doBeforeInsertHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected BeforeInsertHook function to empty object, but got: %#v", o)
 	}
-	findNodeBeforeInsertHooks = []FindNodeHook{}
+	addProviderRPCBeforeInsertHooks = []AddProviderRPCHook{}
 
-	AddFindNodeHook(boil.AfterInsertHook, findNodeAfterInsertHook)
+	AddAddProviderRPCHook(boil.AfterInsertHook, addProviderRPCAfterInsertHook)
 	if err = o.doAfterInsertHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doAfterInsertHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected AfterInsertHook function to empty object, but got: %#v", o)
 	}
-	findNodeAfterInsertHooks = []FindNodeHook{}
+	addProviderRPCAfterInsertHooks = []AddProviderRPCHook{}
 
-	AddFindNodeHook(boil.AfterSelectHook, findNodeAfterSelectHook)
+	AddAddProviderRPCHook(boil.AfterSelectHook, addProviderRPCAfterSelectHook)
 	if err = o.doAfterSelectHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doAfterSelectHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected AfterSelectHook function to empty object, but got: %#v", o)
 	}
-	findNodeAfterSelectHooks = []FindNodeHook{}
+	addProviderRPCAfterSelectHooks = []AddProviderRPCHook{}
 
-	AddFindNodeHook(boil.BeforeUpdateHook, findNodeBeforeUpdateHook)
+	AddAddProviderRPCHook(boil.BeforeUpdateHook, addProviderRPCBeforeUpdateHook)
 	if err = o.doBeforeUpdateHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doBeforeUpdateHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected BeforeUpdateHook function to empty object, but got: %#v", o)
 	}
-	findNodeBeforeUpdateHooks = []FindNodeHook{}
+	addProviderRPCBeforeUpdateHooks = []AddProviderRPCHook{}
 
-	AddFindNodeHook(boil.AfterUpdateHook, findNodeAfterUpdateHook)
+	AddAddProviderRPCHook(boil.AfterUpdateHook, addProviderRPCAfterUpdateHook)
 	if err = o.doAfterUpdateHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doAfterUpdateHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected AfterUpdateHook function to empty object, but got: %#v", o)
 	}
-	findNodeAfterUpdateHooks = []FindNodeHook{}
+	addProviderRPCAfterUpdateHooks = []AddProviderRPCHook{}
 
-	AddFindNodeHook(boil.BeforeDeleteHook, findNodeBeforeDeleteHook)
+	AddAddProviderRPCHook(boil.BeforeDeleteHook, addProviderRPCBeforeDeleteHook)
 	if err = o.doBeforeDeleteHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doBeforeDeleteHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected BeforeDeleteHook function to empty object, but got: %#v", o)
 	}
-	findNodeBeforeDeleteHooks = []FindNodeHook{}
+	addProviderRPCBeforeDeleteHooks = []AddProviderRPCHook{}
 
-	AddFindNodeHook(boil.AfterDeleteHook, findNodeAfterDeleteHook)
+	AddAddProviderRPCHook(boil.AfterDeleteHook, addProviderRPCAfterDeleteHook)
 	if err = o.doAfterDeleteHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doAfterDeleteHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected AfterDeleteHook function to empty object, but got: %#v", o)
 	}
-	findNodeAfterDeleteHooks = []FindNodeHook{}
+	addProviderRPCAfterDeleteHooks = []AddProviderRPCHook{}
 
-	AddFindNodeHook(boil.BeforeUpsertHook, findNodeBeforeUpsertHook)
+	AddAddProviderRPCHook(boil.BeforeUpsertHook, addProviderRPCBeforeUpsertHook)
 	if err = o.doBeforeUpsertHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doBeforeUpsertHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected BeforeUpsertHook function to empty object, but got: %#v", o)
 	}
-	findNodeBeforeUpsertHooks = []FindNodeHook{}
+	addProviderRPCBeforeUpsertHooks = []AddProviderRPCHook{}
 
-	AddFindNodeHook(boil.AfterUpsertHook, findNodeAfterUpsertHook)
+	AddAddProviderRPCHook(boil.AfterUpsertHook, addProviderRPCAfterUpsertHook)
 	if err = o.doAfterUpsertHooks(ctx, nil); err != nil {
 		t.Errorf("Unable to execute doAfterUpsertHooks: %s", err)
 	}
 	if !reflect.DeepEqual(o, empty) {
 		t.Errorf("Expected AfterUpsertHook function to empty object, but got: %#v", o)
 	}
-	findNodeAfterUpsertHooks = []FindNodeHook{}
+	addProviderRPCAfterUpsertHooks = []AddProviderRPCHook{}
 }
 
-func testFindNodesInsert(t *testing.T) {
+func testAddProviderRPCSInsert(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -457,7 +457,7 @@ func testFindNodesInsert(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := FindNodes().Count(ctx, tx)
+	count, err := AddProviderRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -467,24 +467,24 @@ func testFindNodesInsert(t *testing.T) {
 	}
 }
 
-func testFindNodesInsertWhitelist(t *testing.T) {
+func testAddProviderRPCSInsertWhitelist(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
-	if err = o.Insert(ctx, tx, boil.Whitelist(findNodeColumnsWithoutDefault...)); err != nil {
+	if err = o.Insert(ctx, tx, boil.Whitelist(addProviderRPCColumnsWithoutDefault...)); err != nil {
 		t.Error(err)
 	}
 
-	count, err := FindNodes().Count(ctx, tx)
+	count, err := AddProviderRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -494,33 +494,30 @@ func testFindNodesInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testFindNodeToManyCloserPeers(t *testing.T) {
+func testAddProviderRPCToManyProvides(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a FindNode
-	var b, c CloserPeer
+	var a AddProviderRPC
+	var b, c Provide
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	if err = randomize.Struct(seed, &a, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	if err = randomize.Struct(seed, &b, closerPeerDBTypes, false, closerPeerColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &b, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, closerPeerDBTypes, false, closerPeerColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &c, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-
-	b.FindNodeID = a.ID
-	c.FindNodeID = a.ID
 
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
@@ -529,17 +526,26 @@ func testFindNodeToManyCloserPeers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	check, err := a.CloserPeers().All(ctx, tx)
+	_, err = tx.Exec("insert into \"provides_x_add_provider_rpcs\" (\"add_provider_rpc_id\", \"provide_id\") values ($1, $2)", a.ID, b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tx.Exec("insert into \"provides_x_add_provider_rpcs\" (\"add_provider_rpc_id\", \"provide_id\") values ($1, $2)", a.ID, c.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.Provides().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
 	for _, v := range check {
-		if v.FindNodeID == b.FindNodeID {
+		if v.ID == b.ID {
 			bFound = true
 		}
-		if v.FindNodeID == c.FindNodeID {
+		if v.ID == c.ID {
 			cFound = true
 		}
 	}
@@ -551,19 +557,19 @@ func testFindNodeToManyCloserPeers(t *testing.T) {
 		t.Error("expected to find c")
 	}
 
-	slice := FindNodeSlice{&a}
-	if err = a.L.LoadCloserPeers(ctx, tx, false, (*[]*FindNode)(&slice), nil); err != nil {
+	slice := AddProviderRPCSlice{&a}
+	if err = a.L.LoadProvides(ctx, tx, false, (*[]*AddProviderRPC)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.CloserPeers); got != 2 {
+	if got := len(a.R.Provides); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.CloserPeers = nil
-	if err = a.L.LoadCloserPeers(ctx, tx, true, &a, nil); err != nil {
+	a.R.Provides = nil
+	if err = a.L.LoadProvides(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.CloserPeers); got != 2 {
+	if got := len(a.R.Provides); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -572,23 +578,23 @@ func testFindNodeToManyCloserPeers(t *testing.T) {
 	}
 }
 
-func testFindNodeToManyAddOpCloserPeers(t *testing.T) {
+func testAddProviderRPCToManyAddOpProvides(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a FindNode
-	var b, c, d, e CloserPeer
+	var a AddProviderRPC
+	var b, c, d, e Provide
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, findNodeDBTypes, false, strmangle.SetComplement(findNodePrimaryKeyColumns, findNodeColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, addProviderRPCDBTypes, false, strmangle.SetComplement(addProviderRPCPrimaryKeyColumns, addProviderRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*CloserPeer{&b, &c, &d, &e}
+	foreigners := []*Provide{&b, &c, &d, &e}
 	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, closerPeerDBTypes, false, strmangle.SetComplement(closerPeerPrimaryKeyColumns, closerPeerColumnsWithoutDefault)...); err != nil {
+		if err = randomize.Struct(seed, x, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -603,13 +609,13 @@ func testFindNodeToManyAddOpCloserPeers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*CloserPeer{
+	foreignersSplitByInsertion := [][]*Provide{
 		{&b, &c},
 		{&d, &e},
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddCloserPeers(ctx, tx, i != 0, x...)
+		err = a.AddProvides(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -617,28 +623,21 @@ func testFindNodeToManyAddOpCloserPeers(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ID != first.FindNodeID {
-			t.Error("foreign key was wrong value", a.ID, first.FindNodeID)
+		if first.R.AddProviderRPCS[0] != &a {
+			t.Error("relationship was not added properly to the slice")
 		}
-		if a.ID != second.FindNodeID {
-			t.Error("foreign key was wrong value", a.ID, second.FindNodeID)
-		}
-
-		if first.R.FindNode != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.FindNode != &a {
-			t.Error("relationship was not added properly to the foreign slice")
+		if second.R.AddProviderRPCS[0] != &a {
+			t.Error("relationship was not added properly to the slice")
 		}
 
-		if a.R.CloserPeers[i*2] != first {
+		if a.R.Provides[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.CloserPeers[i*2+1] != second {
+		if a.R.Provides[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.CloserPeers().Count(ctx, tx)
+		count, err := a.Provides().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -647,17 +646,177 @@ func testFindNodeToManyAddOpCloserPeers(t *testing.T) {
 		}
 	}
 }
-func testFindNodeToOnePeerUsingLocal(t *testing.T) {
+
+func testAddProviderRPCToManySetOpProvides(t *testing.T) {
+	var err error
+
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var local FindNode
+	var a AddProviderRPC
+	var b, c, d, e Provide
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, addProviderRPCDBTypes, false, strmangle.SetComplement(addProviderRPCPrimaryKeyColumns, addProviderRPCColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Provide{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetProvides(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Provides().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetProvides(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Provides().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	// The following checks cannot be implemented since we have no handle
+	// to these when we call Set(). Leaving them here as wishful thinking
+	// and to let people know there's dragons.
+	//
+	// if len(b.R.AddProviderRPCS) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	// if len(c.R.AddProviderRPCS) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	if d.R.AddProviderRPCS[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+	if e.R.AddProviderRPCS[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+
+	if a.R.Provides[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.Provides[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testAddProviderRPCToManyRemoveOpProvides(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a AddProviderRPC
+	var b, c, d, e Provide
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, addProviderRPCDBTypes, false, strmangle.SetComplement(addProviderRPCPrimaryKeyColumns, addProviderRPCColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Provide{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddProvides(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Provides().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveProvides(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Provides().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if len(b.R.AddProviderRPCS) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if len(c.R.AddProviderRPCS) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if d.R.AddProviderRPCS[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.AddProviderRPCS[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if len(a.R.Provides) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.Provides[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.Provides[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testAddProviderRPCToOnePeerUsingLocal(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local AddProviderRPC
 	var foreign Peer
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	if err := randomize.Struct(seed, &local, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, peerDBTypes, false, peerColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Peer struct: %s", err)
@@ -681,8 +840,8 @@ func testFindNodeToOnePeerUsingLocal(t *testing.T) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
-	slice := FindNodeSlice{&local}
-	if err = local.L.LoadLocal(ctx, tx, false, (*[]*FindNode)(&slice), nil); err != nil {
+	slice := AddProviderRPCSlice{&local}
+	if err = local.L.LoadLocal(ctx, tx, false, (*[]*AddProviderRPC)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.Local == nil {
@@ -698,17 +857,17 @@ func testFindNodeToOnePeerUsingLocal(t *testing.T) {
 	}
 }
 
-func testFindNodeToOneProvideUsingProvide(t *testing.T) {
+func testAddProviderRPCToOneProvideUsingProvide(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var local FindNode
+	var local AddProviderRPC
 	var foreign Provide
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	if err := randomize.Struct(seed, &local, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Provide struct: %s", err)
@@ -732,8 +891,8 @@ func testFindNodeToOneProvideUsingProvide(t *testing.T) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
-	slice := FindNodeSlice{&local}
-	if err = local.L.LoadProvide(ctx, tx, false, (*[]*FindNode)(&slice), nil); err != nil {
+	slice := AddProviderRPCSlice{&local}
+	if err = local.L.LoadProvide(ctx, tx, false, (*[]*AddProviderRPC)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.Provide == nil {
@@ -749,17 +908,17 @@ func testFindNodeToOneProvideUsingProvide(t *testing.T) {
 	}
 }
 
-func testFindNodeToOnePeerUsingRemote(t *testing.T) {
+func testAddProviderRPCToOnePeerUsingRemote(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var local FindNode
+	var local AddProviderRPC
 	var foreign Peer
 
 	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	if err := randomize.Struct(seed, &local, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 	if err := randomize.Struct(seed, &foreign, peerDBTypes, false, peerColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize Peer struct: %s", err)
@@ -783,8 +942,8 @@ func testFindNodeToOnePeerUsingRemote(t *testing.T) {
 		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
 	}
 
-	slice := FindNodeSlice{&local}
-	if err = local.L.LoadRemote(ctx, tx, false, (*[]*FindNode)(&slice), nil); err != nil {
+	slice := AddProviderRPCSlice{&local}
+	if err = local.L.LoadRemote(ctx, tx, false, (*[]*AddProviderRPC)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
 	if local.R.Remote == nil {
@@ -800,18 +959,18 @@ func testFindNodeToOnePeerUsingRemote(t *testing.T) {
 	}
 }
 
-func testFindNodeToOneSetOpPeerUsingLocal(t *testing.T) {
+func testAddProviderRPCToOneSetOpPeerUsingLocal(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a FindNode
+	var a AddProviderRPC
 	var b, c Peer
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, findNodeDBTypes, false, strmangle.SetComplement(findNodePrimaryKeyColumns, findNodeColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, addProviderRPCDBTypes, false, strmangle.SetComplement(addProviderRPCPrimaryKeyColumns, addProviderRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 	if err = randomize.Struct(seed, &b, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
@@ -838,7 +997,7 @@ func testFindNodeToOneSetOpPeerUsingLocal(t *testing.T) {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.LocalFindNodes[0] != &a {
+		if x.R.LocalAddProviderRPCS[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
 		if a.LocalID != x.ID {
@@ -857,18 +1016,18 @@ func testFindNodeToOneSetOpPeerUsingLocal(t *testing.T) {
 		}
 	}
 }
-func testFindNodeToOneSetOpProvideUsingProvide(t *testing.T) {
+func testAddProviderRPCToOneSetOpProvideUsingProvide(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a FindNode
+	var a AddProviderRPC
 	var b, c Provide
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, findNodeDBTypes, false, strmangle.SetComplement(findNodePrimaryKeyColumns, findNodeColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, addProviderRPCDBTypes, false, strmangle.SetComplement(addProviderRPCPrimaryKeyColumns, addProviderRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 	if err = randomize.Struct(seed, &b, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
@@ -895,7 +1054,7 @@ func testFindNodeToOneSetOpProvideUsingProvide(t *testing.T) {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.FindNodes[0] != &a {
+		if x.R.AddProviderRPCS[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
 		if a.ProvideID != x.ID {
@@ -914,18 +1073,18 @@ func testFindNodeToOneSetOpProvideUsingProvide(t *testing.T) {
 		}
 	}
 }
-func testFindNodeToOneSetOpPeerUsingRemote(t *testing.T) {
+func testAddProviderRPCToOneSetOpPeerUsingRemote(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
-	var a FindNode
+	var a AddProviderRPC
 	var b, c Peer
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, findNodeDBTypes, false, strmangle.SetComplement(findNodePrimaryKeyColumns, findNodeColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &a, addProviderRPCDBTypes, false, strmangle.SetComplement(addProviderRPCPrimaryKeyColumns, addProviderRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 	if err = randomize.Struct(seed, &b, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
@@ -952,7 +1111,7 @@ func testFindNodeToOneSetOpPeerUsingRemote(t *testing.T) {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.RemoteFindNodes[0] != &a {
+		if x.R.RemoteAddProviderRPCS[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
 		if a.RemoteID != x.ID {
@@ -972,14 +1131,14 @@ func testFindNodeToOneSetOpPeerUsingRemote(t *testing.T) {
 	}
 }
 
-func testFindNodesReload(t *testing.T) {
+func testAddProviderRPCSReload(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -994,14 +1153,14 @@ func testFindNodesReload(t *testing.T) {
 	}
 }
 
-func testFindNodesReloadAll(t *testing.T) {
+func testAddProviderRPCSReloadAll(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -1011,21 +1170,21 @@ func testFindNodesReloadAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice := FindNodeSlice{o}
+	slice := AddProviderRPCSlice{o}
 
 	if err = slice.ReloadAll(ctx, tx); err != nil {
 		t.Error(err)
 	}
 }
 
-func testFindNodesSelect(t *testing.T) {
+func testAddProviderRPCSSelect(t *testing.T) {
 	t.Parallel()
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -1035,7 +1194,7 @@ func testFindNodesSelect(t *testing.T) {
 		t.Error(err)
 	}
 
-	slice, err := FindNodes().All(ctx, tx)
+	slice, err := AddProviderRPCS().All(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1046,25 +1205,25 @@ func testFindNodesSelect(t *testing.T) {
 }
 
 var (
-	findNodeDBTypes = map[string]string{`ID`: `integer`, `ProvideID`: `integer`, `LocalID`: `integer`, `RemoteID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `CloserPeersCount`: `integer`, `Error`: `text`}
-	_               = bytes.MinRead
+	addProviderRPCDBTypes = map[string]string{`ID`: `integer`, `ProvideID`: `integer`, `LocalID`: `integer`, `RemoteID`: `integer`, `Distance`: `bytea`, `MultiAddressIds`: `ARRAYinteger`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `Error`: `text`}
+	_                     = bytes.MinRead
 )
 
-func testFindNodesUpdate(t *testing.T) {
+func testAddProviderRPCSUpdate(t *testing.T) {
 	t.Parallel()
 
-	if 0 == len(findNodePrimaryKeyColumns) {
+	if 0 == len(addProviderRPCPrimaryKeyColumns) {
 		t.Skip("Skipping table with no primary key columns")
 	}
-	if len(findNodeAllColumns) == len(findNodePrimaryKeyColumns) {
+	if len(addProviderRPCAllColumns) == len(addProviderRPCPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -1074,7 +1233,7 @@ func testFindNodesUpdate(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := FindNodes().Count(ctx, tx)
+	count, err := AddProviderRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1083,8 +1242,8 @@ func testFindNodesUpdate(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodePrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	if rowsAff, err := o.Update(ctx, tx, boil.Infer()); err != nil {
@@ -1094,18 +1253,18 @@ func testFindNodesUpdate(t *testing.T) {
 	}
 }
 
-func testFindNodesSliceUpdateAll(t *testing.T) {
+func testAddProviderRPCSSliceUpdateAll(t *testing.T) {
 	t.Parallel()
 
-	if len(findNodeAllColumns) == len(findNodePrimaryKeyColumns) {
+	if len(addProviderRPCAllColumns) == len(addProviderRPCPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
-	o := &FindNode{}
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := &AddProviderRPC{}
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
@@ -1115,7 +1274,7 @@ func testFindNodesSliceUpdateAll(t *testing.T) {
 		t.Error(err)
 	}
 
-	count, err := FindNodes().Count(ctx, tx)
+	count, err := AddProviderRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1124,18 +1283,18 @@ func testFindNodesSliceUpdateAll(t *testing.T) {
 		t.Error("want one record, got:", count)
 	}
 
-	if err = randomize.Struct(seed, o, findNodeDBTypes, true, findNodePrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	if err = randomize.Struct(seed, o, addProviderRPCDBTypes, true, addProviderRPCPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	// Remove Primary keys and unique columns from what we plan to update
 	var fields []string
-	if strmangle.StringSliceMatch(findNodeAllColumns, findNodePrimaryKeyColumns) {
-		fields = findNodeAllColumns
+	if strmangle.StringSliceMatch(addProviderRPCAllColumns, addProviderRPCPrimaryKeyColumns) {
+		fields = addProviderRPCAllColumns
 	} else {
 		fields = strmangle.SetComplement(
-			findNodeAllColumns,
-			findNodePrimaryKeyColumns,
+			addProviderRPCAllColumns,
+			addProviderRPCPrimaryKeyColumns,
 		)
 	}
 
@@ -1153,7 +1312,7 @@ func testFindNodesSliceUpdateAll(t *testing.T) {
 		}
 	}
 
-	slice := FindNodeSlice{o}
+	slice := AddProviderRPCSlice{o}
 	if rowsAff, err := slice.UpdateAll(ctx, tx, updateMap); err != nil {
 		t.Error(err)
 	} else if rowsAff != 1 {
@@ -1161,29 +1320,29 @@ func testFindNodesSliceUpdateAll(t *testing.T) {
 	}
 }
 
-func testFindNodesUpsert(t *testing.T) {
+func testAddProviderRPCSUpsert(t *testing.T) {
 	t.Parallel()
 
-	if len(findNodeAllColumns) == len(findNodePrimaryKeyColumns) {
+	if len(addProviderRPCAllColumns) == len(addProviderRPCPrimaryKeyColumns) {
 		t.Skip("Skipping table with only primary key columns")
 	}
 
 	seed := randomize.NewSeed()
 	var err error
 	// Attempt the INSERT side of an UPSERT
-	o := FindNode{}
-	if err = randomize.Struct(seed, &o, findNodeDBTypes, true); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	o := AddProviderRPC{}
+	if err = randomize.Struct(seed, &o, addProviderRPCDBTypes, true); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 	if err = o.Upsert(ctx, tx, false, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert FindNode: %s", err)
+		t.Errorf("Unable to upsert AddProviderRPC: %s", err)
 	}
 
-	count, err := FindNodes().Count(ctx, tx)
+	count, err := AddProviderRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}
@@ -1192,15 +1351,15 @@ func testFindNodesUpsert(t *testing.T) {
 	}
 
 	// Attempt the UPDATE side of an UPSERT
-	if err = randomize.Struct(seed, &o, findNodeDBTypes, false, findNodePrimaryKeyColumns...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	if err = randomize.Struct(seed, &o, addProviderRPCDBTypes, false, addProviderRPCPrimaryKeyColumns...); err != nil {
+		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
 	}
 
 	if err = o.Upsert(ctx, tx, true, nil, boil.Infer(), boil.Infer()); err != nil {
-		t.Errorf("Unable to upsert FindNode: %s", err)
+		t.Errorf("Unable to upsert AddProviderRPC: %s", err)
 	}
 
-	count, err = FindNodes().Count(ctx, tx)
+	count, err = AddProviderRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Error(err)
 	}

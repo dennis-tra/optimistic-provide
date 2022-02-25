@@ -149,7 +149,7 @@ func testCloserPeersExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := CloserPeerExists(ctx, tx, o.ProvideID, o.FindNodeID, o.PeerID)
+	e, err := CloserPeerExists(ctx, tx, o.ProvideID, o.FindNodeRPCID, o.PeerID)
 	if err != nil {
 		t.Errorf("Unable to check if CloserPeer exists: %s", err)
 	}
@@ -175,7 +175,7 @@ func testCloserPeersFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	closerPeerFound, err := FindCloserPeer(ctx, tx, o.ProvideID, o.FindNodeID, o.PeerID)
+	closerPeerFound, err := FindCloserPeer(ctx, tx, o.ProvideID, o.FindNodeRPCID, o.PeerID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -494,32 +494,32 @@ func testCloserPeersInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testCloserPeerToOneFindNodeUsingFindNode(t *testing.T) {
+func testCloserPeerToOneFindNodesRPCUsingFindNodeRPC(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var local CloserPeer
-	var foreign FindNode
+	var foreign FindNodesRPC
 
 	seed := randomize.NewSeed()
 	if err := randomize.Struct(seed, &local, closerPeerDBTypes, false, closerPeerColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize CloserPeer struct: %s", err)
 	}
-	if err := randomize.Struct(seed, &foreign, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FindNode struct: %s", err)
+	if err := randomize.Struct(seed, &foreign, findNodesRPCDBTypes, false, findNodesRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize FindNodesRPC struct: %s", err)
 	}
 
 	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	local.FindNodeID = foreign.ID
+	local.FindNodeRPCID = foreign.ID
 	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.FindNode().One(ctx, tx)
+	check, err := local.FindNodeRPC().One(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -529,18 +529,18 @@ func testCloserPeerToOneFindNodeUsingFindNode(t *testing.T) {
 	}
 
 	slice := CloserPeerSlice{&local}
-	if err = local.L.LoadFindNode(ctx, tx, false, (*[]*CloserPeer)(&slice), nil); err != nil {
+	if err = local.L.LoadFindNodeRPC(ctx, tx, false, (*[]*CloserPeer)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.FindNode == nil {
+	if local.R.FindNodeRPC == nil {
 		t.Error("struct should have been eager loaded")
 	}
 
-	local.R.FindNode = nil
-	if err = local.L.LoadFindNode(ctx, tx, true, &local, nil); err != nil {
+	local.R.FindNodeRPC = nil
+	if err = local.L.LoadFindNodeRPC(ctx, tx, true, &local, nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.FindNode == nil {
+	if local.R.FindNodeRPC == nil {
 		t.Error("struct should have been eager loaded")
 	}
 }
@@ -647,7 +647,7 @@ func testCloserPeerToOneProvideUsingProvide(t *testing.T) {
 	}
 }
 
-func testCloserPeerToOneSetOpFindNodeUsingFindNode(t *testing.T) {
+func testCloserPeerToOneSetOpFindNodesRPCUsingFindNodeRPC(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -655,16 +655,16 @@ func testCloserPeerToOneSetOpFindNodeUsingFindNode(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a CloserPeer
-	var b, c FindNode
+	var b, c FindNodesRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, closerPeerDBTypes, false, strmangle.SetComplement(closerPeerPrimaryKeyColumns, closerPeerColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &b, findNodeDBTypes, false, strmangle.SetComplement(findNodePrimaryKeyColumns, findNodeColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &b, findNodesRPCDBTypes, false, strmangle.SetComplement(findNodesRPCPrimaryKeyColumns, findNodesRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, findNodeDBTypes, false, strmangle.SetComplement(findNodePrimaryKeyColumns, findNodeColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &c, findNodesRPCDBTypes, false, strmangle.SetComplement(findNodesRPCPrimaryKeyColumns, findNodesRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -675,24 +675,24 @@ func testCloserPeerToOneSetOpFindNodeUsingFindNode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for i, x := range []*FindNode{&b, &c} {
-		err = a.SetFindNode(ctx, tx, i != 0, x)
+	for i, x := range []*FindNodesRPC{&b, &c} {
+		err = a.SetFindNodeRPC(ctx, tx, i != 0, x)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if a.R.FindNode != x {
+		if a.R.FindNodeRPC != x {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.CloserPeers[0] != &a {
+		if x.R.FindNodeRPCCloserPeers[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.FindNodeID != x.ID {
-			t.Error("foreign key was wrong value", a.FindNodeID)
+		if a.FindNodeRPCID != x.ID {
+			t.Error("foreign key was wrong value", a.FindNodeRPCID)
 		}
 
-		if exists, err := CloserPeerExists(ctx, tx, a.ProvideID, a.FindNodeID, a.PeerID); err != nil {
+		if exists, err := CloserPeerExists(ctx, tx, a.ProvideID, a.FindNodeRPCID, a.PeerID); err != nil {
 			t.Fatal(err)
 		} else if !exists {
 			t.Error("want 'a' to exist")
@@ -745,7 +745,7 @@ func testCloserPeerToOneSetOpPeerUsingPeer(t *testing.T) {
 			t.Error("foreign key was wrong value", a.PeerID)
 		}
 
-		if exists, err := CloserPeerExists(ctx, tx, a.ProvideID, a.FindNodeID, a.PeerID); err != nil {
+		if exists, err := CloserPeerExists(ctx, tx, a.ProvideID, a.FindNodeRPCID, a.PeerID); err != nil {
 			t.Fatal(err)
 		} else if !exists {
 			t.Error("want 'a' to exist")
@@ -798,7 +798,7 @@ func testCloserPeerToOneSetOpProvideUsingProvide(t *testing.T) {
 			t.Error("foreign key was wrong value", a.ProvideID)
 		}
 
-		if exists, err := CloserPeerExists(ctx, tx, a.ProvideID, a.FindNodeID, a.PeerID); err != nil {
+		if exists, err := CloserPeerExists(ctx, tx, a.ProvideID, a.FindNodeRPCID, a.PeerID); err != nil {
 			t.Fatal(err)
 		} else if !exists {
 			t.Error("want 'a' to exist")
@@ -881,7 +881,7 @@ func testCloserPeersSelect(t *testing.T) {
 }
 
 var (
-	closerPeerDBTypes = map[string]string{`ProvideID`: `integer`, `FindNodeID`: `integer`, `PeerID`: `integer`}
+	closerPeerDBTypes = map[string]string{`ProvideID`: `integer`, `FindNodeRPCID`: `integer`, `PeerID`: `integer`}
 	_                 = bytes.MinRead
 )
 

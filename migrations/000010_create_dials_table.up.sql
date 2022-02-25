@@ -31,4 +31,27 @@ CREATE TABLE dials
     PRIMARY KEY (id)
 );
 
+CREATE TABLE provides_x_dials
+(
+    provide_id INT NOT NULL,
+    dial_id    INT NOT NULL,
+
+    CONSTRAINT fk_provides_x_dials_provide_id FOREIGN KEY (provide_id) REFERENCES provides (id),
+    CONSTRAINT fk_provides_x_dials_dial_id FOREIGN KEY (dial_id) REFERENCES dials (id),
+
+    PRIMARY KEY (provide_id, dial_id)
+);
+
+CREATE TABLE retrievals_x_dials
+(
+    retrieval_id INT NOT NULL,
+    dial_id      INT NOT NULL,
+
+    CONSTRAINT fk_retrievals_x_dials_retrieval_id FOREIGN KEY (retrieval_id) REFERENCES retrievals (id),
+    CONSTRAINT fk_retrievals_x_dials_dial_id FOREIGN KEY (dial_id) REFERENCES dials (id),
+
+    PRIMARY KEY (retrieval_id, dial_id)
+);
+
+
 COMMIT;

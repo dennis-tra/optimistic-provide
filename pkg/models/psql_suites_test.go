@@ -6,7 +6,7 @@ package models
 import "testing"
 
 func TestUpsert(t *testing.T) {
-	t.Run("AddProviders", testAddProvidersUpsert)
+	t.Run("AddProviderRPCS", testAddProviderRPCSUpsert)
 
 	t.Run("CloserPeers", testCloserPeersUpsert)
 
@@ -14,9 +14,9 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("Dials", testDialsUpsert)
 
-	t.Run("FindNodes", testFindNodesUpsert)
+	t.Run("FindNodesRPCS", testFindNodesRPCSUpsert)
 
-	t.Run("GetProviders", testGetProvidersUpsert)
+	t.Run("GetProvidersRPCS", testGetProvidersRPCSUpsert)
 
 	t.Run("IPAddresses", testIPAddressesUpsert)
 

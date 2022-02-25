@@ -494,32 +494,32 @@ func testProviderPeersInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testProviderPeerToOneGetProviderUsingGetProvider(t *testing.T) {
+func testProviderPeerToOneGetProvidersRPCUsingGetProvidersRPC(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var local ProviderPeer
-	var foreign GetProvider
+	var foreign GetProvidersRPC
 
 	seed := randomize.NewSeed()
 	if err := randomize.Struct(seed, &local, providerPeerDBTypes, false, providerPeerColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize ProviderPeer struct: %s", err)
 	}
-	if err := randomize.Struct(seed, &foreign, getProviderDBTypes, false, getProviderColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize GetProvider struct: %s", err)
+	if err := randomize.Struct(seed, &foreign, getProvidersRPCDBTypes, false, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
 	}
 
 	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	local.GetProvidersID = foreign.ID
+	local.GetProvidersRPCID = foreign.ID
 	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.GetProvider().One(ctx, tx)
+	check, err := local.GetProvidersRPC().One(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -529,18 +529,18 @@ func testProviderPeerToOneGetProviderUsingGetProvider(t *testing.T) {
 	}
 
 	slice := ProviderPeerSlice{&local}
-	if err = local.L.LoadGetProvider(ctx, tx, false, (*[]*ProviderPeer)(&slice), nil); err != nil {
+	if err = local.L.LoadGetProvidersRPC(ctx, tx, false, (*[]*ProviderPeer)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.GetProvider == nil {
+	if local.R.GetProvidersRPC == nil {
 		t.Error("struct should have been eager loaded")
 	}
 
-	local.R.GetProvider = nil
-	if err = local.L.LoadGetProvider(ctx, tx, true, &local, nil); err != nil {
+	local.R.GetProvidersRPC = nil
+	if err = local.L.LoadGetProvidersRPC(ctx, tx, true, &local, nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.GetProvider == nil {
+	if local.R.GetProvidersRPC == nil {
 		t.Error("struct should have been eager loaded")
 	}
 }
@@ -596,7 +596,7 @@ func testProviderPeerToOnePeerUsingProvider(t *testing.T) {
 	}
 }
 
-func testProviderPeerToOneSetOpGetProviderUsingGetProvider(t *testing.T) {
+func testProviderPeerToOneSetOpGetProvidersRPCUsingGetProvidersRPC(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -604,16 +604,16 @@ func testProviderPeerToOneSetOpGetProviderUsingGetProvider(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a ProviderPeer
-	var b, c GetProvider
+	var b, c GetProvidersRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, providerPeerDBTypes, false, strmangle.SetComplement(providerPeerPrimaryKeyColumns, providerPeerColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &b, getProviderDBTypes, false, strmangle.SetComplement(getProviderPrimaryKeyColumns, getProviderColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &b, getProvidersRPCDBTypes, false, strmangle.SetComplement(getProvidersRPCPrimaryKeyColumns, getProvidersRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, getProviderDBTypes, false, strmangle.SetComplement(getProviderPrimaryKeyColumns, getProviderColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &c, getProvidersRPCDBTypes, false, strmangle.SetComplement(getProvidersRPCPrimaryKeyColumns, getProvidersRPCColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -624,32 +624,32 @@ func testProviderPeerToOneSetOpGetProviderUsingGetProvider(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for i, x := range []*GetProvider{&b, &c} {
-		err = a.SetGetProvider(ctx, tx, i != 0, x)
+	for i, x := range []*GetProvidersRPC{&b, &c} {
+		err = a.SetGetProvidersRPC(ctx, tx, i != 0, x)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if a.R.GetProvider != x {
+		if a.R.GetProvidersRPC != x {
 			t.Error("relationship struct not set to correct value")
 		}
 
 		if x.R.ProviderPeers[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.GetProvidersID != x.ID {
-			t.Error("foreign key was wrong value", a.GetProvidersID)
+		if a.GetProvidersRPCID != x.ID {
+			t.Error("foreign key was wrong value", a.GetProvidersRPCID)
 		}
 
-		zero := reflect.Zero(reflect.TypeOf(a.GetProvidersID))
-		reflect.Indirect(reflect.ValueOf(&a.GetProvidersID)).Set(zero)
+		zero := reflect.Zero(reflect.TypeOf(a.GetProvidersRPCID))
+		reflect.Indirect(reflect.ValueOf(&a.GetProvidersRPCID)).Set(zero)
 
 		if err = a.Reload(ctx, tx); err != nil {
 			t.Fatal("failed to reload", err)
 		}
 
-		if a.GetProvidersID != x.ID {
-			t.Error("foreign key was wrong value", a.GetProvidersID, x.ID)
+		if a.GetProvidersRPCID != x.ID {
+			t.Error("foreign key was wrong value", a.GetProvidersRPCID, x.ID)
 		}
 	}
 }
@@ -785,7 +785,7 @@ func testProviderPeersSelect(t *testing.T) {
 }
 
 var (
-	providerPeerDBTypes = map[string]string{`ID`: `integer`, `GetProvidersID`: `integer`, `ProviderID`: `integer`, `MultiAddressIds`: `ARRAYinteger`}
+	providerPeerDBTypes = map[string]string{`ID`: `integer`, `GetProvidersRPCID`: `integer`, `ProviderID`: `integer`, `MultiAddressIds`: `ARRAYinteger`}
 	_                   = bytes.MinRead
 )
 

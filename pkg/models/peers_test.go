@@ -494,14 +494,14 @@ func testPeersInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testPeerToManyLocalAddProviders(t *testing.T) {
+func testPeerToManyLocalAddProviderRPCS(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Peer
-	var b, c AddProvider
+	var b, c AddProviderRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, peerDBTypes, true, peerColumnsWithDefault...); err != nil {
@@ -512,10 +512,10 @@ func testPeerToManyLocalAddProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = randomize.Struct(seed, &b, addProviderDBTypes, false, addProviderColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &b, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, addProviderDBTypes, false, addProviderColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &c, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -529,7 +529,7 @@ func testPeerToManyLocalAddProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	check, err := a.LocalAddProviders().All(ctx, tx)
+	check, err := a.LocalAddProviderRPCS().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -552,18 +552,18 @@ func testPeerToManyLocalAddProviders(t *testing.T) {
 	}
 
 	slice := PeerSlice{&a}
-	if err = a.L.LoadLocalAddProviders(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
+	if err = a.L.LoadLocalAddProviderRPCS(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.LocalAddProviders); got != 2 {
+	if got := len(a.R.LocalAddProviderRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.LocalAddProviders = nil
-	if err = a.L.LoadLocalAddProviders(ctx, tx, true, &a, nil); err != nil {
+	a.R.LocalAddProviderRPCS = nil
+	if err = a.L.LoadLocalAddProviderRPCS(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.LocalAddProviders); got != 2 {
+	if got := len(a.R.LocalAddProviderRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -572,14 +572,14 @@ func testPeerToManyLocalAddProviders(t *testing.T) {
 	}
 }
 
-func testPeerToManyRemoteAddProviders(t *testing.T) {
+func testPeerToManyRemoteAddProviderRPCS(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Peer
-	var b, c AddProvider
+	var b, c AddProviderRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, peerDBTypes, true, peerColumnsWithDefault...); err != nil {
@@ -590,10 +590,10 @@ func testPeerToManyRemoteAddProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = randomize.Struct(seed, &b, addProviderDBTypes, false, addProviderColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &b, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, addProviderDBTypes, false, addProviderColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &c, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -607,7 +607,7 @@ func testPeerToManyRemoteAddProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	check, err := a.RemoteAddProviders().All(ctx, tx)
+	check, err := a.RemoteAddProviderRPCS().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -630,18 +630,18 @@ func testPeerToManyRemoteAddProviders(t *testing.T) {
 	}
 
 	slice := PeerSlice{&a}
-	if err = a.L.LoadRemoteAddProviders(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
+	if err = a.L.LoadRemoteAddProviderRPCS(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.RemoteAddProviders); got != 2 {
+	if got := len(a.R.RemoteAddProviderRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.RemoteAddProviders = nil
-	if err = a.L.LoadRemoteAddProviders(ctx, tx, true, &a, nil); err != nil {
+	a.R.RemoteAddProviderRPCS = nil
+	if err = a.L.LoadRemoteAddProviderRPCS(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.RemoteAddProviders); got != 2 {
+	if got := len(a.R.RemoteAddProviderRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -1040,14 +1040,14 @@ func testPeerToManyRemoteDials(t *testing.T) {
 	}
 }
 
-func testPeerToManyLocalFindNodes(t *testing.T) {
+func testPeerToManyLocalFindNodesRPCS(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Peer
-	var b, c FindNode
+	var b, c FindNodesRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, peerDBTypes, true, peerColumnsWithDefault...); err != nil {
@@ -1058,10 +1058,10 @@ func testPeerToManyLocalFindNodes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = randomize.Struct(seed, &b, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &b, findNodesRPCDBTypes, false, findNodesRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &c, findNodesRPCDBTypes, false, findNodesRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1075,7 +1075,7 @@ func testPeerToManyLocalFindNodes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	check, err := a.LocalFindNodes().All(ctx, tx)
+	check, err := a.LocalFindNodesRPCS().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1098,18 +1098,18 @@ func testPeerToManyLocalFindNodes(t *testing.T) {
 	}
 
 	slice := PeerSlice{&a}
-	if err = a.L.LoadLocalFindNodes(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
+	if err = a.L.LoadLocalFindNodesRPCS(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.LocalFindNodes); got != 2 {
+	if got := len(a.R.LocalFindNodesRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.LocalFindNodes = nil
-	if err = a.L.LoadLocalFindNodes(ctx, tx, true, &a, nil); err != nil {
+	a.R.LocalFindNodesRPCS = nil
+	if err = a.L.LoadLocalFindNodesRPCS(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.LocalFindNodes); got != 2 {
+	if got := len(a.R.LocalFindNodesRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -1118,14 +1118,14 @@ func testPeerToManyLocalFindNodes(t *testing.T) {
 	}
 }
 
-func testPeerToManyRemoteFindNodes(t *testing.T) {
+func testPeerToManyRemoteFindNodesRPCS(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Peer
-	var b, c FindNode
+	var b, c FindNodesRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, peerDBTypes, true, peerColumnsWithDefault...); err != nil {
@@ -1136,10 +1136,10 @@ func testPeerToManyRemoteFindNodes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = randomize.Struct(seed, &b, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &b, findNodesRPCDBTypes, false, findNodesRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &c, findNodesRPCDBTypes, false, findNodesRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1153,7 +1153,7 @@ func testPeerToManyRemoteFindNodes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	check, err := a.RemoteFindNodes().All(ctx, tx)
+	check, err := a.RemoteFindNodesRPCS().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1176,18 +1176,18 @@ func testPeerToManyRemoteFindNodes(t *testing.T) {
 	}
 
 	slice := PeerSlice{&a}
-	if err = a.L.LoadRemoteFindNodes(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
+	if err = a.L.LoadRemoteFindNodesRPCS(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.RemoteFindNodes); got != 2 {
+	if got := len(a.R.RemoteFindNodesRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.RemoteFindNodes = nil
-	if err = a.L.LoadRemoteFindNodes(ctx, tx, true, &a, nil); err != nil {
+	a.R.RemoteFindNodesRPCS = nil
+	if err = a.L.LoadRemoteFindNodesRPCS(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.RemoteFindNodes); got != 2 {
+	if got := len(a.R.RemoteFindNodesRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -1196,14 +1196,14 @@ func testPeerToManyRemoteFindNodes(t *testing.T) {
 	}
 }
 
-func testPeerToManyLocalGetProviders(t *testing.T) {
+func testPeerToManyLocalGetProvidersRPCS(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Peer
-	var b, c GetProvider
+	var b, c GetProvidersRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, peerDBTypes, true, peerColumnsWithDefault...); err != nil {
@@ -1214,10 +1214,10 @@ func testPeerToManyLocalGetProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = randomize.Struct(seed, &b, getProviderDBTypes, false, getProviderColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &b, getProvidersRPCDBTypes, false, getProvidersRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, getProviderDBTypes, false, getProviderColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &c, getProvidersRPCDBTypes, false, getProvidersRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1231,7 +1231,7 @@ func testPeerToManyLocalGetProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	check, err := a.LocalGetProviders().All(ctx, tx)
+	check, err := a.LocalGetProvidersRPCS().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1254,18 +1254,18 @@ func testPeerToManyLocalGetProviders(t *testing.T) {
 	}
 
 	slice := PeerSlice{&a}
-	if err = a.L.LoadLocalGetProviders(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
+	if err = a.L.LoadLocalGetProvidersRPCS(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.LocalGetProviders); got != 2 {
+	if got := len(a.R.LocalGetProvidersRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.LocalGetProviders = nil
-	if err = a.L.LoadLocalGetProviders(ctx, tx, true, &a, nil); err != nil {
+	a.R.LocalGetProvidersRPCS = nil
+	if err = a.L.LoadLocalGetProvidersRPCS(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.LocalGetProviders); got != 2 {
+	if got := len(a.R.LocalGetProvidersRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -1274,14 +1274,14 @@ func testPeerToManyLocalGetProviders(t *testing.T) {
 	}
 }
 
-func testPeerToManyRemoteGetProviders(t *testing.T) {
+func testPeerToManyRemoteGetProvidersRPCS(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Peer
-	var b, c GetProvider
+	var b, c GetProvidersRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, peerDBTypes, true, peerColumnsWithDefault...); err != nil {
@@ -1292,10 +1292,10 @@ func testPeerToManyRemoteGetProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = randomize.Struct(seed, &b, getProviderDBTypes, false, getProviderColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &b, getProvidersRPCDBTypes, false, getProvidersRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, getProviderDBTypes, false, getProviderColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &c, getProvidersRPCDBTypes, false, getProvidersRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1309,7 +1309,7 @@ func testPeerToManyRemoteGetProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	check, err := a.RemoteGetProviders().All(ctx, tx)
+	check, err := a.RemoteGetProvidersRPCS().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1332,18 +1332,18 @@ func testPeerToManyRemoteGetProviders(t *testing.T) {
 	}
 
 	slice := PeerSlice{&a}
-	if err = a.L.LoadRemoteGetProviders(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
+	if err = a.L.LoadRemoteGetProvidersRPCS(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.RemoteGetProviders); got != 2 {
+	if got := len(a.R.RemoteGetProvidersRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.RemoteGetProviders = nil
-	if err = a.L.LoadRemoteGetProviders(ctx, tx, true, &a, nil); err != nil {
+	a.R.RemoteGetProvidersRPCS = nil
+	if err = a.L.LoadRemoteGetProvidersRPCS(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.RemoteGetProviders); got != 2 {
+	if got := len(a.R.RemoteGetProvidersRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -1976,7 +1976,7 @@ func testPeerToManyRoutingTableSnapshots(t *testing.T) {
 	}
 }
 
-func testPeerToManyAddOpLocalAddProviders(t *testing.T) {
+func testPeerToManyAddOpLocalAddProviderRPCS(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -1984,15 +1984,15 @@ func testPeerToManyAddOpLocalAddProviders(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a Peer
-	var b, c, d, e AddProvider
+	var b, c, d, e AddProviderRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*AddProvider{&b, &c, &d, &e}
+	foreigners := []*AddProviderRPC{&b, &c, &d, &e}
 	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, addProviderDBTypes, false, strmangle.SetComplement(addProviderPrimaryKeyColumns, addProviderColumnsWithoutDefault)...); err != nil {
+		if err = randomize.Struct(seed, x, addProviderRPCDBTypes, false, strmangle.SetComplement(addProviderRPCPrimaryKeyColumns, addProviderRPCColumnsWithoutDefault)...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -2007,13 +2007,13 @@ func testPeerToManyAddOpLocalAddProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*AddProvider{
+	foreignersSplitByInsertion := [][]*AddProviderRPC{
 		{&b, &c},
 		{&d, &e},
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddLocalAddProviders(ctx, tx, i != 0, x...)
+		err = a.AddLocalAddProviderRPCS(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2035,14 +2035,14 @@ func testPeerToManyAddOpLocalAddProviders(t *testing.T) {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
 
-		if a.R.LocalAddProviders[i*2] != first {
+		if a.R.LocalAddProviderRPCS[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.LocalAddProviders[i*2+1] != second {
+		if a.R.LocalAddProviderRPCS[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.LocalAddProviders().Count(ctx, tx)
+		count, err := a.LocalAddProviderRPCS().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2051,7 +2051,7 @@ func testPeerToManyAddOpLocalAddProviders(t *testing.T) {
 		}
 	}
 }
-func testPeerToManyAddOpRemoteAddProviders(t *testing.T) {
+func testPeerToManyAddOpRemoteAddProviderRPCS(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -2059,15 +2059,15 @@ func testPeerToManyAddOpRemoteAddProviders(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a Peer
-	var b, c, d, e AddProvider
+	var b, c, d, e AddProviderRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*AddProvider{&b, &c, &d, &e}
+	foreigners := []*AddProviderRPC{&b, &c, &d, &e}
 	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, addProviderDBTypes, false, strmangle.SetComplement(addProviderPrimaryKeyColumns, addProviderColumnsWithoutDefault)...); err != nil {
+		if err = randomize.Struct(seed, x, addProviderRPCDBTypes, false, strmangle.SetComplement(addProviderRPCPrimaryKeyColumns, addProviderRPCColumnsWithoutDefault)...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -2082,13 +2082,13 @@ func testPeerToManyAddOpRemoteAddProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*AddProvider{
+	foreignersSplitByInsertion := [][]*AddProviderRPC{
 		{&b, &c},
 		{&d, &e},
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddRemoteAddProviders(ctx, tx, i != 0, x...)
+		err = a.AddRemoteAddProviderRPCS(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2110,14 +2110,14 @@ func testPeerToManyAddOpRemoteAddProviders(t *testing.T) {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
 
-		if a.R.RemoteAddProviders[i*2] != first {
+		if a.R.RemoteAddProviderRPCS[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.RemoteAddProviders[i*2+1] != second {
+		if a.R.RemoteAddProviderRPCS[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.RemoteAddProviders().Count(ctx, tx)
+		count, err := a.RemoteAddProviderRPCS().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2501,7 +2501,7 @@ func testPeerToManyAddOpRemoteDials(t *testing.T) {
 		}
 	}
 }
-func testPeerToManyAddOpLocalFindNodes(t *testing.T) {
+func testPeerToManyAddOpLocalFindNodesRPCS(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -2509,15 +2509,15 @@ func testPeerToManyAddOpLocalFindNodes(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a Peer
-	var b, c, d, e FindNode
+	var b, c, d, e FindNodesRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*FindNode{&b, &c, &d, &e}
+	foreigners := []*FindNodesRPC{&b, &c, &d, &e}
 	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, findNodeDBTypes, false, strmangle.SetComplement(findNodePrimaryKeyColumns, findNodeColumnsWithoutDefault)...); err != nil {
+		if err = randomize.Struct(seed, x, findNodesRPCDBTypes, false, strmangle.SetComplement(findNodesRPCPrimaryKeyColumns, findNodesRPCColumnsWithoutDefault)...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -2532,13 +2532,13 @@ func testPeerToManyAddOpLocalFindNodes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*FindNode{
+	foreignersSplitByInsertion := [][]*FindNodesRPC{
 		{&b, &c},
 		{&d, &e},
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddLocalFindNodes(ctx, tx, i != 0, x...)
+		err = a.AddLocalFindNodesRPCS(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2560,14 +2560,14 @@ func testPeerToManyAddOpLocalFindNodes(t *testing.T) {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
 
-		if a.R.LocalFindNodes[i*2] != first {
+		if a.R.LocalFindNodesRPCS[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.LocalFindNodes[i*2+1] != second {
+		if a.R.LocalFindNodesRPCS[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.LocalFindNodes().Count(ctx, tx)
+		count, err := a.LocalFindNodesRPCS().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2576,7 +2576,7 @@ func testPeerToManyAddOpLocalFindNodes(t *testing.T) {
 		}
 	}
 }
-func testPeerToManyAddOpRemoteFindNodes(t *testing.T) {
+func testPeerToManyAddOpRemoteFindNodesRPCS(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -2584,15 +2584,15 @@ func testPeerToManyAddOpRemoteFindNodes(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a Peer
-	var b, c, d, e FindNode
+	var b, c, d, e FindNodesRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*FindNode{&b, &c, &d, &e}
+	foreigners := []*FindNodesRPC{&b, &c, &d, &e}
 	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, findNodeDBTypes, false, strmangle.SetComplement(findNodePrimaryKeyColumns, findNodeColumnsWithoutDefault)...); err != nil {
+		if err = randomize.Struct(seed, x, findNodesRPCDBTypes, false, strmangle.SetComplement(findNodesRPCPrimaryKeyColumns, findNodesRPCColumnsWithoutDefault)...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -2607,13 +2607,13 @@ func testPeerToManyAddOpRemoteFindNodes(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*FindNode{
+	foreignersSplitByInsertion := [][]*FindNodesRPC{
 		{&b, &c},
 		{&d, &e},
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddRemoteFindNodes(ctx, tx, i != 0, x...)
+		err = a.AddRemoteFindNodesRPCS(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2635,14 +2635,14 @@ func testPeerToManyAddOpRemoteFindNodes(t *testing.T) {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
 
-		if a.R.RemoteFindNodes[i*2] != first {
+		if a.R.RemoteFindNodesRPCS[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.RemoteFindNodes[i*2+1] != second {
+		if a.R.RemoteFindNodesRPCS[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.RemoteFindNodes().Count(ctx, tx)
+		count, err := a.RemoteFindNodesRPCS().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2651,7 +2651,7 @@ func testPeerToManyAddOpRemoteFindNodes(t *testing.T) {
 		}
 	}
 }
-func testPeerToManyAddOpLocalGetProviders(t *testing.T) {
+func testPeerToManyAddOpLocalGetProvidersRPCS(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -2659,15 +2659,15 @@ func testPeerToManyAddOpLocalGetProviders(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a Peer
-	var b, c, d, e GetProvider
+	var b, c, d, e GetProvidersRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*GetProvider{&b, &c, &d, &e}
+	foreigners := []*GetProvidersRPC{&b, &c, &d, &e}
 	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, getProviderDBTypes, false, strmangle.SetComplement(getProviderPrimaryKeyColumns, getProviderColumnsWithoutDefault)...); err != nil {
+		if err = randomize.Struct(seed, x, getProvidersRPCDBTypes, false, strmangle.SetComplement(getProvidersRPCPrimaryKeyColumns, getProvidersRPCColumnsWithoutDefault)...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -2682,13 +2682,13 @@ func testPeerToManyAddOpLocalGetProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*GetProvider{
+	foreignersSplitByInsertion := [][]*GetProvidersRPC{
 		{&b, &c},
 		{&d, &e},
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddLocalGetProviders(ctx, tx, i != 0, x...)
+		err = a.AddLocalGetProvidersRPCS(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2710,14 +2710,14 @@ func testPeerToManyAddOpLocalGetProviders(t *testing.T) {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
 
-		if a.R.LocalGetProviders[i*2] != first {
+		if a.R.LocalGetProvidersRPCS[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.LocalGetProviders[i*2+1] != second {
+		if a.R.LocalGetProvidersRPCS[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.LocalGetProviders().Count(ctx, tx)
+		count, err := a.LocalGetProvidersRPCS().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2726,7 +2726,7 @@ func testPeerToManyAddOpLocalGetProviders(t *testing.T) {
 		}
 	}
 }
-func testPeerToManyAddOpRemoteGetProviders(t *testing.T) {
+func testPeerToManyAddOpRemoteGetProvidersRPCS(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -2734,15 +2734,15 @@ func testPeerToManyAddOpRemoteGetProviders(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a Peer
-	var b, c, d, e GetProvider
+	var b, c, d, e GetProvidersRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*GetProvider{&b, &c, &d, &e}
+	foreigners := []*GetProvidersRPC{&b, &c, &d, &e}
 	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, getProviderDBTypes, false, strmangle.SetComplement(getProviderPrimaryKeyColumns, getProviderColumnsWithoutDefault)...); err != nil {
+		if err = randomize.Struct(seed, x, getProvidersRPCDBTypes, false, strmangle.SetComplement(getProvidersRPCPrimaryKeyColumns, getProvidersRPCColumnsWithoutDefault)...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -2757,13 +2757,13 @@ func testPeerToManyAddOpRemoteGetProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*GetProvider{
+	foreignersSplitByInsertion := [][]*GetProvidersRPC{
 		{&b, &c},
 		{&d, &e},
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddRemoteGetProviders(ctx, tx, i != 0, x...)
+		err = a.AddRemoteGetProvidersRPCS(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -2785,14 +2785,14 @@ func testPeerToManyAddOpRemoteGetProviders(t *testing.T) {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
 
-		if a.R.RemoteGetProviders[i*2] != first {
+		if a.R.RemoteGetProvidersRPCS[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.RemoteGetProviders[i*2+1] != second {
+		if a.R.RemoteGetProvidersRPCS[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.RemoteGetProviders().Count(ctx, tx)
+		count, err := a.RemoteGetProvidersRPCS().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}

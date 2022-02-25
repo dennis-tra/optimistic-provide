@@ -494,14 +494,14 @@ func testProvidesInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testProvideToManyAddProviders(t *testing.T) {
+func testProvideToManyAddProviderRPCS(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Provide
-	var b, c AddProvider
+	var b, c AddProviderRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, provideDBTypes, true, provideColumnsWithDefault...); err != nil {
@@ -512,10 +512,10 @@ func testProvideToManyAddProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err = randomize.Struct(seed, &b, addProviderDBTypes, false, addProviderColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &b, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, addProviderDBTypes, false, addProviderColumnsWithDefault...); err != nil {
+	if err = randomize.Struct(seed, &c, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -529,7 +529,7 @@ func testProvideToManyAddProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	check, err := a.AddProviders().All(ctx, tx)
+	check, err := a.AddProviderRPCS().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -552,18 +552,18 @@ func testProvideToManyAddProviders(t *testing.T) {
 	}
 
 	slice := ProvideSlice{&a}
-	if err = a.L.LoadAddProviders(ctx, tx, false, (*[]*Provide)(&slice), nil); err != nil {
+	if err = a.L.LoadAddProviderRPCS(ctx, tx, false, (*[]*Provide)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.AddProviders); got != 2 {
+	if got := len(a.R.AddProviderRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.AddProviders = nil
-	if err = a.L.LoadAddProviders(ctx, tx, true, &a, nil); err != nil {
+	a.R.AddProviderRPCS = nil
+	if err = a.L.LoadAddProviderRPCS(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.AddProviders); got != 2 {
+	if got := len(a.R.AddProviderRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -650,83 +650,6 @@ func testProvideToManyCloserPeers(t *testing.T) {
 	}
 }
 
-func testProvideToManyConnections(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Provide
-	var b, c Connection
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, provideDBTypes, true, provideColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Provide struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, connectionDBTypes, false, connectionColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, connectionDBTypes, false, connectionColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	queries.Assign(&b.ProvideID, a.ID)
-	queries.Assign(&c.ProvideID, a.ID)
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.Connections().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if queries.Equal(v.ProvideID, b.ProvideID) {
-			bFound = true
-		}
-		if queries.Equal(v.ProvideID, c.ProvideID) {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := ProvideSlice{&a}
-	if err = a.L.LoadConnections(ctx, tx, false, (*[]*Provide)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.Connections); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.Connections = nil
-	if err = a.L.LoadConnections(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.Connections); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
 func testProvideToManyDials(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -796,84 +719,6 @@ func testProvideToManyDials(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := len(a.R.Dials); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
-func testProvideToManyFindNodes(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Provide
-	var b, c FindNode
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, provideDBTypes, true, provideColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Provide struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, findNodeDBTypes, false, findNodeColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	b.ProvideID = a.ID
-	c.ProvideID = a.ID
-
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.FindNodes().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if v.ProvideID == b.ProvideID {
-			bFound = true
-		}
-		if v.ProvideID == c.ProvideID {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := ProvideSlice{&a}
-	if err = a.L.LoadFindNodes(ctx, tx, false, (*[]*Provide)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.FindNodes); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.FindNodes = nil
-	if err = a.L.LoadFindNodes(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.FindNodes); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -959,7 +804,343 @@ func testProvideToManyPeerStates(t *testing.T) {
 	}
 }
 
-func testProvideToManyAddOpAddProviders(t *testing.T) {
+func testProvideToManyAddProviderRPCS(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c AddProviderRPC
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, true, provideColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Provide struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = tx.Exec("insert into \"provides_x_add_provider_rpcs\" (\"provide_id\", \"add_provider_rpc_id\") values ($1, $2)", a.ID, b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tx.Exec("insert into \"provides_x_add_provider_rpcs\" (\"provide_id\", \"add_provider_rpc_id\") values ($1, $2)", a.ID, c.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.AddProviderRPCS().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.ID == b.ID {
+			bFound = true
+		}
+		if v.ID == c.ID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := ProvideSlice{&a}
+	if err = a.L.LoadAddProviderRPCS(ctx, tx, false, (*[]*Provide)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.AddProviderRPCS); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.AddProviderRPCS = nil
+	if err = a.L.LoadAddProviderRPCS(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.AddProviderRPCS); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testProvideToManyConnections(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c Connection
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, true, provideColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Provide struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, connectionDBTypes, false, connectionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, connectionDBTypes, false, connectionColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = tx.Exec("insert into \"provides_x_connections\" (\"provide_id\", \"connection_id\") values ($1, $2)", a.ID, b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tx.Exec("insert into \"provides_x_connections\" (\"provide_id\", \"connection_id\") values ($1, $2)", a.ID, c.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.Connections().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.ID == b.ID {
+			bFound = true
+		}
+		if v.ID == c.ID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := ProvideSlice{&a}
+	if err = a.L.LoadConnections(ctx, tx, false, (*[]*Provide)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Connections); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.Connections = nil
+	if err = a.L.LoadConnections(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Connections); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testProvideToManyDials(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c Dial
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, true, provideColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Provide struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, dialDBTypes, false, dialColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, dialDBTypes, false, dialColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = tx.Exec("insert into \"provides_x_dials\" (\"provide_id\", \"dial_id\") values ($1, $2)", a.ID, b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tx.Exec("insert into \"provides_x_dials\" (\"provide_id\", \"dial_id\") values ($1, $2)", a.ID, c.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.Dials().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.ID == b.ID {
+			bFound = true
+		}
+		if v.ID == c.ID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := ProvideSlice{&a}
+	if err = a.L.LoadDials(ctx, tx, false, (*[]*Provide)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Dials); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.Dials = nil
+	if err = a.L.LoadDials(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.Dials); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testProvideToManyFindNodesRPCS(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c FindNodesRPC
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, true, provideColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Provide struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, findNodesRPCDBTypes, false, findNodesRPCColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, findNodesRPCDBTypes, false, findNodesRPCColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = tx.Exec("insert into \"provides_x_find_nodes_rpcs\" (\"provide_id\", \"find_nodes_rpc_id\") values ($1, $2)", a.ID, b.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = tx.Exec("insert into \"provides_x_find_nodes_rpcs\" (\"provide_id\", \"find_nodes_rpc_id\") values ($1, $2)", a.ID, c.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.FindNodesRPCS().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.ID == b.ID {
+			bFound = true
+		}
+		if v.ID == c.ID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := ProvideSlice{&a}
+	if err = a.L.LoadFindNodesRPCS(ctx, tx, false, (*[]*Provide)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.FindNodesRPCS); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.FindNodesRPCS = nil
+	if err = a.L.LoadFindNodesRPCS(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.FindNodesRPCS); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testProvideToManyAddOpAddProviderRPCS(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -967,15 +1148,15 @@ func testProvideToManyAddOpAddProviders(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a Provide
-	var b, c, d, e AddProvider
+	var b, c, d, e AddProviderRPC
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*AddProvider{&b, &c, &d, &e}
+	foreigners := []*AddProviderRPC{&b, &c, &d, &e}
 	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, addProviderDBTypes, false, strmangle.SetComplement(addProviderPrimaryKeyColumns, addProviderColumnsWithoutDefault)...); err != nil {
+		if err = randomize.Struct(seed, x, addProviderRPCDBTypes, false, strmangle.SetComplement(addProviderRPCPrimaryKeyColumns, addProviderRPCColumnsWithoutDefault)...); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -990,13 +1171,13 @@ func testProvideToManyAddOpAddProviders(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*AddProvider{
+	foreignersSplitByInsertion := [][]*AddProviderRPC{
 		{&b, &c},
 		{&d, &e},
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddAddProviders(ctx, tx, i != 0, x...)
+		err = a.AddAddProviderRPCS(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1018,14 +1199,14 @@ func testProvideToManyAddOpAddProviders(t *testing.T) {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
 
-		if a.R.AddProviders[i*2] != first {
+		if a.R.AddProviderRPCS[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.AddProviders[i*2+1] != second {
+		if a.R.AddProviderRPCS[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.AddProviders().Count(ctx, tx)
+		count, err := a.AddProviderRPCS().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1109,257 +1290,6 @@ func testProvideToManyAddOpCloserPeers(t *testing.T) {
 		}
 	}
 }
-func testProvideToManyAddOpConnections(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Provide
-	var b, c, d, e Connection
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Connection{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*Connection{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddConnections(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if !queries.Equal(a.ID, first.ProvideID) {
-			t.Error("foreign key was wrong value", a.ID, first.ProvideID)
-		}
-		if !queries.Equal(a.ID, second.ProvideID) {
-			t.Error("foreign key was wrong value", a.ID, second.ProvideID)
-		}
-
-		if first.R.Provide != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Provide != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.Connections[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.Connections[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.Connections().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-
-func testProvideToManySetOpConnections(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Provide
-	var b, c, d, e Connection
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Connection{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetConnections(ctx, tx, false, &b, &c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.Connections().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetConnections(ctx, tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.Connections().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ProvideID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ProvideID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if !queries.Equal(a.ID, d.ProvideID) {
-		t.Error("foreign key was wrong value", a.ID, d.ProvideID)
-	}
-	if !queries.Equal(a.ID, e.ProvideID) {
-		t.Error("foreign key was wrong value", a.ID, e.ProvideID)
-	}
-
-	if b.R.Provide != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Provide != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Provide != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Provide != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.Connections[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.Connections[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testProvideToManyRemoveOpConnections(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Provide
-	var b, c, d, e Connection
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Connection{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.AddConnections(ctx, tx, true, foreigners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.Connections().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemoveConnections(ctx, tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.Connections().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.ProvideID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.ProvideID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-
-	if b.R.Provide != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Provide != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Provide != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.Provide != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-
-	if len(a.R.Connections) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.Connections[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.Connections[0] != &e {
-		t.Error("relationship to e should have been preserved")
-	}
-}
-
 func testProvideToManyAddOpDials(t *testing.T) {
 	var err error
 
@@ -1611,81 +1541,6 @@ func testProvideToManyRemoveOpDials(t *testing.T) {
 	}
 }
 
-func testProvideToManyAddOpFindNodes(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Provide
-	var b, c, d, e FindNode
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*FindNode{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, findNodeDBTypes, false, strmangle.SetComplement(findNodePrimaryKeyColumns, findNodeColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*FindNode{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddFindNodes(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if a.ID != first.ProvideID {
-			t.Error("foreign key was wrong value", a.ID, first.ProvideID)
-		}
-		if a.ID != second.ProvideID {
-			t.Error("foreign key was wrong value", a.ID, second.ProvideID)
-		}
-
-		if first.R.Provide != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Provide != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.FindNodes[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.FindNodes[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.FindNodes().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
 func testProvideToManyAddOpPeerStates(t *testing.T) {
 	var err error
 
@@ -1933,6 +1788,918 @@ func testProvideToManyRemoveOpPeerStates(t *testing.T) {
 		t.Error("relationship to d should have been preserved")
 	}
 	if a.R.PeerStates[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testProvideToManyAddOpAddProviderRPCS(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e AddProviderRPC
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*AddProviderRPC{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, addProviderRPCDBTypes, false, strmangle.SetComplement(addProviderRPCPrimaryKeyColumns, addProviderRPCColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*AddProviderRPC{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddAddProviderRPCS(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if first.R.Provides[0] != &a {
+			t.Error("relationship was not added properly to the slice")
+		}
+		if second.R.Provides[0] != &a {
+			t.Error("relationship was not added properly to the slice")
+		}
+
+		if a.R.AddProviderRPCS[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.AddProviderRPCS[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.AddProviderRPCS().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testProvideToManySetOpAddProviderRPCS(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e AddProviderRPC
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*AddProviderRPC{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, addProviderRPCDBTypes, false, strmangle.SetComplement(addProviderRPCPrimaryKeyColumns, addProviderRPCColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetAddProviderRPCS(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.AddProviderRPCS().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetAddProviderRPCS(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.AddProviderRPCS().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	// The following checks cannot be implemented since we have no handle
+	// to these when we call Set(). Leaving them here as wishful thinking
+	// and to let people know there's dragons.
+	//
+	// if len(b.R.Provides) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	// if len(c.R.Provides) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	if d.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+	if e.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+
+	if a.R.AddProviderRPCS[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.AddProviderRPCS[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testProvideToManyRemoveOpAddProviderRPCS(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e AddProviderRPC
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*AddProviderRPC{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, addProviderRPCDBTypes, false, strmangle.SetComplement(addProviderRPCPrimaryKeyColumns, addProviderRPCColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddAddProviderRPCS(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.AddProviderRPCS().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveAddProviderRPCS(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.AddProviderRPCS().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if len(b.R.Provides) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if len(c.R.Provides) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if d.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if len(a.R.AddProviderRPCS) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.AddProviderRPCS[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.AddProviderRPCS[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testProvideToManyAddOpConnections(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e Connection
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Connection{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Connection{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddConnections(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if first.R.Provides[0] != &a {
+			t.Error("relationship was not added properly to the slice")
+		}
+		if second.R.Provides[0] != &a {
+			t.Error("relationship was not added properly to the slice")
+		}
+
+		if a.R.Connections[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Connections[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Connections().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testProvideToManySetOpConnections(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e Connection
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Connection{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetConnections(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Connections().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetConnections(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Connections().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	// The following checks cannot be implemented since we have no handle
+	// to these when we call Set(). Leaving them here as wishful thinking
+	// and to let people know there's dragons.
+	//
+	// if len(b.R.Provides) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	// if len(c.R.Provides) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	if d.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+	if e.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+
+	if a.R.Connections[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.Connections[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testProvideToManyRemoveOpConnections(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e Connection
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Connection{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, connectionDBTypes, false, strmangle.SetComplement(connectionPrimaryKeyColumns, connectionColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddConnections(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Connections().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveConnections(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Connections().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if len(b.R.Provides) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if len(c.R.Provides) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if d.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if len(a.R.Connections) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.Connections[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.Connections[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testProvideToManyAddOpDials(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e Dial
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Dial{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, dialDBTypes, false, strmangle.SetComplement(dialPrimaryKeyColumns, dialColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Dial{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddDials(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if first.R.Provides[0] != &a {
+			t.Error("relationship was not added properly to the slice")
+		}
+		if second.R.Provides[0] != &a {
+			t.Error("relationship was not added properly to the slice")
+		}
+
+		if a.R.Dials[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.Dials[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.Dials().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testProvideToManySetOpDials(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e Dial
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Dial{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, dialDBTypes, false, strmangle.SetComplement(dialPrimaryKeyColumns, dialColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetDials(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Dials().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetDials(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Dials().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	// The following checks cannot be implemented since we have no handle
+	// to these when we call Set(). Leaving them here as wishful thinking
+	// and to let people know there's dragons.
+	//
+	// if len(b.R.Provides) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	// if len(c.R.Provides) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	if d.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+	if e.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+
+	if a.R.Dials[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.Dials[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testProvideToManyRemoveOpDials(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e Dial
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Dial{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, dialDBTypes, false, strmangle.SetComplement(dialPrimaryKeyColumns, dialColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddDials(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.Dials().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveDials(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.Dials().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if len(b.R.Provides) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if len(c.R.Provides) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if d.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if len(a.R.Dials) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.Dials[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.Dials[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testProvideToManyAddOpFindNodesRPCS(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e FindNodesRPC
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*FindNodesRPC{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, findNodesRPCDBTypes, false, strmangle.SetComplement(findNodesRPCPrimaryKeyColumns, findNodesRPCColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*FindNodesRPC{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddFindNodesRPCS(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if first.R.Provides[0] != &a {
+			t.Error("relationship was not added properly to the slice")
+		}
+		if second.R.Provides[0] != &a {
+			t.Error("relationship was not added properly to the slice")
+		}
+
+		if a.R.FindNodesRPCS[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.FindNodesRPCS[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.FindNodesRPCS().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testProvideToManySetOpFindNodesRPCS(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e FindNodesRPC
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*FindNodesRPC{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, findNodesRPCDBTypes, false, strmangle.SetComplement(findNodesRPCPrimaryKeyColumns, findNodesRPCColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetFindNodesRPCS(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.FindNodesRPCS().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetFindNodesRPCS(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.FindNodesRPCS().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	// The following checks cannot be implemented since we have no handle
+	// to these when we call Set(). Leaving them here as wishful thinking
+	// and to let people know there's dragons.
+	//
+	// if len(b.R.Provides) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	// if len(c.R.Provides) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	if d.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+	if e.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+
+	if a.R.FindNodesRPCS[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.FindNodesRPCS[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testProvideToManyRemoveOpFindNodesRPCS(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c, d, e FindNodesRPC
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*FindNodesRPC{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, findNodesRPCDBTypes, false, strmangle.SetComplement(findNodesRPCPrimaryKeyColumns, findNodesRPCColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddFindNodesRPCS(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.FindNodesRPCS().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveFindNodesRPCS(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.FindNodesRPCS().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if len(b.R.Provides) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if len(c.R.Provides) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if d.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Provides[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if len(a.R.FindNodesRPCS) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.FindNodesRPCS[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.FindNodesRPCS[0] != &e {
 		t.Error("relationship to e should have been preserved")
 	}
 }

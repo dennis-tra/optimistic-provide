@@ -113,68 +113,68 @@ var PeerWhere = struct {
 
 // PeerRels is where relationship names are stored.
 var PeerRels = struct {
-	LocalAddProviders     string
-	RemoteAddProviders    string
-	CloserPeers           string
-	LocalConnections      string
-	RemoteConnections     string
-	LocalDials            string
-	RemoteDials           string
-	LocalFindNodes        string
-	RemoteFindNodes       string
-	LocalGetProviders     string
-	RemoteGetProviders    string
-	PeerLogs              string
-	PeerStates            string
-	ReferrerPeerStates    string
-	ProviderProviderPeers string
-	ProviderProvides      string
-	RetrieverRetrievals   string
-	RoutingTableEntries   string
-	RoutingTableSnapshots string
+	LocalAddProviderRPCS   string
+	RemoteAddProviderRPCS  string
+	CloserPeers            string
+	LocalConnections       string
+	RemoteConnections      string
+	LocalDials             string
+	RemoteDials            string
+	LocalFindNodesRPCS     string
+	RemoteFindNodesRPCS    string
+	LocalGetProvidersRPCS  string
+	RemoteGetProvidersRPCS string
+	PeerLogs               string
+	PeerStates             string
+	ReferrerPeerStates     string
+	ProviderProviderPeers  string
+	ProviderProvides       string
+	RetrieverRetrievals    string
+	RoutingTableEntries    string
+	RoutingTableSnapshots  string
 }{
-	LocalAddProviders:     "LocalAddProviders",
-	RemoteAddProviders:    "RemoteAddProviders",
-	CloserPeers:           "CloserPeers",
-	LocalConnections:      "LocalConnections",
-	RemoteConnections:     "RemoteConnections",
-	LocalDials:            "LocalDials",
-	RemoteDials:           "RemoteDials",
-	LocalFindNodes:        "LocalFindNodes",
-	RemoteFindNodes:       "RemoteFindNodes",
-	LocalGetProviders:     "LocalGetProviders",
-	RemoteGetProviders:    "RemoteGetProviders",
-	PeerLogs:              "PeerLogs",
-	PeerStates:            "PeerStates",
-	ReferrerPeerStates:    "ReferrerPeerStates",
-	ProviderProviderPeers: "ProviderProviderPeers",
-	ProviderProvides:      "ProviderProvides",
-	RetrieverRetrievals:   "RetrieverRetrievals",
-	RoutingTableEntries:   "RoutingTableEntries",
-	RoutingTableSnapshots: "RoutingTableSnapshots",
+	LocalAddProviderRPCS:   "LocalAddProviderRPCS",
+	RemoteAddProviderRPCS:  "RemoteAddProviderRPCS",
+	CloserPeers:            "CloserPeers",
+	LocalConnections:       "LocalConnections",
+	RemoteConnections:      "RemoteConnections",
+	LocalDials:             "LocalDials",
+	RemoteDials:            "RemoteDials",
+	LocalFindNodesRPCS:     "LocalFindNodesRPCS",
+	RemoteFindNodesRPCS:    "RemoteFindNodesRPCS",
+	LocalGetProvidersRPCS:  "LocalGetProvidersRPCS",
+	RemoteGetProvidersRPCS: "RemoteGetProvidersRPCS",
+	PeerLogs:               "PeerLogs",
+	PeerStates:             "PeerStates",
+	ReferrerPeerStates:     "ReferrerPeerStates",
+	ProviderProviderPeers:  "ProviderProviderPeers",
+	ProviderProvides:       "ProviderProvides",
+	RetrieverRetrievals:    "RetrieverRetrievals",
+	RoutingTableEntries:    "RoutingTableEntries",
+	RoutingTableSnapshots:  "RoutingTableSnapshots",
 }
 
 // peerR is where relationships are stored.
 type peerR struct {
-	LocalAddProviders     AddProviderSlice          `boil:"LocalAddProviders" json:"LocalAddProviders" toml:"LocalAddProviders" yaml:"LocalAddProviders"`
-	RemoteAddProviders    AddProviderSlice          `boil:"RemoteAddProviders" json:"RemoteAddProviders" toml:"RemoteAddProviders" yaml:"RemoteAddProviders"`
-	CloserPeers           CloserPeerSlice           `boil:"CloserPeers" json:"CloserPeers" toml:"CloserPeers" yaml:"CloserPeers"`
-	LocalConnections      ConnectionSlice           `boil:"LocalConnections" json:"LocalConnections" toml:"LocalConnections" yaml:"LocalConnections"`
-	RemoteConnections     ConnectionSlice           `boil:"RemoteConnections" json:"RemoteConnections" toml:"RemoteConnections" yaml:"RemoteConnections"`
-	LocalDials            DialSlice                 `boil:"LocalDials" json:"LocalDials" toml:"LocalDials" yaml:"LocalDials"`
-	RemoteDials           DialSlice                 `boil:"RemoteDials" json:"RemoteDials" toml:"RemoteDials" yaml:"RemoteDials"`
-	LocalFindNodes        FindNodeSlice             `boil:"LocalFindNodes" json:"LocalFindNodes" toml:"LocalFindNodes" yaml:"LocalFindNodes"`
-	RemoteFindNodes       FindNodeSlice             `boil:"RemoteFindNodes" json:"RemoteFindNodes" toml:"RemoteFindNodes" yaml:"RemoteFindNodes"`
-	LocalGetProviders     GetProviderSlice          `boil:"LocalGetProviders" json:"LocalGetProviders" toml:"LocalGetProviders" yaml:"LocalGetProviders"`
-	RemoteGetProviders    GetProviderSlice          `boil:"RemoteGetProviders" json:"RemoteGetProviders" toml:"RemoteGetProviders" yaml:"RemoteGetProviders"`
-	PeerLogs              PeerLogSlice              `boil:"PeerLogs" json:"PeerLogs" toml:"PeerLogs" yaml:"PeerLogs"`
-	PeerStates            PeerStateSlice            `boil:"PeerStates" json:"PeerStates" toml:"PeerStates" yaml:"PeerStates"`
-	ReferrerPeerStates    PeerStateSlice            `boil:"ReferrerPeerStates" json:"ReferrerPeerStates" toml:"ReferrerPeerStates" yaml:"ReferrerPeerStates"`
-	ProviderProviderPeers ProviderPeerSlice         `boil:"ProviderProviderPeers" json:"ProviderProviderPeers" toml:"ProviderProviderPeers" yaml:"ProviderProviderPeers"`
-	ProviderProvides      ProvideSlice              `boil:"ProviderProvides" json:"ProviderProvides" toml:"ProviderProvides" yaml:"ProviderProvides"`
-	RetrieverRetrievals   RetrievalSlice            `boil:"RetrieverRetrievals" json:"RetrieverRetrievals" toml:"RetrieverRetrievals" yaml:"RetrieverRetrievals"`
-	RoutingTableEntries   RoutingTableEntrySlice    `boil:"RoutingTableEntries" json:"RoutingTableEntries" toml:"RoutingTableEntries" yaml:"RoutingTableEntries"`
-	RoutingTableSnapshots RoutingTableSnapshotSlice `boil:"RoutingTableSnapshots" json:"RoutingTableSnapshots" toml:"RoutingTableSnapshots" yaml:"RoutingTableSnapshots"`
+	LocalAddProviderRPCS   AddProviderRPCSlice       `boil:"LocalAddProviderRPCS" json:"LocalAddProviderRPCS" toml:"LocalAddProviderRPCS" yaml:"LocalAddProviderRPCS"`
+	RemoteAddProviderRPCS  AddProviderRPCSlice       `boil:"RemoteAddProviderRPCS" json:"RemoteAddProviderRPCS" toml:"RemoteAddProviderRPCS" yaml:"RemoteAddProviderRPCS"`
+	CloserPeers            CloserPeerSlice           `boil:"CloserPeers" json:"CloserPeers" toml:"CloserPeers" yaml:"CloserPeers"`
+	LocalConnections       ConnectionSlice           `boil:"LocalConnections" json:"LocalConnections" toml:"LocalConnections" yaml:"LocalConnections"`
+	RemoteConnections      ConnectionSlice           `boil:"RemoteConnections" json:"RemoteConnections" toml:"RemoteConnections" yaml:"RemoteConnections"`
+	LocalDials             DialSlice                 `boil:"LocalDials" json:"LocalDials" toml:"LocalDials" yaml:"LocalDials"`
+	RemoteDials            DialSlice                 `boil:"RemoteDials" json:"RemoteDials" toml:"RemoteDials" yaml:"RemoteDials"`
+	LocalFindNodesRPCS     FindNodesRPCSlice         `boil:"LocalFindNodesRPCS" json:"LocalFindNodesRPCS" toml:"LocalFindNodesRPCS" yaml:"LocalFindNodesRPCS"`
+	RemoteFindNodesRPCS    FindNodesRPCSlice         `boil:"RemoteFindNodesRPCS" json:"RemoteFindNodesRPCS" toml:"RemoteFindNodesRPCS" yaml:"RemoteFindNodesRPCS"`
+	LocalGetProvidersRPCS  GetProvidersRPCSlice      `boil:"LocalGetProvidersRPCS" json:"LocalGetProvidersRPCS" toml:"LocalGetProvidersRPCS" yaml:"LocalGetProvidersRPCS"`
+	RemoteGetProvidersRPCS GetProvidersRPCSlice      `boil:"RemoteGetProvidersRPCS" json:"RemoteGetProvidersRPCS" toml:"RemoteGetProvidersRPCS" yaml:"RemoteGetProvidersRPCS"`
+	PeerLogs               PeerLogSlice              `boil:"PeerLogs" json:"PeerLogs" toml:"PeerLogs" yaml:"PeerLogs"`
+	PeerStates             PeerStateSlice            `boil:"PeerStates" json:"PeerStates" toml:"PeerStates" yaml:"PeerStates"`
+	ReferrerPeerStates     PeerStateSlice            `boil:"ReferrerPeerStates" json:"ReferrerPeerStates" toml:"ReferrerPeerStates" yaml:"ReferrerPeerStates"`
+	ProviderProviderPeers  ProviderPeerSlice         `boil:"ProviderProviderPeers" json:"ProviderProviderPeers" toml:"ProviderProviderPeers" yaml:"ProviderProviderPeers"`
+	ProviderProvides       ProvideSlice              `boil:"ProviderProvides" json:"ProviderProvides" toml:"ProviderProvides" yaml:"ProviderProvides"`
+	RetrieverRetrievals    RetrievalSlice            `boil:"RetrieverRetrievals" json:"RetrieverRetrievals" toml:"RetrieverRetrievals" yaml:"RetrieverRetrievals"`
+	RoutingTableEntries    RoutingTableEntrySlice    `boil:"RoutingTableEntries" json:"RoutingTableEntries" toml:"RoutingTableEntries" yaml:"RoutingTableEntries"`
+	RoutingTableSnapshots  RoutingTableSnapshotSlice `boil:"RoutingTableSnapshots" json:"RoutingTableSnapshots" toml:"RoutingTableSnapshots" yaml:"RoutingTableSnapshots"`
 }
 
 // NewStruct creates a new relationship struct
@@ -467,43 +467,43 @@ func (q peerQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool,
 	return count > 0, nil
 }
 
-// LocalAddProviders retrieves all the add_provider's AddProviders with an executor via local_id column.
-func (o *Peer) LocalAddProviders(mods ...qm.QueryMod) addProviderQuery {
+// LocalAddProviderRPCS retrieves all the add_provider_rpc's AddProviderRPCS with an executor via local_id column.
+func (o *Peer) LocalAddProviderRPCS(mods ...qm.QueryMod) addProviderRPCQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"add_providers\".\"local_id\"=?", o.ID),
+		qm.Where("\"add_provider_rpcs\".\"local_id\"=?", o.ID),
 	)
 
-	query := AddProviders(queryMods...)
-	queries.SetFrom(query.Query, "\"add_providers\"")
+	query := AddProviderRPCS(queryMods...)
+	queries.SetFrom(query.Query, "\"add_provider_rpcs\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"add_providers\".*"})
+		queries.SetSelect(query.Query, []string{"\"add_provider_rpcs\".*"})
 	}
 
 	return query
 }
 
-// RemoteAddProviders retrieves all the add_provider's AddProviders with an executor via remote_id column.
-func (o *Peer) RemoteAddProviders(mods ...qm.QueryMod) addProviderQuery {
+// RemoteAddProviderRPCS retrieves all the add_provider_rpc's AddProviderRPCS with an executor via remote_id column.
+func (o *Peer) RemoteAddProviderRPCS(mods ...qm.QueryMod) addProviderRPCQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"add_providers\".\"remote_id\"=?", o.ID),
+		qm.Where("\"add_provider_rpcs\".\"remote_id\"=?", o.ID),
 	)
 
-	query := AddProviders(queryMods...)
-	queries.SetFrom(query.Query, "\"add_providers\"")
+	query := AddProviderRPCS(queryMods...)
+	queries.SetFrom(query.Query, "\"add_provider_rpcs\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"add_providers\".*"})
+		queries.SetSelect(query.Query, []string{"\"add_provider_rpcs\".*"})
 	}
 
 	return query
@@ -614,85 +614,85 @@ func (o *Peer) RemoteDials(mods ...qm.QueryMod) dialQuery {
 	return query
 }
 
-// LocalFindNodes retrieves all the find_node's FindNodes with an executor via local_id column.
-func (o *Peer) LocalFindNodes(mods ...qm.QueryMod) findNodeQuery {
+// LocalFindNodesRPCS retrieves all the find_nodes_rpc's FindNodesRPCS with an executor via local_id column.
+func (o *Peer) LocalFindNodesRPCS(mods ...qm.QueryMod) findNodesRPCQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"find_nodes\".\"local_id\"=?", o.ID),
+		qm.Where("\"find_nodes_rpcs\".\"local_id\"=?", o.ID),
 	)
 
-	query := FindNodes(queryMods...)
-	queries.SetFrom(query.Query, "\"find_nodes\"")
+	query := FindNodesRPCS(queryMods...)
+	queries.SetFrom(query.Query, "\"find_nodes_rpcs\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"find_nodes\".*"})
+		queries.SetSelect(query.Query, []string{"\"find_nodes_rpcs\".*"})
 	}
 
 	return query
 }
 
-// RemoteFindNodes retrieves all the find_node's FindNodes with an executor via remote_id column.
-func (o *Peer) RemoteFindNodes(mods ...qm.QueryMod) findNodeQuery {
+// RemoteFindNodesRPCS retrieves all the find_nodes_rpc's FindNodesRPCS with an executor via remote_id column.
+func (o *Peer) RemoteFindNodesRPCS(mods ...qm.QueryMod) findNodesRPCQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"find_nodes\".\"remote_id\"=?", o.ID),
+		qm.Where("\"find_nodes_rpcs\".\"remote_id\"=?", o.ID),
 	)
 
-	query := FindNodes(queryMods...)
-	queries.SetFrom(query.Query, "\"find_nodes\"")
+	query := FindNodesRPCS(queryMods...)
+	queries.SetFrom(query.Query, "\"find_nodes_rpcs\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"find_nodes\".*"})
+		queries.SetSelect(query.Query, []string{"\"find_nodes_rpcs\".*"})
 	}
 
 	return query
 }
 
-// LocalGetProviders retrieves all the get_provider's GetProviders with an executor via local_id column.
-func (o *Peer) LocalGetProviders(mods ...qm.QueryMod) getProviderQuery {
+// LocalGetProvidersRPCS retrieves all the get_providers_rpc's GetProvidersRPCS with an executor via local_id column.
+func (o *Peer) LocalGetProvidersRPCS(mods ...qm.QueryMod) getProvidersRPCQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"get_providers\".\"local_id\"=?", o.ID),
+		qm.Where("\"get_providers_rpcs\".\"local_id\"=?", o.ID),
 	)
 
-	query := GetProviders(queryMods...)
-	queries.SetFrom(query.Query, "\"get_providers\"")
+	query := GetProvidersRPCS(queryMods...)
+	queries.SetFrom(query.Query, "\"get_providers_rpcs\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"get_providers\".*"})
+		queries.SetSelect(query.Query, []string{"\"get_providers_rpcs\".*"})
 	}
 
 	return query
 }
 
-// RemoteGetProviders retrieves all the get_provider's GetProviders with an executor via remote_id column.
-func (o *Peer) RemoteGetProviders(mods ...qm.QueryMod) getProviderQuery {
+// RemoteGetProvidersRPCS retrieves all the get_providers_rpc's GetProvidersRPCS with an executor via remote_id column.
+func (o *Peer) RemoteGetProvidersRPCS(mods ...qm.QueryMod) getProvidersRPCQuery {
 	var queryMods []qm.QueryMod
 	if len(mods) != 0 {
 		queryMods = append(queryMods, mods...)
 	}
 
 	queryMods = append(queryMods,
-		qm.Where("\"get_providers\".\"remote_id\"=?", o.ID),
+		qm.Where("\"get_providers_rpcs\".\"remote_id\"=?", o.ID),
 	)
 
-	query := GetProviders(queryMods...)
-	queries.SetFrom(query.Query, "\"get_providers\"")
+	query := GetProvidersRPCS(queryMods...)
+	queries.SetFrom(query.Query, "\"get_providers_rpcs\"")
 
 	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"get_providers\".*"})
+		queries.SetSelect(query.Query, []string{"\"get_providers_rpcs\".*"})
 	}
 
 	return query
@@ -866,9 +866,9 @@ func (o *Peer) RoutingTableSnapshots(mods ...qm.QueryMod) routingTableSnapshotQu
 	return query
 }
 
-// LoadLocalAddProviders allows an eager lookup of values, cached into the
+// LoadLocalAddProviderRPCS allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (peerL) LoadLocalAddProviders(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
+func (peerL) LoadLocalAddProviderRPCS(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
 	var slice []*Peer
 	var object *Peer
 
@@ -906,8 +906,8 @@ func (peerL) LoadLocalAddProviders(ctx context.Context, e boil.ContextExecutor, 
 	}
 
 	query := NewQuery(
-		qm.From(`add_providers`),
-		qm.WhereIn(`add_providers.local_id in ?`, args...),
+		qm.From(`add_provider_rpcs`),
+		qm.WhereIn(`add_provider_rpcs.local_id in ?`, args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -915,22 +915,22 @@ func (peerL) LoadLocalAddProviders(ctx context.Context, e boil.ContextExecutor, 
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load add_providers")
+		return errors.Wrap(err, "failed to eager load add_provider_rpcs")
 	}
 
-	var resultSlice []*AddProvider
+	var resultSlice []*AddProviderRPC
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice add_providers")
+		return errors.Wrap(err, "failed to bind eager loaded slice add_provider_rpcs")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on add_providers")
+		return errors.Wrap(err, "failed to close results in eager load on add_provider_rpcs")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for add_providers")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for add_provider_rpcs")
 	}
 
-	if len(addProviderAfterSelectHooks) != 0 {
+	if len(addProviderRPCAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -938,10 +938,10 @@ func (peerL) LoadLocalAddProviders(ctx context.Context, e boil.ContextExecutor, 
 		}
 	}
 	if singular {
-		object.R.LocalAddProviders = resultSlice
+		object.R.LocalAddProviderRPCS = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
-				foreign.R = &addProviderR{}
+				foreign.R = &addProviderRPCR{}
 			}
 			foreign.R.Local = object
 		}
@@ -951,9 +951,9 @@ func (peerL) LoadLocalAddProviders(ctx context.Context, e boil.ContextExecutor, 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
 			if local.ID == foreign.LocalID {
-				local.R.LocalAddProviders = append(local.R.LocalAddProviders, foreign)
+				local.R.LocalAddProviderRPCS = append(local.R.LocalAddProviderRPCS, foreign)
 				if foreign.R == nil {
-					foreign.R = &addProviderR{}
+					foreign.R = &addProviderRPCR{}
 				}
 				foreign.R.Local = local
 				break
@@ -964,9 +964,9 @@ func (peerL) LoadLocalAddProviders(ctx context.Context, e boil.ContextExecutor, 
 	return nil
 }
 
-// LoadRemoteAddProviders allows an eager lookup of values, cached into the
+// LoadRemoteAddProviderRPCS allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (peerL) LoadRemoteAddProviders(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
+func (peerL) LoadRemoteAddProviderRPCS(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
 	var slice []*Peer
 	var object *Peer
 
@@ -1004,8 +1004,8 @@ func (peerL) LoadRemoteAddProviders(ctx context.Context, e boil.ContextExecutor,
 	}
 
 	query := NewQuery(
-		qm.From(`add_providers`),
-		qm.WhereIn(`add_providers.remote_id in ?`, args...),
+		qm.From(`add_provider_rpcs`),
+		qm.WhereIn(`add_provider_rpcs.remote_id in ?`, args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -1013,22 +1013,22 @@ func (peerL) LoadRemoteAddProviders(ctx context.Context, e boil.ContextExecutor,
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load add_providers")
+		return errors.Wrap(err, "failed to eager load add_provider_rpcs")
 	}
 
-	var resultSlice []*AddProvider
+	var resultSlice []*AddProviderRPC
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice add_providers")
+		return errors.Wrap(err, "failed to bind eager loaded slice add_provider_rpcs")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on add_providers")
+		return errors.Wrap(err, "failed to close results in eager load on add_provider_rpcs")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for add_providers")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for add_provider_rpcs")
 	}
 
-	if len(addProviderAfterSelectHooks) != 0 {
+	if len(addProviderRPCAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -1036,10 +1036,10 @@ func (peerL) LoadRemoteAddProviders(ctx context.Context, e boil.ContextExecutor,
 		}
 	}
 	if singular {
-		object.R.RemoteAddProviders = resultSlice
+		object.R.RemoteAddProviderRPCS = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
-				foreign.R = &addProviderR{}
+				foreign.R = &addProviderRPCR{}
 			}
 			foreign.R.Remote = object
 		}
@@ -1049,9 +1049,9 @@ func (peerL) LoadRemoteAddProviders(ctx context.Context, e boil.ContextExecutor,
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
 			if local.ID == foreign.RemoteID {
-				local.R.RemoteAddProviders = append(local.R.RemoteAddProviders, foreign)
+				local.R.RemoteAddProviderRPCS = append(local.R.RemoteAddProviderRPCS, foreign)
 				if foreign.R == nil {
-					foreign.R = &addProviderR{}
+					foreign.R = &addProviderRPCR{}
 				}
 				foreign.R.Remote = local
 				break
@@ -1552,9 +1552,9 @@ func (peerL) LoadRemoteDials(ctx context.Context, e boil.ContextExecutor, singul
 	return nil
 }
 
-// LoadLocalFindNodes allows an eager lookup of values, cached into the
+// LoadLocalFindNodesRPCS allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (peerL) LoadLocalFindNodes(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
+func (peerL) LoadLocalFindNodesRPCS(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
 	var slice []*Peer
 	var object *Peer
 
@@ -1592,8 +1592,8 @@ func (peerL) LoadLocalFindNodes(ctx context.Context, e boil.ContextExecutor, sin
 	}
 
 	query := NewQuery(
-		qm.From(`find_nodes`),
-		qm.WhereIn(`find_nodes.local_id in ?`, args...),
+		qm.From(`find_nodes_rpcs`),
+		qm.WhereIn(`find_nodes_rpcs.local_id in ?`, args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -1601,22 +1601,22 @@ func (peerL) LoadLocalFindNodes(ctx context.Context, e boil.ContextExecutor, sin
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load find_nodes")
+		return errors.Wrap(err, "failed to eager load find_nodes_rpcs")
 	}
 
-	var resultSlice []*FindNode
+	var resultSlice []*FindNodesRPC
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice find_nodes")
+		return errors.Wrap(err, "failed to bind eager loaded slice find_nodes_rpcs")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on find_nodes")
+		return errors.Wrap(err, "failed to close results in eager load on find_nodes_rpcs")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for find_nodes")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for find_nodes_rpcs")
 	}
 
-	if len(findNodeAfterSelectHooks) != 0 {
+	if len(findNodesRPCAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -1624,10 +1624,10 @@ func (peerL) LoadLocalFindNodes(ctx context.Context, e boil.ContextExecutor, sin
 		}
 	}
 	if singular {
-		object.R.LocalFindNodes = resultSlice
+		object.R.LocalFindNodesRPCS = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
-				foreign.R = &findNodeR{}
+				foreign.R = &findNodesRPCR{}
 			}
 			foreign.R.Local = object
 		}
@@ -1637,9 +1637,9 @@ func (peerL) LoadLocalFindNodes(ctx context.Context, e boil.ContextExecutor, sin
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
 			if local.ID == foreign.LocalID {
-				local.R.LocalFindNodes = append(local.R.LocalFindNodes, foreign)
+				local.R.LocalFindNodesRPCS = append(local.R.LocalFindNodesRPCS, foreign)
 				if foreign.R == nil {
-					foreign.R = &findNodeR{}
+					foreign.R = &findNodesRPCR{}
 				}
 				foreign.R.Local = local
 				break
@@ -1650,9 +1650,9 @@ func (peerL) LoadLocalFindNodes(ctx context.Context, e boil.ContextExecutor, sin
 	return nil
 }
 
-// LoadRemoteFindNodes allows an eager lookup of values, cached into the
+// LoadRemoteFindNodesRPCS allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (peerL) LoadRemoteFindNodes(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
+func (peerL) LoadRemoteFindNodesRPCS(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
 	var slice []*Peer
 	var object *Peer
 
@@ -1690,8 +1690,8 @@ func (peerL) LoadRemoteFindNodes(ctx context.Context, e boil.ContextExecutor, si
 	}
 
 	query := NewQuery(
-		qm.From(`find_nodes`),
-		qm.WhereIn(`find_nodes.remote_id in ?`, args...),
+		qm.From(`find_nodes_rpcs`),
+		qm.WhereIn(`find_nodes_rpcs.remote_id in ?`, args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -1699,22 +1699,22 @@ func (peerL) LoadRemoteFindNodes(ctx context.Context, e boil.ContextExecutor, si
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load find_nodes")
+		return errors.Wrap(err, "failed to eager load find_nodes_rpcs")
 	}
 
-	var resultSlice []*FindNode
+	var resultSlice []*FindNodesRPC
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice find_nodes")
+		return errors.Wrap(err, "failed to bind eager loaded slice find_nodes_rpcs")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on find_nodes")
+		return errors.Wrap(err, "failed to close results in eager load on find_nodes_rpcs")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for find_nodes")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for find_nodes_rpcs")
 	}
 
-	if len(findNodeAfterSelectHooks) != 0 {
+	if len(findNodesRPCAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -1722,10 +1722,10 @@ func (peerL) LoadRemoteFindNodes(ctx context.Context, e boil.ContextExecutor, si
 		}
 	}
 	if singular {
-		object.R.RemoteFindNodes = resultSlice
+		object.R.RemoteFindNodesRPCS = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
-				foreign.R = &findNodeR{}
+				foreign.R = &findNodesRPCR{}
 			}
 			foreign.R.Remote = object
 		}
@@ -1735,9 +1735,9 @@ func (peerL) LoadRemoteFindNodes(ctx context.Context, e boil.ContextExecutor, si
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
 			if local.ID == foreign.RemoteID {
-				local.R.RemoteFindNodes = append(local.R.RemoteFindNodes, foreign)
+				local.R.RemoteFindNodesRPCS = append(local.R.RemoteFindNodesRPCS, foreign)
 				if foreign.R == nil {
-					foreign.R = &findNodeR{}
+					foreign.R = &findNodesRPCR{}
 				}
 				foreign.R.Remote = local
 				break
@@ -1748,9 +1748,9 @@ func (peerL) LoadRemoteFindNodes(ctx context.Context, e boil.ContextExecutor, si
 	return nil
 }
 
-// LoadLocalGetProviders allows an eager lookup of values, cached into the
+// LoadLocalGetProvidersRPCS allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (peerL) LoadLocalGetProviders(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
+func (peerL) LoadLocalGetProvidersRPCS(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
 	var slice []*Peer
 	var object *Peer
 
@@ -1788,8 +1788,8 @@ func (peerL) LoadLocalGetProviders(ctx context.Context, e boil.ContextExecutor, 
 	}
 
 	query := NewQuery(
-		qm.From(`get_providers`),
-		qm.WhereIn(`get_providers.local_id in ?`, args...),
+		qm.From(`get_providers_rpcs`),
+		qm.WhereIn(`get_providers_rpcs.local_id in ?`, args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -1797,22 +1797,22 @@ func (peerL) LoadLocalGetProviders(ctx context.Context, e boil.ContextExecutor, 
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load get_providers")
+		return errors.Wrap(err, "failed to eager load get_providers_rpcs")
 	}
 
-	var resultSlice []*GetProvider
+	var resultSlice []*GetProvidersRPC
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice get_providers")
+		return errors.Wrap(err, "failed to bind eager loaded slice get_providers_rpcs")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on get_providers")
+		return errors.Wrap(err, "failed to close results in eager load on get_providers_rpcs")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for get_providers")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for get_providers_rpcs")
 	}
 
-	if len(getProviderAfterSelectHooks) != 0 {
+	if len(getProvidersRPCAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -1820,10 +1820,10 @@ func (peerL) LoadLocalGetProviders(ctx context.Context, e boil.ContextExecutor, 
 		}
 	}
 	if singular {
-		object.R.LocalGetProviders = resultSlice
+		object.R.LocalGetProvidersRPCS = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
-				foreign.R = &getProviderR{}
+				foreign.R = &getProvidersRPCR{}
 			}
 			foreign.R.Local = object
 		}
@@ -1833,9 +1833,9 @@ func (peerL) LoadLocalGetProviders(ctx context.Context, e boil.ContextExecutor, 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
 			if local.ID == foreign.LocalID {
-				local.R.LocalGetProviders = append(local.R.LocalGetProviders, foreign)
+				local.R.LocalGetProvidersRPCS = append(local.R.LocalGetProvidersRPCS, foreign)
 				if foreign.R == nil {
-					foreign.R = &getProviderR{}
+					foreign.R = &getProvidersRPCR{}
 				}
 				foreign.R.Local = local
 				break
@@ -1846,9 +1846,9 @@ func (peerL) LoadLocalGetProviders(ctx context.Context, e boil.ContextExecutor, 
 	return nil
 }
 
-// LoadRemoteGetProviders allows an eager lookup of values, cached into the
+// LoadRemoteGetProvidersRPCS allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (peerL) LoadRemoteGetProviders(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
+func (peerL) LoadRemoteGetProvidersRPCS(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
 	var slice []*Peer
 	var object *Peer
 
@@ -1886,8 +1886,8 @@ func (peerL) LoadRemoteGetProviders(ctx context.Context, e boil.ContextExecutor,
 	}
 
 	query := NewQuery(
-		qm.From(`get_providers`),
-		qm.WhereIn(`get_providers.remote_id in ?`, args...),
+		qm.From(`get_providers_rpcs`),
+		qm.WhereIn(`get_providers_rpcs.remote_id in ?`, args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -1895,22 +1895,22 @@ func (peerL) LoadRemoteGetProviders(ctx context.Context, e boil.ContextExecutor,
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load get_providers")
+		return errors.Wrap(err, "failed to eager load get_providers_rpcs")
 	}
 
-	var resultSlice []*GetProvider
+	var resultSlice []*GetProvidersRPC
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice get_providers")
+		return errors.Wrap(err, "failed to bind eager loaded slice get_providers_rpcs")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on get_providers")
+		return errors.Wrap(err, "failed to close results in eager load on get_providers_rpcs")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for get_providers")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for get_providers_rpcs")
 	}
 
-	if len(getProviderAfterSelectHooks) != 0 {
+	if len(getProvidersRPCAfterSelectHooks) != 0 {
 		for _, obj := range resultSlice {
 			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
 				return err
@@ -1918,10 +1918,10 @@ func (peerL) LoadRemoteGetProviders(ctx context.Context, e boil.ContextExecutor,
 		}
 	}
 	if singular {
-		object.R.RemoteGetProviders = resultSlice
+		object.R.RemoteGetProvidersRPCS = resultSlice
 		for _, foreign := range resultSlice {
 			if foreign.R == nil {
-				foreign.R = &getProviderR{}
+				foreign.R = &getProvidersRPCR{}
 			}
 			foreign.R.Remote = object
 		}
@@ -1931,9 +1931,9 @@ func (peerL) LoadRemoteGetProviders(ctx context.Context, e boil.ContextExecutor,
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
 			if local.ID == foreign.RemoteID {
-				local.R.RemoteGetProviders = append(local.R.RemoteGetProviders, foreign)
+				local.R.RemoteGetProvidersRPCS = append(local.R.RemoteGetProvidersRPCS, foreign)
 				if foreign.R == nil {
-					foreign.R = &getProviderR{}
+					foreign.R = &getProvidersRPCR{}
 				}
 				foreign.R.Remote = local
 				break
@@ -2728,11 +2728,11 @@ func (peerL) LoadRoutingTableSnapshots(ctx context.Context, e boil.ContextExecut
 	return nil
 }
 
-// AddLocalAddProviders adds the given related objects to the existing relationships
+// AddLocalAddProviderRPCS adds the given related objects to the existing relationships
 // of the peer, optionally inserting them as new records.
-// Appends related to o.R.LocalAddProviders.
+// Appends related to o.R.LocalAddProviderRPCS.
 // Sets related.R.Local appropriately.
-func (o *Peer) AddLocalAddProviders(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*AddProvider) error {
+func (o *Peer) AddLocalAddProviderRPCS(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*AddProviderRPC) error {
 	var err error
 	for _, rel := range related {
 		if insert {
@@ -2742,9 +2742,9 @@ func (o *Peer) AddLocalAddProviders(ctx context.Context, exec boil.ContextExecut
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"add_providers\" SET %s WHERE %s",
+				"UPDATE \"add_provider_rpcs\" SET %s WHERE %s",
 				strmangle.SetParamNames("\"", "\"", 1, []string{"local_id"}),
-				strmangle.WhereClause("\"", "\"", 2, addProviderPrimaryKeyColumns),
+				strmangle.WhereClause("\"", "\"", 2, addProviderRPCPrimaryKeyColumns),
 			)
 			values := []interface{}{o.ID, rel.ID}
 
@@ -2763,15 +2763,15 @@ func (o *Peer) AddLocalAddProviders(ctx context.Context, exec boil.ContextExecut
 
 	if o.R == nil {
 		o.R = &peerR{
-			LocalAddProviders: related,
+			LocalAddProviderRPCS: related,
 		}
 	} else {
-		o.R.LocalAddProviders = append(o.R.LocalAddProviders, related...)
+		o.R.LocalAddProviderRPCS = append(o.R.LocalAddProviderRPCS, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &addProviderR{
+			rel.R = &addProviderRPCR{
 				Local: o,
 			}
 		} else {
@@ -2781,11 +2781,11 @@ func (o *Peer) AddLocalAddProviders(ctx context.Context, exec boil.ContextExecut
 	return nil
 }
 
-// AddRemoteAddProviders adds the given related objects to the existing relationships
+// AddRemoteAddProviderRPCS adds the given related objects to the existing relationships
 // of the peer, optionally inserting them as new records.
-// Appends related to o.R.RemoteAddProviders.
+// Appends related to o.R.RemoteAddProviderRPCS.
 // Sets related.R.Remote appropriately.
-func (o *Peer) AddRemoteAddProviders(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*AddProvider) error {
+func (o *Peer) AddRemoteAddProviderRPCS(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*AddProviderRPC) error {
 	var err error
 	for _, rel := range related {
 		if insert {
@@ -2795,9 +2795,9 @@ func (o *Peer) AddRemoteAddProviders(ctx context.Context, exec boil.ContextExecu
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"add_providers\" SET %s WHERE %s",
+				"UPDATE \"add_provider_rpcs\" SET %s WHERE %s",
 				strmangle.SetParamNames("\"", "\"", 1, []string{"remote_id"}),
-				strmangle.WhereClause("\"", "\"", 2, addProviderPrimaryKeyColumns),
+				strmangle.WhereClause("\"", "\"", 2, addProviderRPCPrimaryKeyColumns),
 			)
 			values := []interface{}{o.ID, rel.ID}
 
@@ -2816,15 +2816,15 @@ func (o *Peer) AddRemoteAddProviders(ctx context.Context, exec boil.ContextExecu
 
 	if o.R == nil {
 		o.R = &peerR{
-			RemoteAddProviders: related,
+			RemoteAddProviderRPCS: related,
 		}
 	} else {
-		o.R.RemoteAddProviders = append(o.R.RemoteAddProviders, related...)
+		o.R.RemoteAddProviderRPCS = append(o.R.RemoteAddProviderRPCS, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &addProviderR{
+			rel.R = &addProviderRPCR{
 				Remote: o,
 			}
 		} else {
@@ -2852,7 +2852,7 @@ func (o *Peer) AddCloserPeers(ctx context.Context, exec boil.ContextExecutor, in
 				strmangle.SetParamNames("\"", "\"", 1, []string{"peer_id"}),
 				strmangle.WhereClause("\"", "\"", 2, closerPeerPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.ProvideID, rel.FindNodeID, rel.PeerID}
+			values := []interface{}{o.ID, rel.ProvideID, rel.FindNodeRPCID, rel.PeerID}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)
@@ -3099,11 +3099,11 @@ func (o *Peer) AddRemoteDials(ctx context.Context, exec boil.ContextExecutor, in
 	return nil
 }
 
-// AddLocalFindNodes adds the given related objects to the existing relationships
+// AddLocalFindNodesRPCS adds the given related objects to the existing relationships
 // of the peer, optionally inserting them as new records.
-// Appends related to o.R.LocalFindNodes.
+// Appends related to o.R.LocalFindNodesRPCS.
 // Sets related.R.Local appropriately.
-func (o *Peer) AddLocalFindNodes(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*FindNode) error {
+func (o *Peer) AddLocalFindNodesRPCS(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*FindNodesRPC) error {
 	var err error
 	for _, rel := range related {
 		if insert {
@@ -3113,9 +3113,9 @@ func (o *Peer) AddLocalFindNodes(ctx context.Context, exec boil.ContextExecutor,
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"find_nodes\" SET %s WHERE %s",
+				"UPDATE \"find_nodes_rpcs\" SET %s WHERE %s",
 				strmangle.SetParamNames("\"", "\"", 1, []string{"local_id"}),
-				strmangle.WhereClause("\"", "\"", 2, findNodePrimaryKeyColumns),
+				strmangle.WhereClause("\"", "\"", 2, findNodesRPCPrimaryKeyColumns),
 			)
 			values := []interface{}{o.ID, rel.ID}
 
@@ -3134,15 +3134,15 @@ func (o *Peer) AddLocalFindNodes(ctx context.Context, exec boil.ContextExecutor,
 
 	if o.R == nil {
 		o.R = &peerR{
-			LocalFindNodes: related,
+			LocalFindNodesRPCS: related,
 		}
 	} else {
-		o.R.LocalFindNodes = append(o.R.LocalFindNodes, related...)
+		o.R.LocalFindNodesRPCS = append(o.R.LocalFindNodesRPCS, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &findNodeR{
+			rel.R = &findNodesRPCR{
 				Local: o,
 			}
 		} else {
@@ -3152,11 +3152,11 @@ func (o *Peer) AddLocalFindNodes(ctx context.Context, exec boil.ContextExecutor,
 	return nil
 }
 
-// AddRemoteFindNodes adds the given related objects to the existing relationships
+// AddRemoteFindNodesRPCS adds the given related objects to the existing relationships
 // of the peer, optionally inserting them as new records.
-// Appends related to o.R.RemoteFindNodes.
+// Appends related to o.R.RemoteFindNodesRPCS.
 // Sets related.R.Remote appropriately.
-func (o *Peer) AddRemoteFindNodes(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*FindNode) error {
+func (o *Peer) AddRemoteFindNodesRPCS(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*FindNodesRPC) error {
 	var err error
 	for _, rel := range related {
 		if insert {
@@ -3166,9 +3166,9 @@ func (o *Peer) AddRemoteFindNodes(ctx context.Context, exec boil.ContextExecutor
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"find_nodes\" SET %s WHERE %s",
+				"UPDATE \"find_nodes_rpcs\" SET %s WHERE %s",
 				strmangle.SetParamNames("\"", "\"", 1, []string{"remote_id"}),
-				strmangle.WhereClause("\"", "\"", 2, findNodePrimaryKeyColumns),
+				strmangle.WhereClause("\"", "\"", 2, findNodesRPCPrimaryKeyColumns),
 			)
 			values := []interface{}{o.ID, rel.ID}
 
@@ -3187,15 +3187,15 @@ func (o *Peer) AddRemoteFindNodes(ctx context.Context, exec boil.ContextExecutor
 
 	if o.R == nil {
 		o.R = &peerR{
-			RemoteFindNodes: related,
+			RemoteFindNodesRPCS: related,
 		}
 	} else {
-		o.R.RemoteFindNodes = append(o.R.RemoteFindNodes, related...)
+		o.R.RemoteFindNodesRPCS = append(o.R.RemoteFindNodesRPCS, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &findNodeR{
+			rel.R = &findNodesRPCR{
 				Remote: o,
 			}
 		} else {
@@ -3205,11 +3205,11 @@ func (o *Peer) AddRemoteFindNodes(ctx context.Context, exec boil.ContextExecutor
 	return nil
 }
 
-// AddLocalGetProviders adds the given related objects to the existing relationships
+// AddLocalGetProvidersRPCS adds the given related objects to the existing relationships
 // of the peer, optionally inserting them as new records.
-// Appends related to o.R.LocalGetProviders.
+// Appends related to o.R.LocalGetProvidersRPCS.
 // Sets related.R.Local appropriately.
-func (o *Peer) AddLocalGetProviders(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*GetProvider) error {
+func (o *Peer) AddLocalGetProvidersRPCS(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*GetProvidersRPC) error {
 	var err error
 	for _, rel := range related {
 		if insert {
@@ -3219,9 +3219,9 @@ func (o *Peer) AddLocalGetProviders(ctx context.Context, exec boil.ContextExecut
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"get_providers\" SET %s WHERE %s",
+				"UPDATE \"get_providers_rpcs\" SET %s WHERE %s",
 				strmangle.SetParamNames("\"", "\"", 1, []string{"local_id"}),
-				strmangle.WhereClause("\"", "\"", 2, getProviderPrimaryKeyColumns),
+				strmangle.WhereClause("\"", "\"", 2, getProvidersRPCPrimaryKeyColumns),
 			)
 			values := []interface{}{o.ID, rel.ID}
 
@@ -3240,15 +3240,15 @@ func (o *Peer) AddLocalGetProviders(ctx context.Context, exec boil.ContextExecut
 
 	if o.R == nil {
 		o.R = &peerR{
-			LocalGetProviders: related,
+			LocalGetProvidersRPCS: related,
 		}
 	} else {
-		o.R.LocalGetProviders = append(o.R.LocalGetProviders, related...)
+		o.R.LocalGetProvidersRPCS = append(o.R.LocalGetProvidersRPCS, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &getProviderR{
+			rel.R = &getProvidersRPCR{
 				Local: o,
 			}
 		} else {
@@ -3258,11 +3258,11 @@ func (o *Peer) AddLocalGetProviders(ctx context.Context, exec boil.ContextExecut
 	return nil
 }
 
-// AddRemoteGetProviders adds the given related objects to the existing relationships
+// AddRemoteGetProvidersRPCS adds the given related objects to the existing relationships
 // of the peer, optionally inserting them as new records.
-// Appends related to o.R.RemoteGetProviders.
+// Appends related to o.R.RemoteGetProvidersRPCS.
 // Sets related.R.Remote appropriately.
-func (o *Peer) AddRemoteGetProviders(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*GetProvider) error {
+func (o *Peer) AddRemoteGetProvidersRPCS(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*GetProvidersRPC) error {
 	var err error
 	for _, rel := range related {
 		if insert {
@@ -3272,9 +3272,9 @@ func (o *Peer) AddRemoteGetProviders(ctx context.Context, exec boil.ContextExecu
 			}
 		} else {
 			updateQuery := fmt.Sprintf(
-				"UPDATE \"get_providers\" SET %s WHERE %s",
+				"UPDATE \"get_providers_rpcs\" SET %s WHERE %s",
 				strmangle.SetParamNames("\"", "\"", 1, []string{"remote_id"}),
-				strmangle.WhereClause("\"", "\"", 2, getProviderPrimaryKeyColumns),
+				strmangle.WhereClause("\"", "\"", 2, getProvidersRPCPrimaryKeyColumns),
 			)
 			values := []interface{}{o.ID, rel.ID}
 
@@ -3293,15 +3293,15 @@ func (o *Peer) AddRemoteGetProviders(ctx context.Context, exec boil.ContextExecu
 
 	if o.R == nil {
 		o.R = &peerR{
-			RemoteGetProviders: related,
+			RemoteGetProvidersRPCS: related,
 		}
 	} else {
-		o.R.RemoteGetProviders = append(o.R.RemoteGetProviders, related...)
+		o.R.RemoteGetProvidersRPCS = append(o.R.RemoteGetProvidersRPCS, related...)
 	}
 
 	for _, rel := range related {
 		if rel.R == nil {
-			rel.R = &getProviderR{
+			rel.R = &getProvidersRPCR{
 				Remote: o,
 			}
 		} else {

@@ -24,66 +24,66 @@ import (
 
 // ProviderPeer is an object representing the database table.
 type ProviderPeer struct {
-	ID              int              `boil:"id" json:"id" toml:"id" yaml:"id"`
-	GetProvidersID  int              `boil:"get_providers_id" json:"get_providers_id" toml:"get_providers_id" yaml:"get_providers_id"`
-	ProviderID      int              `boil:"provider_id" json:"provider_id" toml:"provider_id" yaml:"provider_id"`
-	MultiAddressIds types.Int64Array `boil:"multi_address_ids" json:"multi_address_ids" toml:"multi_address_ids" yaml:"multi_address_ids"`
+	ID                int              `boil:"id" json:"id" toml:"id" yaml:"id"`
+	GetProvidersRPCID int              `boil:"get_providers_rpc_id" json:"get_providers_rpc_id" toml:"get_providers_rpc_id" yaml:"get_providers_rpc_id"`
+	ProviderID        int              `boil:"provider_id" json:"provider_id" toml:"provider_id" yaml:"provider_id"`
+	MultiAddressIds   types.Int64Array `boil:"multi_address_ids" json:"multi_address_ids" toml:"multi_address_ids" yaml:"multi_address_ids"`
 
 	R *providerPeerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L providerPeerL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var ProviderPeerColumns = struct {
-	ID              string
-	GetProvidersID  string
-	ProviderID      string
-	MultiAddressIds string
+	ID                string
+	GetProvidersRPCID string
+	ProviderID        string
+	MultiAddressIds   string
 }{
-	ID:              "id",
-	GetProvidersID:  "get_providers_id",
-	ProviderID:      "provider_id",
-	MultiAddressIds: "multi_address_ids",
+	ID:                "id",
+	GetProvidersRPCID: "get_providers_rpc_id",
+	ProviderID:        "provider_id",
+	MultiAddressIds:   "multi_address_ids",
 }
 
 var ProviderPeerTableColumns = struct {
-	ID              string
-	GetProvidersID  string
-	ProviderID      string
-	MultiAddressIds string
+	ID                string
+	GetProvidersRPCID string
+	ProviderID        string
+	MultiAddressIds   string
 }{
-	ID:              "provider_peers.id",
-	GetProvidersID:  "provider_peers.get_providers_id",
-	ProviderID:      "provider_peers.provider_id",
-	MultiAddressIds: "provider_peers.multi_address_ids",
+	ID:                "provider_peers.id",
+	GetProvidersRPCID: "provider_peers.get_providers_rpc_id",
+	ProviderID:        "provider_peers.provider_id",
+	MultiAddressIds:   "provider_peers.multi_address_ids",
 }
 
 // Generated where
 
 var ProviderPeerWhere = struct {
-	ID              whereHelperint
-	GetProvidersID  whereHelperint
-	ProviderID      whereHelperint
-	MultiAddressIds whereHelpertypes_Int64Array
+	ID                whereHelperint
+	GetProvidersRPCID whereHelperint
+	ProviderID        whereHelperint
+	MultiAddressIds   whereHelpertypes_Int64Array
 }{
-	ID:              whereHelperint{field: "\"provider_peers\".\"id\""},
-	GetProvidersID:  whereHelperint{field: "\"provider_peers\".\"get_providers_id\""},
-	ProviderID:      whereHelperint{field: "\"provider_peers\".\"provider_id\""},
-	MultiAddressIds: whereHelpertypes_Int64Array{field: "\"provider_peers\".\"multi_address_ids\""},
+	ID:                whereHelperint{field: "\"provider_peers\".\"id\""},
+	GetProvidersRPCID: whereHelperint{field: "\"provider_peers\".\"get_providers_rpc_id\""},
+	ProviderID:        whereHelperint{field: "\"provider_peers\".\"provider_id\""},
+	MultiAddressIds:   whereHelpertypes_Int64Array{field: "\"provider_peers\".\"multi_address_ids\""},
 }
 
 // ProviderPeerRels is where relationship names are stored.
 var ProviderPeerRels = struct {
-	GetProvider string
-	Provider    string
+	GetProvidersRPC string
+	Provider        string
 }{
-	GetProvider: "GetProvider",
-	Provider:    "Provider",
+	GetProvidersRPC: "GetProvidersRPC",
+	Provider:        "Provider",
 }
 
 // providerPeerR is where relationships are stored.
 type providerPeerR struct {
-	GetProvider *GetProvider `boil:"GetProvider" json:"GetProvider" toml:"GetProvider" yaml:"GetProvider"`
-	Provider    *Peer        `boil:"Provider" json:"Provider" toml:"Provider" yaml:"Provider"`
+	GetProvidersRPC *GetProvidersRPC `boil:"GetProvidersRPC" json:"GetProvidersRPC" toml:"GetProvidersRPC" yaml:"GetProvidersRPC"`
+	Provider        *Peer            `boil:"Provider" json:"Provider" toml:"Provider" yaml:"Provider"`
 }
 
 // NewStruct creates a new relationship struct
@@ -95,8 +95,8 @@ func (*providerPeerR) NewStruct() *providerPeerR {
 type providerPeerL struct{}
 
 var (
-	providerPeerAllColumns            = []string{"id", "get_providers_id", "provider_id", "multi_address_ids"}
-	providerPeerColumnsWithoutDefault = []string{"get_providers_id", "provider_id", "multi_address_ids"}
+	providerPeerAllColumns            = []string{"id", "get_providers_rpc_id", "provider_id", "multi_address_ids"}
+	providerPeerColumnsWithoutDefault = []string{"get_providers_rpc_id", "provider_id", "multi_address_ids"}
 	providerPeerColumnsWithDefault    = []string{"id"}
 	providerPeerPrimaryKeyColumns     = []string{"id"}
 )
@@ -376,16 +376,16 @@ func (q providerPeerQuery) Exists(ctx context.Context, exec boil.ContextExecutor
 	return count > 0, nil
 }
 
-// GetProvider pointed to by the foreign key.
-func (o *ProviderPeer) GetProvider(mods ...qm.QueryMod) getProviderQuery {
+// GetProvidersRPC pointed to by the foreign key.
+func (o *ProviderPeer) GetProvidersRPC(mods ...qm.QueryMod) getProvidersRPCQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.GetProvidersID),
+		qm.Where("\"id\" = ?", o.GetProvidersRPCID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
-	query := GetProviders(queryMods...)
-	queries.SetFrom(query.Query, "\"get_providers\"")
+	query := GetProvidersRPCS(queryMods...)
+	queries.SetFrom(query.Query, "\"get_providers_rpcs\"")
 
 	return query
 }
@@ -404,9 +404,9 @@ func (o *ProviderPeer) Provider(mods ...qm.QueryMod) peerQuery {
 	return query
 }
 
-// LoadGetProvider allows an eager lookup of values, cached into the
+// LoadGetProvidersRPC allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
-func (providerPeerL) LoadGetProvider(ctx context.Context, e boil.ContextExecutor, singular bool, maybeProviderPeer interface{}, mods queries.Applicator) error {
+func (providerPeerL) LoadGetProvidersRPC(ctx context.Context, e boil.ContextExecutor, singular bool, maybeProviderPeer interface{}, mods queries.Applicator) error {
 	var slice []*ProviderPeer
 	var object *ProviderPeer
 
@@ -421,7 +421,7 @@ func (providerPeerL) LoadGetProvider(ctx context.Context, e boil.ContextExecutor
 		if object.R == nil {
 			object.R = &providerPeerR{}
 		}
-		args = append(args, object.GetProvidersID)
+		args = append(args, object.GetProvidersRPCID)
 
 	} else {
 	Outer:
@@ -431,12 +431,12 @@ func (providerPeerL) LoadGetProvider(ctx context.Context, e boil.ContextExecutor
 			}
 
 			for _, a := range args {
-				if a == obj.GetProvidersID {
+				if a == obj.GetProvidersRPCID {
 					continue Outer
 				}
 			}
 
-			args = append(args, obj.GetProvidersID)
+			args = append(args, obj.GetProvidersRPCID)
 
 		}
 	}
@@ -446,8 +446,8 @@ func (providerPeerL) LoadGetProvider(ctx context.Context, e boil.ContextExecutor
 	}
 
 	query := NewQuery(
-		qm.From(`get_providers`),
-		qm.WhereIn(`get_providers.id in ?`, args...),
+		qm.From(`get_providers_rpcs`),
+		qm.WhereIn(`get_providers_rpcs.id in ?`, args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -455,19 +455,19 @@ func (providerPeerL) LoadGetProvider(ctx context.Context, e boil.ContextExecutor
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load GetProvider")
+		return errors.Wrap(err, "failed to eager load GetProvidersRPC")
 	}
 
-	var resultSlice []*GetProvider
+	var resultSlice []*GetProvidersRPC
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice GetProvider")
+		return errors.Wrap(err, "failed to bind eager loaded slice GetProvidersRPC")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for get_providers")
+		return errors.Wrap(err, "failed to close results of eager load for get_providers_rpcs")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for get_providers")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for get_providers_rpcs")
 	}
 
 	if len(providerPeerAfterSelectHooks) != 0 {
@@ -484,9 +484,9 @@ func (providerPeerL) LoadGetProvider(ctx context.Context, e boil.ContextExecutor
 
 	if singular {
 		foreign := resultSlice[0]
-		object.R.GetProvider = foreign
+		object.R.GetProvidersRPC = foreign
 		if foreign.R == nil {
-			foreign.R = &getProviderR{}
+			foreign.R = &getProvidersRPCR{}
 		}
 		foreign.R.ProviderPeers = append(foreign.R.ProviderPeers, object)
 		return nil
@@ -494,10 +494,10 @@ func (providerPeerL) LoadGetProvider(ctx context.Context, e boil.ContextExecutor
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.GetProvidersID == foreign.ID {
-				local.R.GetProvider = foreign
+			if local.GetProvidersRPCID == foreign.ID {
+				local.R.GetProvidersRPC = foreign
 				if foreign.R == nil {
-					foreign.R = &getProviderR{}
+					foreign.R = &getProvidersRPCR{}
 				}
 				foreign.R.ProviderPeers = append(foreign.R.ProviderPeers, local)
 				break
@@ -612,10 +612,10 @@ func (providerPeerL) LoadProvider(ctx context.Context, e boil.ContextExecutor, s
 	return nil
 }
 
-// SetGetProvider of the providerPeer to the related item.
-// Sets o.R.GetProvider to related.
+// SetGetProvidersRPC of the providerPeer to the related item.
+// Sets o.R.GetProvidersRPC to related.
 // Adds o to related.R.ProviderPeers.
-func (o *ProviderPeer) SetGetProvider(ctx context.Context, exec boil.ContextExecutor, insert bool, related *GetProvider) error {
+func (o *ProviderPeer) SetGetProvidersRPC(ctx context.Context, exec boil.ContextExecutor, insert bool, related *GetProvidersRPC) error {
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
@@ -625,7 +625,7 @@ func (o *ProviderPeer) SetGetProvider(ctx context.Context, exec boil.ContextExec
 
 	updateQuery := fmt.Sprintf(
 		"UPDATE \"provider_peers\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"get_providers_id"}),
+		strmangle.SetParamNames("\"", "\"", 1, []string{"get_providers_rpc_id"}),
 		strmangle.WhereClause("\"", "\"", 2, providerPeerPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
@@ -639,17 +639,17 @@ func (o *ProviderPeer) SetGetProvider(ctx context.Context, exec boil.ContextExec
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.GetProvidersID = related.ID
+	o.GetProvidersRPCID = related.ID
 	if o.R == nil {
 		o.R = &providerPeerR{
-			GetProvider: related,
+			GetProvidersRPC: related,
 		}
 	} else {
-		o.R.GetProvider = related
+		o.R.GetProvidersRPC = related
 	}
 
 	if related.R == nil {
-		related.R = &getProviderR{
+		related.R = &getProvidersRPCR{
 			ProviderPeers: ProviderPeerSlice{o},
 		}
 	} else {
