@@ -6,7 +6,7 @@ test:
 	go test ./...
 
 build:
-	go build -o dist/optprov *.go
+	go build -o optprov cmd/optprov/main.go
 
 linux-build:
 	GOOS=linux GOARCH=amd64 go build -o dist/optprov cmd/optprov/*
