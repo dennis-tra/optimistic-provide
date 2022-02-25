@@ -1586,7 +1586,7 @@ func testPeerToManyReferrerPeerStates(t *testing.T) {
 	}
 }
 
-func testPeerToManyRemoteProviderPeers(t *testing.T) {
+func testPeerToManyProviderProviderPeers(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -1611,8 +1611,8 @@ func testPeerToManyRemoteProviderPeers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b.RemoteID = a.ID
-	c.RemoteID = a.ID
+	b.ProviderID = a.ID
+	c.ProviderID = a.ID
 
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
@@ -1621,17 +1621,17 @@ func testPeerToManyRemoteProviderPeers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	check, err := a.RemoteProviderPeers().All(ctx, tx)
+	check, err := a.ProviderProviderPeers().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	bFound, cFound := false, false
 	for _, v := range check {
-		if v.RemoteID == b.RemoteID {
+		if v.ProviderID == b.ProviderID {
 			bFound = true
 		}
-		if v.RemoteID == c.RemoteID {
+		if v.ProviderID == c.ProviderID {
 			cFound = true
 		}
 	}
@@ -1644,18 +1644,18 @@ func testPeerToManyRemoteProviderPeers(t *testing.T) {
 	}
 
 	slice := PeerSlice{&a}
-	if err = a.L.LoadRemoteProviderPeers(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
+	if err = a.L.LoadProviderProviderPeers(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.RemoteProviderPeers); got != 2 {
+	if got := len(a.R.ProviderProviderPeers); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.RemoteProviderPeers = nil
-	if err = a.L.LoadRemoteProviderPeers(ctx, tx, true, &a, nil); err != nil {
+	a.R.ProviderProviderPeers = nil
+	if err = a.L.LoadProviderProviderPeers(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.RemoteProviderPeers); got != 2 {
+	if got := len(a.R.ProviderProviderPeers); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -3026,7 +3026,7 @@ func testPeerToManyAddOpReferrerPeerStates(t *testing.T) {
 		}
 	}
 }
-func testPeerToManyAddOpRemoteProviderPeers(t *testing.T) {
+func testPeerToManyAddOpProviderProviderPeers(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -3063,7 +3063,7 @@ func testPeerToManyAddOpRemoteProviderPeers(t *testing.T) {
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddRemoteProviderPeers(ctx, tx, i != 0, x...)
+		err = a.AddProviderProviderPeers(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -3071,28 +3071,28 @@ func testPeerToManyAddOpRemoteProviderPeers(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ID != first.RemoteID {
-			t.Error("foreign key was wrong value", a.ID, first.RemoteID)
+		if a.ID != first.ProviderID {
+			t.Error("foreign key was wrong value", a.ID, first.ProviderID)
 		}
-		if a.ID != second.RemoteID {
-			t.Error("foreign key was wrong value", a.ID, second.RemoteID)
+		if a.ID != second.ProviderID {
+			t.Error("foreign key was wrong value", a.ID, second.ProviderID)
 		}
 
-		if first.R.Remote != &a {
+		if first.R.Provider != &a {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
-		if second.R.Remote != &a {
+		if second.R.Provider != &a {
 			t.Error("relationship was not added properly to the foreign slice")
 		}
 
-		if a.R.RemoteProviderPeers[i*2] != first {
+		if a.R.ProviderProviderPeers[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.RemoteProviderPeers[i*2+1] != second {
+		if a.R.ProviderProviderPeers[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.RemoteProviderPeers().Count(ctx, tx)
+		count, err := a.ProviderProviderPeers().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}

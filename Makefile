@@ -32,7 +32,7 @@ models:
 
 make open-api:
 	oapi-codegen -generate types -package types ./pkg/api/openapi.yaml > ./pkg/api/types/types.gen.go
-	openapi-generator generate -g typescript-fetch -i ./pkg/api/openapi.yaml -o ./optprov/src/api --global-property client --additional-properties=supportsES6=true,typescriptThreePlus=true
+	openapi-generator generate -g typescript-fetch -i ./pkg/api/openapi.yaml -o ./optprov/src/api --global-property models --additional-properties=supportsES6=true,typescriptThreePlus=true
 
 test-db:
 	docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_USER=optprov -e POSTGRES_DB=optprov postgres:13

@@ -40,13 +40,10 @@ const HostCard: React.FC<HostCardProps> = ({ host }) => {
           height: 240,
         }}
       >
-        <Typography component="h2" variant="h6" color="primary" gutterBottom>
-          {host.name}
-        </Typography>
         <Tooltip title={`Click to copy: ${host.hostId}`}>
           <Typography
             component="p"
-            variant="h4"
+            variant="h6"
             noWrap
             onClick={() => {
               navigator.clipboard.writeText(host.hostId);
@@ -57,6 +54,9 @@ const HostCard: React.FC<HostCardProps> = ({ host }) => {
             {host.hostId}
           </Typography>
         </Tooltip>
+        <Typography component="h2" variant="h4" color="primary">
+          {host.name}
+        </Typography>
         <Tooltip title={new Date(host.createdAt).toLocaleString()}>
           <Typography color="text.secondary" noWrap>
             Created <ReactTimeAgo date={new Date(host.createdAt)} />

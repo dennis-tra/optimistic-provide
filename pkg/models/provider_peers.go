@@ -26,7 +26,7 @@ import (
 type ProviderPeer struct {
 	ID              int              `boil:"id" json:"id" toml:"id" yaml:"id"`
 	GetProvidersID  int              `boil:"get_providers_id" json:"get_providers_id" toml:"get_providers_id" yaml:"get_providers_id"`
-	RemoteID        int              `boil:"remote_id" json:"remote_id" toml:"remote_id" yaml:"remote_id"`
+	ProviderID      int              `boil:"provider_id" json:"provider_id" toml:"provider_id" yaml:"provider_id"`
 	MultiAddressIds types.Int64Array `boil:"multi_address_ids" json:"multi_address_ids" toml:"multi_address_ids" yaml:"multi_address_ids"`
 
 	R *providerPeerR `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -36,24 +36,24 @@ type ProviderPeer struct {
 var ProviderPeerColumns = struct {
 	ID              string
 	GetProvidersID  string
-	RemoteID        string
+	ProviderID      string
 	MultiAddressIds string
 }{
 	ID:              "id",
 	GetProvidersID:  "get_providers_id",
-	RemoteID:        "remote_id",
+	ProviderID:      "provider_id",
 	MultiAddressIds: "multi_address_ids",
 }
 
 var ProviderPeerTableColumns = struct {
 	ID              string
 	GetProvidersID  string
-	RemoteID        string
+	ProviderID      string
 	MultiAddressIds string
 }{
 	ID:              "provider_peers.id",
 	GetProvidersID:  "provider_peers.get_providers_id",
-	RemoteID:        "provider_peers.remote_id",
+	ProviderID:      "provider_peers.provider_id",
 	MultiAddressIds: "provider_peers.multi_address_ids",
 }
 
@@ -62,28 +62,28 @@ var ProviderPeerTableColumns = struct {
 var ProviderPeerWhere = struct {
 	ID              whereHelperint
 	GetProvidersID  whereHelperint
-	RemoteID        whereHelperint
+	ProviderID      whereHelperint
 	MultiAddressIds whereHelpertypes_Int64Array
 }{
 	ID:              whereHelperint{field: "\"provider_peers\".\"id\""},
 	GetProvidersID:  whereHelperint{field: "\"provider_peers\".\"get_providers_id\""},
-	RemoteID:        whereHelperint{field: "\"provider_peers\".\"remote_id\""},
+	ProviderID:      whereHelperint{field: "\"provider_peers\".\"provider_id\""},
 	MultiAddressIds: whereHelpertypes_Int64Array{field: "\"provider_peers\".\"multi_address_ids\""},
 }
 
 // ProviderPeerRels is where relationship names are stored.
 var ProviderPeerRels = struct {
 	GetProvider string
-	Remote      string
+	Provider    string
 }{
 	GetProvider: "GetProvider",
-	Remote:      "Remote",
+	Provider:    "Provider",
 }
 
 // providerPeerR is where relationships are stored.
 type providerPeerR struct {
 	GetProvider *GetProvider `boil:"GetProvider" json:"GetProvider" toml:"GetProvider" yaml:"GetProvider"`
-	Remote      *Peer        `boil:"Remote" json:"Remote" toml:"Remote" yaml:"Remote"`
+	Provider    *Peer        `boil:"Provider" json:"Provider" toml:"Provider" yaml:"Provider"`
 }
 
 // NewStruct creates a new relationship struct
@@ -95,8 +95,8 @@ func (*providerPeerR) NewStruct() *providerPeerR {
 type providerPeerL struct{}
 
 var (
-	providerPeerAllColumns            = []string{"id", "get_providers_id", "remote_id", "multi_address_ids"}
-	providerPeerColumnsWithoutDefault = []string{"get_providers_id", "remote_id", "multi_address_ids"}
+	providerPeerAllColumns            = []string{"id", "get_providers_id", "provider_id", "multi_address_ids"}
+	providerPeerColumnsWithoutDefault = []string{"get_providers_id", "provider_id", "multi_address_ids"}
 	providerPeerColumnsWithDefault    = []string{"id"}
 	providerPeerPrimaryKeyColumns     = []string{"id"}
 )
@@ -390,10 +390,10 @@ func (o *ProviderPeer) GetProvider(mods ...qm.QueryMod) getProviderQuery {
 	return query
 }
 
-// Remote pointed to by the foreign key.
-func (o *ProviderPeer) Remote(mods ...qm.QueryMod) peerQuery {
+// Provider pointed to by the foreign key.
+func (o *ProviderPeer) Provider(mods ...qm.QueryMod) peerQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.RemoteID),
+		qm.Where("\"id\" = ?", o.ProviderID),
 	}
 
 	queryMods = append(queryMods, mods...)
@@ -508,9 +508,9 @@ func (providerPeerL) LoadGetProvider(ctx context.Context, e boil.ContextExecutor
 	return nil
 }
 
-// LoadRemote allows an eager lookup of values, cached into the
+// LoadProvider allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
-func (providerPeerL) LoadRemote(ctx context.Context, e boil.ContextExecutor, singular bool, maybeProviderPeer interface{}, mods queries.Applicator) error {
+func (providerPeerL) LoadProvider(ctx context.Context, e boil.ContextExecutor, singular bool, maybeProviderPeer interface{}, mods queries.Applicator) error {
 	var slice []*ProviderPeer
 	var object *ProviderPeer
 
@@ -525,7 +525,7 @@ func (providerPeerL) LoadRemote(ctx context.Context, e boil.ContextExecutor, sin
 		if object.R == nil {
 			object.R = &providerPeerR{}
 		}
-		args = append(args, object.RemoteID)
+		args = append(args, object.ProviderID)
 
 	} else {
 	Outer:
@@ -535,12 +535,12 @@ func (providerPeerL) LoadRemote(ctx context.Context, e boil.ContextExecutor, sin
 			}
 
 			for _, a := range args {
-				if a == obj.RemoteID {
+				if a == obj.ProviderID {
 					continue Outer
 				}
 			}
 
-			args = append(args, obj.RemoteID)
+			args = append(args, obj.ProviderID)
 
 		}
 	}
@@ -588,22 +588,22 @@ func (providerPeerL) LoadRemote(ctx context.Context, e boil.ContextExecutor, sin
 
 	if singular {
 		foreign := resultSlice[0]
-		object.R.Remote = foreign
+		object.R.Provider = foreign
 		if foreign.R == nil {
 			foreign.R = &peerR{}
 		}
-		foreign.R.RemoteProviderPeers = append(foreign.R.RemoteProviderPeers, object)
+		foreign.R.ProviderProviderPeers = append(foreign.R.ProviderProviderPeers, object)
 		return nil
 	}
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.RemoteID == foreign.ID {
-				local.R.Remote = foreign
+			if local.ProviderID == foreign.ID {
+				local.R.Provider = foreign
 				if foreign.R == nil {
 					foreign.R = &peerR{}
 				}
-				foreign.R.RemoteProviderPeers = append(foreign.R.RemoteProviderPeers, local)
+				foreign.R.ProviderProviderPeers = append(foreign.R.ProviderProviderPeers, local)
 				break
 			}
 		}
@@ -659,10 +659,10 @@ func (o *ProviderPeer) SetGetProvider(ctx context.Context, exec boil.ContextExec
 	return nil
 }
 
-// SetRemote of the providerPeer to the related item.
-// Sets o.R.Remote to related.
-// Adds o to related.R.RemoteProviderPeers.
-func (o *ProviderPeer) SetRemote(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Peer) error {
+// SetProvider of the providerPeer to the related item.
+// Sets o.R.Provider to related.
+// Adds o to related.R.ProviderProviderPeers.
+func (o *ProviderPeer) SetProvider(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Peer) error {
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
@@ -672,7 +672,7 @@ func (o *ProviderPeer) SetRemote(ctx context.Context, exec boil.ContextExecutor,
 
 	updateQuery := fmt.Sprintf(
 		"UPDATE \"provider_peers\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"remote_id"}),
+		strmangle.SetParamNames("\"", "\"", 1, []string{"provider_id"}),
 		strmangle.WhereClause("\"", "\"", 2, providerPeerPrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
@@ -686,21 +686,21 @@ func (o *ProviderPeer) SetRemote(ctx context.Context, exec boil.ContextExecutor,
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.RemoteID = related.ID
+	o.ProviderID = related.ID
 	if o.R == nil {
 		o.R = &providerPeerR{
-			Remote: related,
+			Provider: related,
 		}
 	} else {
-		o.R.Remote = related
+		o.R.Provider = related
 	}
 
 	if related.R == nil {
 		related.R = &peerR{
-			RemoteProviderPeers: ProviderPeerSlice{o},
+			ProviderProviderPeers: ProviderPeerSlice{o},
 		}
 	} else {
-		related.R.RemoteProviderPeers = append(related.R.RemoteProviderPeers, o)
+		related.R.ProviderProviderPeers = append(related.R.ProviderProviderPeers, o)
 	}
 
 	return nil

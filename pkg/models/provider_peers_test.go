@@ -545,7 +545,7 @@ func testProviderPeerToOneGetProviderUsingGetProvider(t *testing.T) {
 	}
 }
 
-func testProviderPeerToOnePeerUsingRemote(t *testing.T) {
+func testProviderPeerToOnePeerUsingProvider(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
@@ -565,12 +565,12 @@ func testProviderPeerToOnePeerUsingRemote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	local.RemoteID = foreign.ID
+	local.ProviderID = foreign.ID
 	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.Remote().One(ctx, tx)
+	check, err := local.Provider().One(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -580,18 +580,18 @@ func testProviderPeerToOnePeerUsingRemote(t *testing.T) {
 	}
 
 	slice := ProviderPeerSlice{&local}
-	if err = local.L.LoadRemote(ctx, tx, false, (*[]*ProviderPeer)(&slice), nil); err != nil {
+	if err = local.L.LoadProvider(ctx, tx, false, (*[]*ProviderPeer)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.Remote == nil {
+	if local.R.Provider == nil {
 		t.Error("struct should have been eager loaded")
 	}
 
-	local.R.Remote = nil
-	if err = local.L.LoadRemote(ctx, tx, true, &local, nil); err != nil {
+	local.R.Provider = nil
+	if err = local.L.LoadProvider(ctx, tx, true, &local, nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.Remote == nil {
+	if local.R.Provider == nil {
 		t.Error("struct should have been eager loaded")
 	}
 }
@@ -653,7 +653,7 @@ func testProviderPeerToOneSetOpGetProviderUsingGetProvider(t *testing.T) {
 		}
 	}
 }
-func testProviderPeerToOneSetOpPeerUsingRemote(t *testing.T) {
+func testProviderPeerToOneSetOpPeerUsingProvider(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -682,31 +682,31 @@ func testProviderPeerToOneSetOpPeerUsingRemote(t *testing.T) {
 	}
 
 	for i, x := range []*Peer{&b, &c} {
-		err = a.SetRemote(ctx, tx, i != 0, x)
+		err = a.SetProvider(ctx, tx, i != 0, x)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if a.R.Remote != x {
+		if a.R.Provider != x {
 			t.Error("relationship struct not set to correct value")
 		}
 
-		if x.R.RemoteProviderPeers[0] != &a {
+		if x.R.ProviderProviderPeers[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.RemoteID != x.ID {
-			t.Error("foreign key was wrong value", a.RemoteID)
+		if a.ProviderID != x.ID {
+			t.Error("foreign key was wrong value", a.ProviderID)
 		}
 
-		zero := reflect.Zero(reflect.TypeOf(a.RemoteID))
-		reflect.Indirect(reflect.ValueOf(&a.RemoteID)).Set(zero)
+		zero := reflect.Zero(reflect.TypeOf(a.ProviderID))
+		reflect.Indirect(reflect.ValueOf(&a.ProviderID)).Set(zero)
 
 		if err = a.Reload(ctx, tx); err != nil {
 			t.Fatal("failed to reload", err)
 		}
 
-		if a.RemoteID != x.ID {
-			t.Error("foreign key was wrong value", a.RemoteID, x.ID)
+		if a.ProviderID != x.ID {
+			t.Error("foreign key was wrong value", a.ProviderID, x.ID)
 		}
 	}
 }
@@ -785,7 +785,7 @@ func testProviderPeersSelect(t *testing.T) {
 }
 
 var (
-	providerPeerDBTypes = map[string]string{`ID`: `integer`, `GetProvidersID`: `integer`, `RemoteID`: `integer`, `MultiAddressIds`: `ARRAYinteger`}
+	providerPeerDBTypes = map[string]string{`ID`: `integer`, `GetProvidersID`: `integer`, `ProviderID`: `integer`, `MultiAddressIds`: `ARRAYinteger`}
 	_                   = bytes.MinRead
 )
 

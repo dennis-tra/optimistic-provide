@@ -56,7 +56,7 @@ func (p Providers) Save(ctx context.Context, h host.Host, getProvidersID int, pr
 
 	dbProvider := &models.ProviderPeer{
 		GetProvidersID:  getProvidersID,
-		RemoteID:        dbPeer.ID,
+		ProviderID:      dbPeer.ID,
 		MultiAddressIds: dbMaddrIDsInt64,
 	}
 
