@@ -857,57 +857,6 @@ func testAddProviderRPCToOnePeerUsingLocal(t *testing.T) {
 	}
 }
 
-func testAddProviderRPCToOneProvideUsingProvide(t *testing.T) {
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var local AddProviderRPC
-	var foreign Provide
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, addProviderRPCDBTypes, false, addProviderRPCColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize AddProviderRPC struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &foreign, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Provide struct: %s", err)
-	}
-
-	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	local.ProvideID = foreign.ID
-	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.Provide().One(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if check.ID != foreign.ID {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
-
-	slice := AddProviderRPCSlice{&local}
-	if err = local.L.LoadProvide(ctx, tx, false, (*[]*AddProviderRPC)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Provide == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.Provide = nil
-	if err = local.L.LoadProvide(ctx, tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Provide == nil {
-		t.Error("struct should have been eager loaded")
-	}
-}
-
 func testAddProviderRPCToOnePeerUsingRemote(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -1013,63 +962,6 @@ func testAddProviderRPCToOneSetOpPeerUsingLocal(t *testing.T) {
 
 		if a.LocalID != x.ID {
 			t.Error("foreign key was wrong value", a.LocalID, x.ID)
-		}
-	}
-}
-func testAddProviderRPCToOneSetOpProvideUsingProvide(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a AddProviderRPC
-	var b, c Provide
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, addProviderRPCDBTypes, false, strmangle.SetComplement(addProviderRPCPrimaryKeyColumns, addProviderRPCColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	for i, x := range []*Provide{&b, &c} {
-		err = a.SetProvide(ctx, tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if a.R.Provide != x {
-			t.Error("relationship struct not set to correct value")
-		}
-
-		if x.R.AddProviderRPCS[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if a.ProvideID != x.ID {
-			t.Error("foreign key was wrong value", a.ProvideID)
-		}
-
-		zero := reflect.Zero(reflect.TypeOf(a.ProvideID))
-		reflect.Indirect(reflect.ValueOf(&a.ProvideID)).Set(zero)
-
-		if err = a.Reload(ctx, tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if a.ProvideID != x.ID {
-			t.Error("foreign key was wrong value", a.ProvideID, x.ID)
 		}
 	}
 }
@@ -1205,7 +1097,7 @@ func testAddProviderRPCSSelect(t *testing.T) {
 }
 
 var (
-	addProviderRPCDBTypes = map[string]string{`ID`: `integer`, `ProvideID`: `integer`, `LocalID`: `integer`, `RemoteID`: `integer`, `Distance`: `bytea`, `MultiAddressIds`: `ARRAYinteger`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `Error`: `text`}
+	addProviderRPCDBTypes = map[string]string{`ID`: `integer`, `LocalID`: `integer`, `RemoteID`: `integer`, `Distance`: `bytea`, `MultiAddressIds`: `ARRAYinteger`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `Error`: `text`}
 	_                     = bytes.MinRead
 )
 

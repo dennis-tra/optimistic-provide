@@ -90,7 +90,7 @@ func (pc *ProvideController) Get(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
 	provideID := c.MustGet("provideID").(int)
 
-	dbProvide, dbConnections, dbFindNodes, dbDials, dbAddProviders, err := pc.ps.Get(c.Request.Context(), h, provideID)
+	dbProvide, err := pc.ps.Get(c.Request.Context(), h, provideID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,
@@ -100,8 +100,8 @@ func (pc *ProvideController) Get(c *gin.Context) {
 		return
 	}
 
-	connections := make([]types.Connection, len(dbConnections))
-	for i, dbConn := range dbConnections {
+	connections := make([]types.Connection, len(dbProvide.R.Connections))
+	for i, dbConn := range dbProvide.R.Connections {
 		connections[i] = types.Connection{
 			DurationInS:  float32(dbConn.EndedAt.Sub(dbConn.StartedAt).Seconds()),
 			EndedAt:      dbConn.EndedAt.Format(time.RFC3339),
@@ -112,8 +112,8 @@ func (pc *ProvideController) Get(c *gin.Context) {
 		}
 	}
 
-	findNodes := make([]types.FindNode, len(dbFindNodes))
-	for i, dbFindNode := range dbFindNodes {
+	findNodes := make([]types.FindNode, len(dbProvide.R.FindNodesRPCS))
+	for i, dbFindNode := range dbProvide.R.FindNodesRPCS {
 		findNodes[i] = types.FindNode{
 			CloserPeersCount: dbFindNode.CloserPeersCount.Ptr(),
 			DurationInS:      float32(dbFindNode.EndedAt.Sub(dbFindNode.StartedAt).Seconds()),
@@ -125,8 +125,8 @@ func (pc *ProvideController) Get(c *gin.Context) {
 		}
 	}
 
-	dials := make([]types.Dial, len(dbDials))
-	for i, dbDial := range dbDials {
+	dials := make([]types.Dial, len(dbProvide.R.Dials))
+	for i, dbDial := range dbProvide.R.Dials {
 		dials[i] = types.Dial{
 			DurationInS:  float32(dbDial.EndedAt.Sub(dbDial.StartedAt).Seconds()),
 			EndedAt:      dbDial.EndedAt.Format(time.RFC3339),
@@ -139,8 +139,8 @@ func (pc *ProvideController) Get(c *gin.Context) {
 		}
 	}
 
-	addProviders := make([]types.AddProvider, len(dbAddProviders))
-	for i, dbAddProvider := range dbAddProviders {
+	addProviders := make([]types.AddProvider, len(dbProvide.R.AddProviderRPCS))
+	for i, dbAddProvider := range dbProvide.R.AddProviderRPCS {
 		addProviders[i] = types.AddProvider{
 			Distance:    base64.RawStdEncoding.EncodeToString(dbAddProvider.Distance),
 			DurationInS: float32(dbAddProvider.EndedAt.Sub(dbAddProvider.StartedAt).Seconds()),

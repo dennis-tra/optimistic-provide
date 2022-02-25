@@ -494,160 +494,6 @@ func testRetrievalsInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testRetrievalToManyDials(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Retrieval
-	var b, c Dial
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, retrievalDBTypes, true, retrievalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Retrieval struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, dialDBTypes, false, dialColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, dialDBTypes, false, dialColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	queries.Assign(&b.RetrievalID, a.ID)
-	queries.Assign(&c.RetrievalID, a.ID)
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.Dials().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if queries.Equal(v.RetrievalID, b.RetrievalID) {
-			bFound = true
-		}
-		if queries.Equal(v.RetrievalID, c.RetrievalID) {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := RetrievalSlice{&a}
-	if err = a.L.LoadDials(ctx, tx, false, (*[]*Retrieval)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.Dials); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.Dials = nil
-	if err = a.L.LoadDials(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.Dials); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
-func testRetrievalToManyPeerStates(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Retrieval
-	var b, c PeerState
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, retrievalDBTypes, true, retrievalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Retrieval struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, peerStateDBTypes, false, peerStateColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, peerStateDBTypes, false, peerStateColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	queries.Assign(&b.RetrievalID, a.ID)
-	queries.Assign(&c.RetrievalID, a.ID)
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.PeerStates().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if queries.Equal(v.RetrievalID, b.RetrievalID) {
-			bFound = true
-		}
-		if queries.Equal(v.RetrievalID, c.RetrievalID) {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := RetrievalSlice{&a}
-	if err = a.L.LoadPeerStates(ctx, tx, false, (*[]*Retrieval)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.PeerStates); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.PeerStates = nil
-	if err = a.L.LoadPeerStates(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.PeerStates); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
 func testRetrievalToManyConnections(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -816,7 +662,7 @@ func testRetrievalToManyDials(t *testing.T) {
 	}
 }
 
-func testRetrievalToManyGetProviderRPCGetProvidersRPCS(t *testing.T) {
+func testRetrievalToManyGetProvidersRPCS(t *testing.T) {
 	var err error
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -848,16 +694,16 @@ func testRetrievalToManyGetProviderRPCGetProvidersRPCS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = tx.Exec("insert into \"retrievals_x_get_providers_rpcs\" (\"retrieval_id\", \"get_provider_rpc_id\") values ($1, $2)", a.ID, b.ID)
+	_, err = tx.Exec("insert into \"retrievals_x_get_providers_rpcs\" (\"retrieval_id\", \"get_providers_rpc_id\") values ($1, $2)", a.ID, b.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = tx.Exec("insert into \"retrievals_x_get_providers_rpcs\" (\"retrieval_id\", \"get_provider_rpc_id\") values ($1, $2)", a.ID, c.ID)
+	_, err = tx.Exec("insert into \"retrievals_x_get_providers_rpcs\" (\"retrieval_id\", \"get_providers_rpc_id\") values ($1, $2)", a.ID, c.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := a.GetProviderRPCGetProvidersRPCS().All(ctx, tx)
+	check, err := a.GetProvidersRPCS().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -880,18 +726,18 @@ func testRetrievalToManyGetProviderRPCGetProvidersRPCS(t *testing.T) {
 	}
 
 	slice := RetrievalSlice{&a}
-	if err = a.L.LoadGetProviderRPCGetProvidersRPCS(ctx, tx, false, (*[]*Retrieval)(&slice), nil); err != nil {
+	if err = a.L.LoadGetProvidersRPCS(ctx, tx, false, (*[]*Retrieval)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.GetProviderRPCGetProvidersRPCS); got != 2 {
+	if got := len(a.R.GetProvidersRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	a.R.GetProviderRPCGetProvidersRPCS = nil
-	if err = a.L.LoadGetProviderRPCGetProvidersRPCS(ctx, tx, true, &a, nil); err != nil {
+	a.R.GetProvidersRPCS = nil
+	if err = a.L.LoadGetProvidersRPCS(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-	if got := len(a.R.GetProviderRPCGetProvidersRPCS); got != 2 {
+	if got := len(a.R.GetProvidersRPCS); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -900,30 +746,31 @@ func testRetrievalToManyGetProviderRPCGetProvidersRPCS(t *testing.T) {
 	}
 }
 
-func testRetrievalToManyAddOpDials(t *testing.T) {
+func testRetrievalToManyPeerStates(t *testing.T) {
 	var err error
-
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var a Retrieval
-	var b, c, d, e Dial
+	var b, c PeerState
 
 	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Dial{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, dialDBTypes, false, strmangle.SetComplement(dialPrimaryKeyColumns, dialColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
+	if err = randomize.Struct(seed, &a, retrievalDBTypes, true, retrievalColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Retrieval struct: %s", err)
 	}
 
 	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
+
+	if err = randomize.Struct(seed, &b, peerStateDBTypes, false, peerStateColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, peerStateDBTypes, false, peerStateColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -931,474 +778,55 @@ func testRetrievalToManyAddOpDials(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	foreignersSplitByInsertion := [][]*Dial{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddDials(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if !queries.Equal(a.ID, first.RetrievalID) {
-			t.Error("foreign key was wrong value", a.ID, first.RetrievalID)
-		}
-		if !queries.Equal(a.ID, second.RetrievalID) {
-			t.Error("foreign key was wrong value", a.ID, second.RetrievalID)
-		}
-
-		if first.R.Retrieval != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Retrieval != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.Dials[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.Dials[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.Dials().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-
-func testRetrievalToManySetOpDials(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Retrieval
-	var b, c, d, e Dial
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+	_, err = tx.Exec("insert into \"retrievals_x_peer_states\" (\"retrieval_id\", \"peer_state_id\") values ($1, $2)", a.ID, b.ID)
+	if err != nil {
 		t.Fatal(err)
 	}
-	foreigners := []*Dial{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, dialDBTypes, false, strmangle.SetComplement(dialPrimaryKeyColumns, dialColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetDials(ctx, tx, false, &b, &c)
+	_, err = tx.Exec("insert into \"retrievals_x_peer_states\" (\"retrieval_id\", \"peer_state_id\") values ($1, $2)", a.ID, c.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err := a.Dials().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetDials(ctx, tx, true, &d, &e)
+	check, err := a.PeerStates().All(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err = a.Dials().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.RetrievalID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.RetrievalID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if !queries.Equal(a.ID, d.RetrievalID) {
-		t.Error("foreign key was wrong value", a.ID, d.RetrievalID)
-	}
-	if !queries.Equal(a.ID, e.RetrievalID) {
-		t.Error("foreign key was wrong value", a.ID, e.RetrievalID)
-	}
-
-	if b.R.Retrieval != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Retrieval != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Retrieval != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Retrieval != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.Dials[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.Dials[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testRetrievalToManyRemoveOpDials(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Retrieval
-	var b, c, d, e Dial
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*Dial{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, dialDBTypes, false, strmangle.SetComplement(dialPrimaryKeyColumns, dialColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.ID == b.ID {
+			bFound = true
+		}
+		if v.ID == c.ID {
+			cFound = true
 		}
 	}
 
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := RetrievalSlice{&a}
+	if err = a.L.LoadPeerStates(ctx, tx, false, (*[]*Retrieval)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
+	if got := len(a.R.PeerStates); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
 
-	err = a.AddDials(ctx, tx, true, foreigners...)
-	if err != nil {
+	a.R.PeerStates = nil
+	if err = a.L.LoadPeerStates(ctx, tx, true, &a, nil); err != nil {
 		t.Fatal(err)
 	}
-
-	count, err := a.Dials().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
+	if got := len(a.R.PeerStates); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
-	err = a.RemoveDials(ctx, tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.Dials().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.RetrievalID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.RetrievalID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-
-	if b.R.Retrieval != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Retrieval != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Retrieval != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.Retrieval != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-
-	if len(a.R.Dials) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.Dials[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.Dials[0] != &e {
-		t.Error("relationship to e should have been preserved")
-	}
-}
-
-func testRetrievalToManyAddOpPeerStates(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Retrieval
-	var b, c, d, e PeerState
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*PeerState{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*PeerState{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddPeerStates(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if !queries.Equal(a.ID, first.RetrievalID) {
-			t.Error("foreign key was wrong value", a.ID, first.RetrievalID)
-		}
-		if !queries.Equal(a.ID, second.RetrievalID) {
-			t.Error("foreign key was wrong value", a.ID, second.RetrievalID)
-		}
-
-		if first.R.Retrieval != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Retrieval != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.PeerStates[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.PeerStates[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.PeerStates().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-
-func testRetrievalToManySetOpPeerStates(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Retrieval
-	var b, c, d, e PeerState
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*PeerState{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.SetPeerStates(ctx, tx, false, &b, &c)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.PeerStates().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.SetPeerStates(ctx, tx, true, &d, &e)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.PeerStates().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.RetrievalID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.RetrievalID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-	if !queries.Equal(a.ID, d.RetrievalID) {
-		t.Error("foreign key was wrong value", a.ID, d.RetrievalID)
-	}
-	if !queries.Equal(a.ID, e.RetrievalID) {
-		t.Error("foreign key was wrong value", a.ID, e.RetrievalID)
-	}
-
-	if b.R.Retrieval != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Retrieval != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Retrieval != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-	if e.R.Retrieval != &a {
-		t.Error("relationship was not added properly to the foreign struct")
-	}
-
-	if a.R.PeerStates[0] != &d {
-		t.Error("relationship struct slice not set to correct value")
-	}
-	if a.R.PeerStates[1] != &e {
-		t.Error("relationship struct slice not set to correct value")
-	}
-}
-
-func testRetrievalToManyRemoveOpPeerStates(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Retrieval
-	var b, c, d, e PeerState
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*PeerState{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	err = a.AddPeerStates(ctx, tx, true, foreigners...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err := a.PeerStates().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 4 {
-		t.Error("count was wrong:", count)
-	}
-
-	err = a.RemovePeerStates(ctx, tx, foreigners[:2]...)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	count, err = a.PeerStates().Count(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if count != 2 {
-		t.Error("count was wrong:", count)
-	}
-
-	if !queries.IsValuerNil(b.RetrievalID) {
-		t.Error("want b's foreign key value to be nil")
-	}
-	if !queries.IsValuerNil(c.RetrievalID) {
-		t.Error("want c's foreign key value to be nil")
-	}
-
-	if b.R.Retrieval != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if c.R.Retrieval != nil {
-		t.Error("relationship was not removed properly from the foreign struct")
-	}
-	if d.R.Retrieval != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-	if e.R.Retrieval != &a {
-		t.Error("relationship to a should have been preserved")
-	}
-
-	if len(a.R.PeerStates) != 2 {
-		t.Error("should have preserved two relationships")
-	}
-
-	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.PeerStates[1] != &d {
-		t.Error("relationship to d should have been preserved")
-	}
-	if a.R.PeerStates[0] != &e {
-		t.Error("relationship to e should have been preserved")
+	if t.Failed() {
+		t.Logf("%#v", check)
 	}
 }
 
@@ -1858,7 +1286,7 @@ func testRetrievalToManyRemoveOpDials(t *testing.T) {
 	}
 }
 
-func testRetrievalToManyAddOpGetProviderRPCGetProvidersRPCS(t *testing.T) {
+func testRetrievalToManyAddOpGetProvidersRPCS(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -1895,7 +1323,7 @@ func testRetrievalToManyAddOpGetProviderRPCGetProvidersRPCS(t *testing.T) {
 	}
 
 	for i, x := range foreignersSplitByInsertion {
-		err = a.AddGetProviderRPCGetProvidersRPCS(ctx, tx, i != 0, x...)
+		err = a.AddGetProvidersRPCS(ctx, tx, i != 0, x...)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1910,14 +1338,14 @@ func testRetrievalToManyAddOpGetProviderRPCGetProvidersRPCS(t *testing.T) {
 			t.Error("relationship was not added properly to the slice")
 		}
 
-		if a.R.GetProviderRPCGetProvidersRPCS[i*2] != first {
+		if a.R.GetProvidersRPCS[i*2] != first {
 			t.Error("relationship struct slice not set to correct value")
 		}
-		if a.R.GetProviderRPCGetProvidersRPCS[i*2+1] != second {
+		if a.R.GetProvidersRPCS[i*2+1] != second {
 			t.Error("relationship struct slice not set to correct value")
 		}
 
-		count, err := a.GetProviderRPCGetProvidersRPCS().Count(ctx, tx)
+		count, err := a.GetProvidersRPCS().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1927,7 +1355,7 @@ func testRetrievalToManyAddOpGetProviderRPCGetProvidersRPCS(t *testing.T) {
 	}
 }
 
-func testRetrievalToManySetOpGetProviderRPCGetProvidersRPCS(t *testing.T) {
+func testRetrievalToManySetOpGetProvidersRPCS(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -1958,12 +1386,12 @@ func testRetrievalToManySetOpGetProviderRPCGetProvidersRPCS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = a.SetGetProviderRPCGetProvidersRPCS(ctx, tx, false, &b, &c)
+	err = a.SetGetProvidersRPCS(ctx, tx, false, &b, &c)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err := a.GetProviderRPCGetProvidersRPCS().Count(ctx, tx)
+	count, err := a.GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1971,12 +1399,12 @@ func testRetrievalToManySetOpGetProviderRPCGetProvidersRPCS(t *testing.T) {
 		t.Error("count was wrong:", count)
 	}
 
-	err = a.SetGetProviderRPCGetProvidersRPCS(ctx, tx, true, &d, &e)
+	err = a.SetGetProvidersRPCS(ctx, tx, true, &d, &e)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err = a.GetProviderRPCGetProvidersRPCS().Count(ctx, tx)
+	count, err = a.GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2001,15 +1429,15 @@ func testRetrievalToManySetOpGetProviderRPCGetProvidersRPCS(t *testing.T) {
 		t.Error("relationship was not added properly to the slice")
 	}
 
-	if a.R.GetProviderRPCGetProvidersRPCS[0] != &d {
+	if a.R.GetProvidersRPCS[0] != &d {
 		t.Error("relationship struct slice not set to correct value")
 	}
-	if a.R.GetProviderRPCGetProvidersRPCS[1] != &e {
+	if a.R.GetProvidersRPCS[1] != &e {
 		t.Error("relationship struct slice not set to correct value")
 	}
 }
 
-func testRetrievalToManyRemoveOpGetProviderRPCGetProvidersRPCS(t *testing.T) {
+func testRetrievalToManyRemoveOpGetProvidersRPCS(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -2034,12 +1462,12 @@ func testRetrievalToManyRemoveOpGetProviderRPCGetProvidersRPCS(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = a.AddGetProviderRPCGetProvidersRPCS(ctx, tx, true, foreigners...)
+	err = a.AddGetProvidersRPCS(ctx, tx, true, foreigners...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err := a.GetProviderRPCGetProvidersRPCS().Count(ctx, tx)
+	count, err := a.GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2047,12 +1475,12 @@ func testRetrievalToManyRemoveOpGetProviderRPCGetProvidersRPCS(t *testing.T) {
 		t.Error("count was wrong:", count)
 	}
 
-	err = a.RemoveGetProviderRPCGetProvidersRPCS(ctx, tx, foreigners[:2]...)
+	err = a.RemoveGetProvidersRPCS(ctx, tx, foreigners[:2]...)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	count, err = a.GetProviderRPCGetProvidersRPCS().Count(ctx, tx)
+	count, err = a.GetProvidersRPCS().Count(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2073,16 +1501,346 @@ func testRetrievalToManyRemoveOpGetProviderRPCGetProvidersRPCS(t *testing.T) {
 		t.Error("relationship was not added properly to the foreign struct")
 	}
 
-	if len(a.R.GetProviderRPCGetProvidersRPCS) != 2 {
+	if len(a.R.GetProvidersRPCS) != 2 {
 		t.Error("should have preserved two relationships")
 	}
 
 	// Removal doesn't do a stable deletion for performance so we have to flip the order
-	if a.R.GetProviderRPCGetProvidersRPCS[1] != &d {
+	if a.R.GetProvidersRPCS[1] != &d {
 		t.Error("relationship to d should have been preserved")
 	}
-	if a.R.GetProviderRPCGetProvidersRPCS[0] != &e {
+	if a.R.GetProvidersRPCS[0] != &e {
 		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testRetrievalToManyAddOpPeerStates(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Retrieval
+	var b, c, d, e PeerState
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*PeerState{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*PeerState{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddPeerStates(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if first.R.Retrievals[0] != &a {
+			t.Error("relationship was not added properly to the slice")
+		}
+		if second.R.Retrievals[0] != &a {
+			t.Error("relationship was not added properly to the slice")
+		}
+
+		if a.R.PeerStates[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.PeerStates[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.PeerStates().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testRetrievalToManySetOpPeerStates(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Retrieval
+	var b, c, d, e PeerState
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*PeerState{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetPeerStates(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.PeerStates().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetPeerStates(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.PeerStates().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	// The following checks cannot be implemented since we have no handle
+	// to these when we call Set(). Leaving them here as wishful thinking
+	// and to let people know there's dragons.
+	//
+	// if len(b.R.Retrievals) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	// if len(c.R.Retrievals) != 0 {
+	// 	t.Error("relationship was not removed properly from the slice")
+	// }
+	if d.R.Retrievals[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+	if e.R.Retrievals[0] != &a {
+		t.Error("relationship was not added properly to the slice")
+	}
+
+	if a.R.PeerStates[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.PeerStates[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testRetrievalToManyRemoveOpPeerStates(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Retrieval
+	var b, c, d, e PeerState
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*PeerState{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, peerStateDBTypes, false, strmangle.SetComplement(peerStatePrimaryKeyColumns, peerStateColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddPeerStates(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.PeerStates().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemovePeerStates(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.PeerStates().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if len(b.R.Retrievals) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if len(c.R.Retrievals) != 0 {
+		t.Error("relationship was not removed properly from the slice")
+	}
+	if d.R.Retrievals[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.Retrievals[0] != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if len(a.R.PeerStates) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.PeerStates[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.PeerStates[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testRetrievalToOneRoutingTableSnapshotUsingFinalRoutingTable(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local Retrieval
+	var foreign RoutingTableSnapshot
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, retrievalDBTypes, true, retrievalColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Retrieval struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, routingTableSnapshotDBTypes, false, routingTableSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RoutingTableSnapshot struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&local.FinalRoutingTableID, foreign.ID)
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.FinalRoutingTable().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !queries.Equal(check.ID, foreign.ID) {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := RetrievalSlice{&local}
+	if err = local.L.LoadFinalRoutingTable(ctx, tx, false, (*[]*Retrieval)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.FinalRoutingTable == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.FinalRoutingTable = nil
+	if err = local.L.LoadFinalRoutingTable(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.FinalRoutingTable == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
+func testRetrievalToOneRoutingTableSnapshotUsingInitialRoutingTable(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local Retrieval
+	var foreign RoutingTableSnapshot
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, retrievalDBTypes, false, retrievalColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Retrieval struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, routingTableSnapshotDBTypes, false, routingTableSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RoutingTableSnapshot struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	local.InitialRoutingTableID = foreign.ID
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.InitialRoutingTable().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if check.ID != foreign.ID {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := RetrievalSlice{&local}
+	if err = local.L.LoadInitialRoutingTable(ctx, tx, false, (*[]*Retrieval)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.InitialRoutingTable == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.InitialRoutingTable = nil
+	if err = local.L.LoadInitialRoutingTable(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.InitialRoutingTable == nil {
+		t.Error("struct should have been eager loaded")
 	}
 }
 
@@ -2137,6 +1895,172 @@ func testRetrievalToOnePeerUsingRetriever(t *testing.T) {
 	}
 }
 
+func testRetrievalToOneSetOpRoutingTableSnapshotUsingFinalRoutingTable(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Retrieval
+	var b, c RoutingTableSnapshot
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, routingTableSnapshotDBTypes, false, strmangle.SetComplement(routingTableSnapshotPrimaryKeyColumns, routingTableSnapshotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, routingTableSnapshotDBTypes, false, strmangle.SetComplement(routingTableSnapshotPrimaryKeyColumns, routingTableSnapshotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*RoutingTableSnapshot{&b, &c} {
+		err = a.SetFinalRoutingTable(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.FinalRoutingTable != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.FinalRoutingTableRetrievals[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if !queries.Equal(a.FinalRoutingTableID, x.ID) {
+			t.Error("foreign key was wrong value", a.FinalRoutingTableID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.FinalRoutingTableID))
+		reflect.Indirect(reflect.ValueOf(&a.FinalRoutingTableID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if !queries.Equal(a.FinalRoutingTableID, x.ID) {
+			t.Error("foreign key was wrong value", a.FinalRoutingTableID, x.ID)
+		}
+	}
+}
+
+func testRetrievalToOneRemoveOpRoutingTableSnapshotUsingFinalRoutingTable(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Retrieval
+	var b RoutingTableSnapshot
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, routingTableSnapshotDBTypes, false, strmangle.SetComplement(routingTableSnapshotPrimaryKeyColumns, routingTableSnapshotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetFinalRoutingTable(ctx, tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemoveFinalRoutingTable(ctx, tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.FinalRoutingTable().Count(ctx, tx)
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.FinalRoutingTable != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if !queries.IsValuerNil(a.FinalRoutingTableID) {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.FinalRoutingTableRetrievals) != 0 {
+		t.Error("failed to remove a from b's relationships")
+	}
+}
+
+func testRetrievalToOneSetOpRoutingTableSnapshotUsingInitialRoutingTable(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Retrieval
+	var b, c RoutingTableSnapshot
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, routingTableSnapshotDBTypes, false, strmangle.SetComplement(routingTableSnapshotPrimaryKeyColumns, routingTableSnapshotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, routingTableSnapshotDBTypes, false, strmangle.SetComplement(routingTableSnapshotPrimaryKeyColumns, routingTableSnapshotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*RoutingTableSnapshot{&b, &c} {
+		err = a.SetInitialRoutingTable(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.InitialRoutingTable != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.InitialRoutingTableRetrievals[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if a.InitialRoutingTableID != x.ID {
+			t.Error("foreign key was wrong value", a.InitialRoutingTableID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.InitialRoutingTableID))
+		reflect.Indirect(reflect.ValueOf(&a.InitialRoutingTableID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if a.InitialRoutingTableID != x.ID {
+			t.Error("foreign key was wrong value", a.InitialRoutingTableID, x.ID)
+		}
+	}
+}
 func testRetrievalToOneSetOpPeerUsingRetriever(t *testing.T) {
 	var err error
 

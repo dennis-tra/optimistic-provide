@@ -3,8 +3,6 @@ package repo
 import (
 	"context"
 
-	"github.com/volatiletech/null/v8"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/db"
@@ -12,9 +10,8 @@ import (
 )
 
 type ConnectionRepo interface {
-	Save(ctx context.Context, conn *models.Connection) (*models.Connection, error)
-	ListFromProvide(ctx context.Context, provideID int) ([]*models.Connection, error)
-	ListFromRetrieval(ctx context.Context, retrievalID int) ([]*models.Connection, error)
+	ListFromProvide(ctx context.Context, provide *models.Provide) ([]*models.Connection, error)
+	ListFromRetrieval(ctx context.Context, retrieval *models.Retrieval) ([]*models.Connection, error)
 }
 
 var _ ConnectionRepo = &Connection{}
@@ -29,22 +26,16 @@ func NewConnectionRepo(dbc *db.Client) ConnectionRepo {
 	}
 }
 
-func (c Connection) ListFromProvide(ctx context.Context, provideID int) ([]*models.Connection, error) {
-	return models.Connections(
-		models.ConnectionWhere.ProvideID.EQ(null.IntFrom(provideID)),
+func (c Connection) ListFromProvide(ctx context.Context, provide *models.Provide) ([]*models.Connection, error) {
+	return provide.Connections(
 		qm.Load(models.ConnectionRels.Remote),
 		qm.Load(models.ConnectionRels.MultiAddress),
 	).All(ctx, c.dbc)
 }
 
-func (c Connection) ListFromRetrieval(ctx context.Context, retrievalID int) ([]*models.Connection, error) {
-	return models.Connections(
-		models.ConnectionWhere.RetrievalID.EQ(null.IntFrom(retrievalID)),
+func (c Connection) ListFromRetrieval(ctx context.Context, retrieval *models.Retrieval) ([]*models.Connection, error) {
+	return retrieval.Connections(
 		qm.Load(models.ConnectionRels.Remote),
 		qm.Load(models.ConnectionRels.MultiAddress),
 	).All(ctx, c.dbc)
-}
-
-func (c Connection) Save(ctx context.Context, conn *models.Connection) (*models.Connection, error) {
-	return conn, conn.Insert(ctx, c.dbc, boil.Infer())
 }

@@ -494,6 +494,316 @@ func testRoutingTableSnapshotsInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testRoutingTableSnapshotToManyFinalRoutingTableProvides(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoutingTableSnapshot
+	var b, c Provide
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, routingTableSnapshotDBTypes, true, routingTableSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RoutingTableSnapshot struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.FinalRoutingTableID, a.ID)
+	queries.Assign(&c.FinalRoutingTableID, a.ID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.FinalRoutingTableProvides().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if queries.Equal(v.FinalRoutingTableID, b.FinalRoutingTableID) {
+			bFound = true
+		}
+		if queries.Equal(v.FinalRoutingTableID, c.FinalRoutingTableID) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := RoutingTableSnapshotSlice{&a}
+	if err = a.L.LoadFinalRoutingTableProvides(ctx, tx, false, (*[]*RoutingTableSnapshot)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.FinalRoutingTableProvides); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.FinalRoutingTableProvides = nil
+	if err = a.L.LoadFinalRoutingTableProvides(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.FinalRoutingTableProvides); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testRoutingTableSnapshotToManyInitialRoutingTableProvides(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoutingTableSnapshot
+	var b, c Provide
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, routingTableSnapshotDBTypes, true, routingTableSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RoutingTableSnapshot struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.InitialRoutingTableID = a.ID
+	c.InitialRoutingTableID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.InitialRoutingTableProvides().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.InitialRoutingTableID == b.InitialRoutingTableID {
+			bFound = true
+		}
+		if v.InitialRoutingTableID == c.InitialRoutingTableID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := RoutingTableSnapshotSlice{&a}
+	if err = a.L.LoadInitialRoutingTableProvides(ctx, tx, false, (*[]*RoutingTableSnapshot)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.InitialRoutingTableProvides); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.InitialRoutingTableProvides = nil
+	if err = a.L.LoadInitialRoutingTableProvides(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.InitialRoutingTableProvides); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testRoutingTableSnapshotToManyFinalRoutingTableRetrievals(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoutingTableSnapshot
+	var b, c Retrieval
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, routingTableSnapshotDBTypes, true, routingTableSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RoutingTableSnapshot struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, retrievalDBTypes, false, retrievalColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, retrievalDBTypes, false, retrievalColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.FinalRoutingTableID, a.ID)
+	queries.Assign(&c.FinalRoutingTableID, a.ID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.FinalRoutingTableRetrievals().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if queries.Equal(v.FinalRoutingTableID, b.FinalRoutingTableID) {
+			bFound = true
+		}
+		if queries.Equal(v.FinalRoutingTableID, c.FinalRoutingTableID) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := RoutingTableSnapshotSlice{&a}
+	if err = a.L.LoadFinalRoutingTableRetrievals(ctx, tx, false, (*[]*RoutingTableSnapshot)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.FinalRoutingTableRetrievals); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.FinalRoutingTableRetrievals = nil
+	if err = a.L.LoadFinalRoutingTableRetrievals(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.FinalRoutingTableRetrievals); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testRoutingTableSnapshotToManyInitialRoutingTableRetrievals(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoutingTableSnapshot
+	var b, c Retrieval
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, routingTableSnapshotDBTypes, true, routingTableSnapshotColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize RoutingTableSnapshot struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, retrievalDBTypes, false, retrievalColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, retrievalDBTypes, false, retrievalColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.InitialRoutingTableID = a.ID
+	c.InitialRoutingTableID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.InitialRoutingTableRetrievals().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.InitialRoutingTableID == b.InitialRoutingTableID {
+			bFound = true
+		}
+		if v.InitialRoutingTableID == c.InitialRoutingTableID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := RoutingTableSnapshotSlice{&a}
+	if err = a.L.LoadInitialRoutingTableRetrievals(ctx, tx, false, (*[]*RoutingTableSnapshot)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.InitialRoutingTableRetrievals); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.InitialRoutingTableRetrievals = nil
+	if err = a.L.LoadInitialRoutingTableRetrievals(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.InitialRoutingTableRetrievals); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testRoutingTableSnapshotToManyRoutingTableEntries(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -572,6 +882,658 @@ func testRoutingTableSnapshotToManyRoutingTableEntries(t *testing.T) {
 	}
 }
 
+func testRoutingTableSnapshotToManyAddOpFinalRoutingTableProvides(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoutingTableSnapshot
+	var b, c, d, e Provide
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, routingTableSnapshotDBTypes, false, strmangle.SetComplement(routingTableSnapshotPrimaryKeyColumns, routingTableSnapshotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Provide{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Provide{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddFinalRoutingTableProvides(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ID, first.FinalRoutingTableID) {
+			t.Error("foreign key was wrong value", a.ID, first.FinalRoutingTableID)
+		}
+		if !queries.Equal(a.ID, second.FinalRoutingTableID) {
+			t.Error("foreign key was wrong value", a.ID, second.FinalRoutingTableID)
+		}
+
+		if first.R.FinalRoutingTable != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.FinalRoutingTable != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.FinalRoutingTableProvides[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.FinalRoutingTableProvides[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.FinalRoutingTableProvides().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testRoutingTableSnapshotToManySetOpFinalRoutingTableProvides(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoutingTableSnapshot
+	var b, c, d, e Provide
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, routingTableSnapshotDBTypes, false, strmangle.SetComplement(routingTableSnapshotPrimaryKeyColumns, routingTableSnapshotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Provide{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetFinalRoutingTableProvides(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.FinalRoutingTableProvides().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetFinalRoutingTableProvides(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.FinalRoutingTableProvides().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.FinalRoutingTableID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.FinalRoutingTableID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.FinalRoutingTableID) {
+		t.Error("foreign key was wrong value", a.ID, d.FinalRoutingTableID)
+	}
+	if !queries.Equal(a.ID, e.FinalRoutingTableID) {
+		t.Error("foreign key was wrong value", a.ID, e.FinalRoutingTableID)
+	}
+
+	if b.R.FinalRoutingTable != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.FinalRoutingTable != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.FinalRoutingTable != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.FinalRoutingTable != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.FinalRoutingTableProvides[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.FinalRoutingTableProvides[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testRoutingTableSnapshotToManyRemoveOpFinalRoutingTableProvides(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoutingTableSnapshot
+	var b, c, d, e Provide
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, routingTableSnapshotDBTypes, false, strmangle.SetComplement(routingTableSnapshotPrimaryKeyColumns, routingTableSnapshotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Provide{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddFinalRoutingTableProvides(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.FinalRoutingTableProvides().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveFinalRoutingTableProvides(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.FinalRoutingTableProvides().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.FinalRoutingTableID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.FinalRoutingTableID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.FinalRoutingTable != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.FinalRoutingTable != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.FinalRoutingTable != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.FinalRoutingTable != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.FinalRoutingTableProvides) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.FinalRoutingTableProvides[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.FinalRoutingTableProvides[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testRoutingTableSnapshotToManyAddOpInitialRoutingTableProvides(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoutingTableSnapshot
+	var b, c, d, e Provide
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, routingTableSnapshotDBTypes, false, strmangle.SetComplement(routingTableSnapshotPrimaryKeyColumns, routingTableSnapshotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Provide{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Provide{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddInitialRoutingTableProvides(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.InitialRoutingTableID {
+			t.Error("foreign key was wrong value", a.ID, first.InitialRoutingTableID)
+		}
+		if a.ID != second.InitialRoutingTableID {
+			t.Error("foreign key was wrong value", a.ID, second.InitialRoutingTableID)
+		}
+
+		if first.R.InitialRoutingTable != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.InitialRoutingTable != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.InitialRoutingTableProvides[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.InitialRoutingTableProvides[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.InitialRoutingTableProvides().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testRoutingTableSnapshotToManyAddOpFinalRoutingTableRetrievals(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoutingTableSnapshot
+	var b, c, d, e Retrieval
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, routingTableSnapshotDBTypes, false, strmangle.SetComplement(routingTableSnapshotPrimaryKeyColumns, routingTableSnapshotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Retrieval{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Retrieval{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddFinalRoutingTableRetrievals(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ID, first.FinalRoutingTableID) {
+			t.Error("foreign key was wrong value", a.ID, first.FinalRoutingTableID)
+		}
+		if !queries.Equal(a.ID, second.FinalRoutingTableID) {
+			t.Error("foreign key was wrong value", a.ID, second.FinalRoutingTableID)
+		}
+
+		if first.R.FinalRoutingTable != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.FinalRoutingTable != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.FinalRoutingTableRetrievals[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.FinalRoutingTableRetrievals[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.FinalRoutingTableRetrievals().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testRoutingTableSnapshotToManySetOpFinalRoutingTableRetrievals(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoutingTableSnapshot
+	var b, c, d, e Retrieval
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, routingTableSnapshotDBTypes, false, strmangle.SetComplement(routingTableSnapshotPrimaryKeyColumns, routingTableSnapshotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Retrieval{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetFinalRoutingTableRetrievals(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.FinalRoutingTableRetrievals().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetFinalRoutingTableRetrievals(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.FinalRoutingTableRetrievals().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.FinalRoutingTableID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.FinalRoutingTableID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.FinalRoutingTableID) {
+		t.Error("foreign key was wrong value", a.ID, d.FinalRoutingTableID)
+	}
+	if !queries.Equal(a.ID, e.FinalRoutingTableID) {
+		t.Error("foreign key was wrong value", a.ID, e.FinalRoutingTableID)
+	}
+
+	if b.R.FinalRoutingTable != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.FinalRoutingTable != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.FinalRoutingTable != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.FinalRoutingTable != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.FinalRoutingTableRetrievals[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.FinalRoutingTableRetrievals[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testRoutingTableSnapshotToManyRemoveOpFinalRoutingTableRetrievals(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoutingTableSnapshot
+	var b, c, d, e Retrieval
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, routingTableSnapshotDBTypes, false, strmangle.SetComplement(routingTableSnapshotPrimaryKeyColumns, routingTableSnapshotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Retrieval{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddFinalRoutingTableRetrievals(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.FinalRoutingTableRetrievals().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveFinalRoutingTableRetrievals(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.FinalRoutingTableRetrievals().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.FinalRoutingTableID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.FinalRoutingTableID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.FinalRoutingTable != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.FinalRoutingTable != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.FinalRoutingTable != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.FinalRoutingTable != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.FinalRoutingTableRetrievals) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.FinalRoutingTableRetrievals[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.FinalRoutingTableRetrievals[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
+func testRoutingTableSnapshotToManyAddOpInitialRoutingTableRetrievals(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a RoutingTableSnapshot
+	var b, c, d, e Retrieval
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, routingTableSnapshotDBTypes, false, strmangle.SetComplement(routingTableSnapshotPrimaryKeyColumns, routingTableSnapshotColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Retrieval{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Retrieval{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddInitialRoutingTableRetrievals(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.InitialRoutingTableID {
+			t.Error("foreign key was wrong value", a.ID, first.InitialRoutingTableID)
+		}
+		if a.ID != second.InitialRoutingTableID {
+			t.Error("foreign key was wrong value", a.ID, second.InitialRoutingTableID)
+		}
+
+		if first.R.InitialRoutingTable != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.InitialRoutingTable != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.InitialRoutingTableRetrievals[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.InitialRoutingTableRetrievals[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.InitialRoutingTableRetrievals().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testRoutingTableSnapshotToManyAddOpRoutingTableEntries(t *testing.T) {
 	var err error
 

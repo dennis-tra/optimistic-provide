@@ -1220,57 +1220,6 @@ func testDialToOneMultiAddressUsingMultiAddress(t *testing.T) {
 	}
 }
 
-func testDialToOneProvideUsingProvide(t *testing.T) {
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var local Dial
-	var foreign Provide
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, dialDBTypes, true, dialColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Dial struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &foreign, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Provide struct: %s", err)
-	}
-
-	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	queries.Assign(&local.ProvideID, foreign.ID)
-	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.Provide().One(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !queries.Equal(check.ID, foreign.ID) {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
-
-	slice := DialSlice{&local}
-	if err = local.L.LoadProvide(ctx, tx, false, (*[]*Dial)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Provide == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.Provide = nil
-	if err = local.L.LoadProvide(ctx, tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Provide == nil {
-		t.Error("struct should have been eager loaded")
-	}
-}
-
 func testDialToOnePeerUsingRemote(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -1318,57 +1267,6 @@ func testDialToOnePeerUsingRemote(t *testing.T) {
 		t.Fatal(err)
 	}
 	if local.R.Remote == nil {
-		t.Error("struct should have been eager loaded")
-	}
-}
-
-func testDialToOneRetrievalUsingRetrieval(t *testing.T) {
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var local Dial
-	var foreign Retrieval
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, dialDBTypes, true, dialColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Dial struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &foreign, retrievalDBTypes, false, retrievalColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Retrieval struct: %s", err)
-	}
-
-	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	queries.Assign(&local.RetrievalID, foreign.ID)
-	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.Retrieval().One(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !queries.Equal(check.ID, foreign.ID) {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
-
-	slice := DialSlice{&local}
-	if err = local.L.LoadRetrieval(ctx, tx, false, (*[]*Dial)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Retrieval == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.Retrieval = nil
-	if err = local.L.LoadRetrieval(ctx, tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Retrieval == nil {
 		t.Error("struct should have been eager loaded")
 	}
 }
@@ -1487,115 +1385,6 @@ func testDialToOneSetOpMultiAddressUsingMultiAddress(t *testing.T) {
 		}
 	}
 }
-func testDialToOneSetOpProvideUsingProvide(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Dial
-	var b, c Provide
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, dialDBTypes, false, strmangle.SetComplement(dialPrimaryKeyColumns, dialColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	for i, x := range []*Provide{&b, &c} {
-		err = a.SetProvide(ctx, tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if a.R.Provide != x {
-			t.Error("relationship struct not set to correct value")
-		}
-
-		if x.R.Dials[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if !queries.Equal(a.ProvideID, x.ID) {
-			t.Error("foreign key was wrong value", a.ProvideID)
-		}
-
-		zero := reflect.Zero(reflect.TypeOf(a.ProvideID))
-		reflect.Indirect(reflect.ValueOf(&a.ProvideID)).Set(zero)
-
-		if err = a.Reload(ctx, tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if !queries.Equal(a.ProvideID, x.ID) {
-			t.Error("foreign key was wrong value", a.ProvideID, x.ID)
-		}
-	}
-}
-
-func testDialToOneRemoveOpProvideUsingProvide(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Dial
-	var b Provide
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, dialDBTypes, false, strmangle.SetComplement(dialPrimaryKeyColumns, dialColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.SetProvide(ctx, tx, true, &b); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.RemoveProvide(ctx, tx, &b); err != nil {
-		t.Error("failed to remove relationship")
-	}
-
-	count, err := a.Provide().Count(ctx, tx)
-	if err != nil {
-		t.Error(err)
-	}
-	if count != 0 {
-		t.Error("want no relationships remaining")
-	}
-
-	if a.R.Provide != nil {
-		t.Error("R struct entry should be nil")
-	}
-
-	if !queries.IsValuerNil(a.ProvideID) {
-		t.Error("foreign key value should be nil")
-	}
-
-	if len(b.R.Dials) != 0 {
-		t.Error("failed to remove a from b's relationships")
-	}
-}
-
 func testDialToOneSetOpPeerUsingRemote(t *testing.T) {
 	var err error
 
@@ -1651,114 +1440,6 @@ func testDialToOneSetOpPeerUsingRemote(t *testing.T) {
 		if a.RemoteID != x.ID {
 			t.Error("foreign key was wrong value", a.RemoteID, x.ID)
 		}
-	}
-}
-func testDialToOneSetOpRetrievalUsingRetrieval(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Dial
-	var b, c Retrieval
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, dialDBTypes, false, strmangle.SetComplement(dialPrimaryKeyColumns, dialColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	for i, x := range []*Retrieval{&b, &c} {
-		err = a.SetRetrieval(ctx, tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if a.R.Retrieval != x {
-			t.Error("relationship struct not set to correct value")
-		}
-
-		if x.R.Dials[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if !queries.Equal(a.RetrievalID, x.ID) {
-			t.Error("foreign key was wrong value", a.RetrievalID)
-		}
-
-		zero := reflect.Zero(reflect.TypeOf(a.RetrievalID))
-		reflect.Indirect(reflect.ValueOf(&a.RetrievalID)).Set(zero)
-
-		if err = a.Reload(ctx, tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if !queries.Equal(a.RetrievalID, x.ID) {
-			t.Error("foreign key was wrong value", a.RetrievalID, x.ID)
-		}
-	}
-}
-
-func testDialToOneRemoveOpRetrievalUsingRetrieval(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Dial
-	var b Retrieval
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, dialDBTypes, false, strmangle.SetComplement(dialPrimaryKeyColumns, dialColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, retrievalDBTypes, false, strmangle.SetComplement(retrievalPrimaryKeyColumns, retrievalColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.SetRetrieval(ctx, tx, true, &b); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = a.RemoveRetrieval(ctx, tx, &b); err != nil {
-		t.Error("failed to remove relationship")
-	}
-
-	count, err := a.Retrieval().Count(ctx, tx)
-	if err != nil {
-		t.Error(err)
-	}
-	if count != 0 {
-		t.Error("want no relationships remaining")
-	}
-
-	if a.R.Retrieval != nil {
-		t.Error("R struct entry should be nil")
-	}
-
-	if !queries.IsValuerNil(a.RetrievalID) {
-		t.Error("foreign key value should be nil")
-	}
-
-	if len(b.R.Dials) != 0 {
-		t.Error("failed to remove a from b's relationships")
 	}
 }
 
@@ -1836,7 +1517,7 @@ func testDialsSelect(t *testing.T) {
 }
 
 var (
-	dialDBTypes = map[string]string{`ID`: `integer`, `ProvideID`: `integer`, `RetrievalID`: `integer`, `LocalID`: `integer`, `RemoteID`: `integer`, `Transport`: `enum.dial_transport('tcp','ws','quic','udp')`, `MultiAddressID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `Error`: `text`}
+	dialDBTypes = map[string]string{`ID`: `integer`, `LocalID`: `integer`, `RemoteID`: `integer`, `Transport`: `enum.dial_transport('tcp','ws','quic','udp')`, `MultiAddressID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `Error`: `text`}
 	_           = bytes.MinRead
 )
 

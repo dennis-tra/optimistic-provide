@@ -3,17 +3,17 @@ package service
 import (
 	"context"
 
-	"github.com/volatiletech/null/v8"
+	"github.com/dennis-tra/optimistic-provide/pkg/dht"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"github.com/libp2p/go-libp2p-kad-dht/qpeerset"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
 	"github.com/dennis-tra/optimistic-provide/pkg/repo"
-	"github.com/libp2p/go-libp2p-core/host"
 )
 
 type PeerStateService interface {
-	Save(ctx context.Context, h host.Host, op HostOperation, id int, states []qpeerset.QueryPeerState) error
+	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, states []qpeerset.QueryPeerState) (models.PeerStateSlice, error)
 }
 
 var _ PeerStateService = &PeerState{}
@@ -30,19 +30,21 @@ func NewPeerStateService(peerService PeerService, psRepo repo.PeerStateRepo) Pee
 	}
 }
 
-func (ps *PeerState) Save(ctx context.Context, h host.Host, op HostOperation, id int, states []qpeerset.QueryPeerState) error {
-	log.Info("Saving connections...")
-	defer log.Info("Done saving connections")
+func (ps *PeerState) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, states []qpeerset.QueryPeerState) (models.PeerStateSlice, error) {
+	log.Info("Saving Peer State")
 
-	for _, state := range states {
-		remotePeer, err := ps.peerService.UpsertPeer(h, state.ID)
+	dbStates := make([]*models.PeerState, len(states))
+	for i, state := range states {
+		remotePeer, err := ps.peerService.UpsertPeer(ctx, exec, h, state.ID)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		referrerPeer, err := ps.peerService.UpsertPeer(h, state.ReferredBy)
+
+		referrerPeer, err := ps.peerService.UpsertPeer(ctx, exec, h, state.ReferredBy)
 		if err != nil {
-			return err
+			return nil, err
 		}
+
 		pState := &models.PeerState{
 			PeerID:     remotePeer.ID,
 			ReferrerID: referrerPeer.ID,
@@ -50,21 +52,14 @@ func (ps *PeerState) Save(ctx context.Context, h host.Host, op HostOperation, id
 			Distance:   state.Distance.Bytes(),
 		}
 
-		switch op {
-		case HostOperationProvide:
-			pState.ProvideID = null.IntFrom(id)
-		case HostOperationRetrieval:
-			pState.RetrievalID = null.IntFrom(id)
-		default:
-			panic(op)
+		if err = pState.Insert(ctx, exec, boil.Infer()); err != nil {
+			return nil, err
 		}
 
-		if pState, err = ps.psRepo.Save(ctx, pState); err != nil {
-			return err
-		}
+		dbStates[i] = pState
 	}
 
-	return nil
+	return dbStates, nil
 }
 
 func (ps *PeerState) mapState(state qpeerset.PeerState) string {

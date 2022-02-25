@@ -604,11 +604,11 @@ func testGetProvidersRPCToManyRetrievals(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = tx.Exec("insert into \"retrievals_x_get_providers_rpcs\" (\"get_provider_rpc_id\", \"retrieval_id\") values ($1, $2)", a.ID, b.ID)
+	_, err = tx.Exec("insert into \"retrievals_x_get_providers_rpcs\" (\"get_providers_rpc_id\", \"retrieval_id\") values ($1, $2)", a.ID, b.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = tx.Exec("insert into \"retrievals_x_get_providers_rpcs\" (\"get_provider_rpc_id\", \"retrieval_id\") values ($1, $2)", a.ID, c.ID)
+	_, err = tx.Exec("insert into \"retrievals_x_get_providers_rpcs\" (\"get_providers_rpc_id\", \"retrieval_id\") values ($1, $2)", a.ID, c.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -776,10 +776,10 @@ func testGetProvidersRPCToManyAddOpRetrievals(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if first.R.GetProviderRPCGetProvidersRPCS[0] != &a {
+		if first.R.GetProvidersRPCS[0] != &a {
 			t.Error("relationship was not added properly to the slice")
 		}
-		if second.R.GetProviderRPCGetProvidersRPCS[0] != &a {
+		if second.R.GetProvidersRPCS[0] != &a {
 			t.Error("relationship was not added properly to the slice")
 		}
 
@@ -861,16 +861,16 @@ func testGetProvidersRPCToManySetOpRetrievals(t *testing.T) {
 	// to these when we call Set(). Leaving them here as wishful thinking
 	// and to let people know there's dragons.
 	//
-	// if len(b.R.GetProviderRPCGetProvidersRPCS) != 0 {
+	// if len(b.R.GetProvidersRPCS) != 0 {
 	// 	t.Error("relationship was not removed properly from the slice")
 	// }
-	// if len(c.R.GetProviderRPCGetProvidersRPCS) != 0 {
+	// if len(c.R.GetProvidersRPCS) != 0 {
 	// 	t.Error("relationship was not removed properly from the slice")
 	// }
-	if d.R.GetProviderRPCGetProvidersRPCS[0] != &a {
+	if d.R.GetProvidersRPCS[0] != &a {
 		t.Error("relationship was not added properly to the slice")
 	}
-	if e.R.GetProviderRPCGetProvidersRPCS[0] != &a {
+	if e.R.GetProvidersRPCS[0] != &a {
 		t.Error("relationship was not added properly to the slice")
 	}
 
@@ -933,16 +933,16 @@ func testGetProvidersRPCToManyRemoveOpRetrievals(t *testing.T) {
 		t.Error("count was wrong:", count)
 	}
 
-	if len(b.R.GetProviderRPCGetProvidersRPCS) != 0 {
+	if len(b.R.GetProvidersRPCS) != 0 {
 		t.Error("relationship was not removed properly from the slice")
 	}
-	if len(c.R.GetProviderRPCGetProvidersRPCS) != 0 {
+	if len(c.R.GetProvidersRPCS) != 0 {
 		t.Error("relationship was not removed properly from the slice")
 	}
-	if d.R.GetProviderRPCGetProvidersRPCS[0] != &a {
+	if d.R.GetProvidersRPCS[0] != &a {
 		t.Error("relationship was not added properly to the foreign struct")
 	}
-	if e.R.GetProviderRPCGetProvidersRPCS[0] != &a {
+	if e.R.GetProvidersRPCS[0] != &a {
 		t.Error("relationship was not added properly to the foreign struct")
 	}
 

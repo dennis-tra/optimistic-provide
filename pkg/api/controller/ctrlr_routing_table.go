@@ -46,7 +46,7 @@ func NewRoutingTableController(ctx context.Context, rts service.RoutingTableServ
 func (rtc *RoutingTableController) Create(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
 
-	rts, err := rtc.rts.Save(rtc.ctx, h)
+	rts, err := rtc.rts.SaveTxn(rtc.ctx, h)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeSAVINGROUTINGTABLE,

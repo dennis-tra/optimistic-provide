@@ -79,17 +79,29 @@ var RoutingTableSnapshotWhere = struct {
 
 // RoutingTableSnapshotRels is where relationship names are stored.
 var RoutingTableSnapshotRels = struct {
-	Peer                string
-	RoutingTableEntries string
+	Peer                          string
+	FinalRoutingTableProvides     string
+	InitialRoutingTableProvides   string
+	FinalRoutingTableRetrievals   string
+	InitialRoutingTableRetrievals string
+	RoutingTableEntries           string
 }{
-	Peer:                "Peer",
-	RoutingTableEntries: "RoutingTableEntries",
+	Peer:                          "Peer",
+	FinalRoutingTableProvides:     "FinalRoutingTableProvides",
+	InitialRoutingTableProvides:   "InitialRoutingTableProvides",
+	FinalRoutingTableRetrievals:   "FinalRoutingTableRetrievals",
+	InitialRoutingTableRetrievals: "InitialRoutingTableRetrievals",
+	RoutingTableEntries:           "RoutingTableEntries",
 }
 
 // routingTableSnapshotR is where relationships are stored.
 type routingTableSnapshotR struct {
-	Peer                *Peer                  `boil:"Peer" json:"Peer" toml:"Peer" yaml:"Peer"`
-	RoutingTableEntries RoutingTableEntrySlice `boil:"RoutingTableEntries" json:"RoutingTableEntries" toml:"RoutingTableEntries" yaml:"RoutingTableEntries"`
+	Peer                          *Peer                  `boil:"Peer" json:"Peer" toml:"Peer" yaml:"Peer"`
+	FinalRoutingTableProvides     ProvideSlice           `boil:"FinalRoutingTableProvides" json:"FinalRoutingTableProvides" toml:"FinalRoutingTableProvides" yaml:"FinalRoutingTableProvides"`
+	InitialRoutingTableProvides   ProvideSlice           `boil:"InitialRoutingTableProvides" json:"InitialRoutingTableProvides" toml:"InitialRoutingTableProvides" yaml:"InitialRoutingTableProvides"`
+	FinalRoutingTableRetrievals   RetrievalSlice         `boil:"FinalRoutingTableRetrievals" json:"FinalRoutingTableRetrievals" toml:"FinalRoutingTableRetrievals" yaml:"FinalRoutingTableRetrievals"`
+	InitialRoutingTableRetrievals RetrievalSlice         `boil:"InitialRoutingTableRetrievals" json:"InitialRoutingTableRetrievals" toml:"InitialRoutingTableRetrievals" yaml:"InitialRoutingTableRetrievals"`
+	RoutingTableEntries           RoutingTableEntrySlice `boil:"RoutingTableEntries" json:"RoutingTableEntries" toml:"RoutingTableEntries" yaml:"RoutingTableEntries"`
 }
 
 // NewStruct creates a new relationship struct
@@ -396,6 +408,90 @@ func (o *RoutingTableSnapshot) Peer(mods ...qm.QueryMod) peerQuery {
 	return query
 }
 
+// FinalRoutingTableProvides retrieves all the provide's Provides with an executor via final_routing_table_id column.
+func (o *RoutingTableSnapshot) FinalRoutingTableProvides(mods ...qm.QueryMod) provideQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"provides\".\"final_routing_table_id\"=?", o.ID),
+	)
+
+	query := Provides(queryMods...)
+	queries.SetFrom(query.Query, "\"provides\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"provides\".*"})
+	}
+
+	return query
+}
+
+// InitialRoutingTableProvides retrieves all the provide's Provides with an executor via initial_routing_table_id column.
+func (o *RoutingTableSnapshot) InitialRoutingTableProvides(mods ...qm.QueryMod) provideQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"provides\".\"initial_routing_table_id\"=?", o.ID),
+	)
+
+	query := Provides(queryMods...)
+	queries.SetFrom(query.Query, "\"provides\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"provides\".*"})
+	}
+
+	return query
+}
+
+// FinalRoutingTableRetrievals retrieves all the retrieval's Retrievals with an executor via final_routing_table_id column.
+func (o *RoutingTableSnapshot) FinalRoutingTableRetrievals(mods ...qm.QueryMod) retrievalQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"retrievals\".\"final_routing_table_id\"=?", o.ID),
+	)
+
+	query := Retrievals(queryMods...)
+	queries.SetFrom(query.Query, "\"retrievals\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"retrievals\".*"})
+	}
+
+	return query
+}
+
+// InitialRoutingTableRetrievals retrieves all the retrieval's Retrievals with an executor via initial_routing_table_id column.
+func (o *RoutingTableSnapshot) InitialRoutingTableRetrievals(mods ...qm.QueryMod) retrievalQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"retrievals\".\"initial_routing_table_id\"=?", o.ID),
+	)
+
+	query := Retrievals(queryMods...)
+	queries.SetFrom(query.Query, "\"retrievals\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"retrievals\".*"})
+	}
+
+	return query
+}
+
 // RoutingTableEntries retrieves all the routing_table_entry's RoutingTableEntries with an executor.
 func (o *RoutingTableSnapshot) RoutingTableEntries(mods ...qm.QueryMod) routingTableEntryQuery {
 	var queryMods []qm.QueryMod
@@ -513,6 +609,398 @@ func (routingTableSnapshotL) LoadPeer(ctx context.Context, e boil.ContextExecuto
 					foreign.R = &peerR{}
 				}
 				foreign.R.RoutingTableSnapshots = append(foreign.R.RoutingTableSnapshots, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadFinalRoutingTableProvides allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (routingTableSnapshotL) LoadFinalRoutingTableProvides(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRoutingTableSnapshot interface{}, mods queries.Applicator) error {
+	var slice []*RoutingTableSnapshot
+	var object *RoutingTableSnapshot
+
+	if singular {
+		object = maybeRoutingTableSnapshot.(*RoutingTableSnapshot)
+	} else {
+		slice = *maybeRoutingTableSnapshot.(*[]*RoutingTableSnapshot)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &routingTableSnapshotR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &routingTableSnapshotR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`provides`),
+		qm.WhereIn(`provides.final_routing_table_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load provides")
+	}
+
+	var resultSlice []*Provide
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice provides")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on provides")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for provides")
+	}
+
+	if len(provideAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.FinalRoutingTableProvides = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &provideR{}
+			}
+			foreign.R.FinalRoutingTable = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.FinalRoutingTableID) {
+				local.R.FinalRoutingTableProvides = append(local.R.FinalRoutingTableProvides, foreign)
+				if foreign.R == nil {
+					foreign.R = &provideR{}
+				}
+				foreign.R.FinalRoutingTable = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadInitialRoutingTableProvides allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (routingTableSnapshotL) LoadInitialRoutingTableProvides(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRoutingTableSnapshot interface{}, mods queries.Applicator) error {
+	var slice []*RoutingTableSnapshot
+	var object *RoutingTableSnapshot
+
+	if singular {
+		object = maybeRoutingTableSnapshot.(*RoutingTableSnapshot)
+	} else {
+		slice = *maybeRoutingTableSnapshot.(*[]*RoutingTableSnapshot)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &routingTableSnapshotR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &routingTableSnapshotR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`provides`),
+		qm.WhereIn(`provides.initial_routing_table_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load provides")
+	}
+
+	var resultSlice []*Provide
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice provides")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on provides")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for provides")
+	}
+
+	if len(provideAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.InitialRoutingTableProvides = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &provideR{}
+			}
+			foreign.R.InitialRoutingTable = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.InitialRoutingTableID {
+				local.R.InitialRoutingTableProvides = append(local.R.InitialRoutingTableProvides, foreign)
+				if foreign.R == nil {
+					foreign.R = &provideR{}
+				}
+				foreign.R.InitialRoutingTable = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadFinalRoutingTableRetrievals allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (routingTableSnapshotL) LoadFinalRoutingTableRetrievals(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRoutingTableSnapshot interface{}, mods queries.Applicator) error {
+	var slice []*RoutingTableSnapshot
+	var object *RoutingTableSnapshot
+
+	if singular {
+		object = maybeRoutingTableSnapshot.(*RoutingTableSnapshot)
+	} else {
+		slice = *maybeRoutingTableSnapshot.(*[]*RoutingTableSnapshot)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &routingTableSnapshotR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &routingTableSnapshotR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`retrievals`),
+		qm.WhereIn(`retrievals.final_routing_table_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load retrievals")
+	}
+
+	var resultSlice []*Retrieval
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice retrievals")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on retrievals")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for retrievals")
+	}
+
+	if len(retrievalAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.FinalRoutingTableRetrievals = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &retrievalR{}
+			}
+			foreign.R.FinalRoutingTable = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.FinalRoutingTableID) {
+				local.R.FinalRoutingTableRetrievals = append(local.R.FinalRoutingTableRetrievals, foreign)
+				if foreign.R == nil {
+					foreign.R = &retrievalR{}
+				}
+				foreign.R.FinalRoutingTable = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadInitialRoutingTableRetrievals allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (routingTableSnapshotL) LoadInitialRoutingTableRetrievals(ctx context.Context, e boil.ContextExecutor, singular bool, maybeRoutingTableSnapshot interface{}, mods queries.Applicator) error {
+	var slice []*RoutingTableSnapshot
+	var object *RoutingTableSnapshot
+
+	if singular {
+		object = maybeRoutingTableSnapshot.(*RoutingTableSnapshot)
+	} else {
+		slice = *maybeRoutingTableSnapshot.(*[]*RoutingTableSnapshot)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &routingTableSnapshotR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &routingTableSnapshotR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`retrievals`),
+		qm.WhereIn(`retrievals.initial_routing_table_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load retrievals")
+	}
+
+	var resultSlice []*Retrieval
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice retrievals")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on retrievals")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for retrievals")
+	}
+
+	if len(retrievalAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.InitialRoutingTableRetrievals = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &retrievalR{}
+			}
+			foreign.R.InitialRoutingTable = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.InitialRoutingTableID {
+				local.R.InitialRoutingTableRetrievals = append(local.R.InitialRoutingTableRetrievals, foreign)
+				if foreign.R == nil {
+					foreign.R = &retrievalR{}
+				}
+				foreign.R.InitialRoutingTable = local
 				break
 			}
 		}
@@ -663,6 +1151,366 @@ func (o *RoutingTableSnapshot) SetPeer(ctx context.Context, exec boil.ContextExe
 		related.R.RoutingTableSnapshots = append(related.R.RoutingTableSnapshots, o)
 	}
 
+	return nil
+}
+
+// AddFinalRoutingTableProvides adds the given related objects to the existing relationships
+// of the routing_table_snapshot, optionally inserting them as new records.
+// Appends related to o.R.FinalRoutingTableProvides.
+// Sets related.R.FinalRoutingTable appropriately.
+func (o *RoutingTableSnapshot) AddFinalRoutingTableProvides(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Provide) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.FinalRoutingTableID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"provides\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"final_routing_table_id"}),
+				strmangle.WhereClause("\"", "\"", 2, providePrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.FinalRoutingTableID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &routingTableSnapshotR{
+			FinalRoutingTableProvides: related,
+		}
+	} else {
+		o.R.FinalRoutingTableProvides = append(o.R.FinalRoutingTableProvides, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &provideR{
+				FinalRoutingTable: o,
+			}
+		} else {
+			rel.R.FinalRoutingTable = o
+		}
+	}
+	return nil
+}
+
+// SetFinalRoutingTableProvides removes all previously related items of the
+// routing_table_snapshot replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.FinalRoutingTable's FinalRoutingTableProvides accordingly.
+// Replaces o.R.FinalRoutingTableProvides with related.
+// Sets related.R.FinalRoutingTable's FinalRoutingTableProvides accordingly.
+func (o *RoutingTableSnapshot) SetFinalRoutingTableProvides(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Provide) error {
+	query := "update \"provides\" set \"final_routing_table_id\" = null where \"final_routing_table_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.FinalRoutingTableProvides {
+			queries.SetScanner(&rel.FinalRoutingTableID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.FinalRoutingTable = nil
+		}
+
+		o.R.FinalRoutingTableProvides = nil
+	}
+	return o.AddFinalRoutingTableProvides(ctx, exec, insert, related...)
+}
+
+// RemoveFinalRoutingTableProvides relationships from objects passed in.
+// Removes related items from R.FinalRoutingTableProvides (uses pointer comparison, removal does not keep order)
+// Sets related.R.FinalRoutingTable.
+func (o *RoutingTableSnapshot) RemoveFinalRoutingTableProvides(ctx context.Context, exec boil.ContextExecutor, related ...*Provide) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.FinalRoutingTableID, nil)
+		if rel.R != nil {
+			rel.R.FinalRoutingTable = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("final_routing_table_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.FinalRoutingTableProvides {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.FinalRoutingTableProvides)
+			if ln > 1 && i < ln-1 {
+				o.R.FinalRoutingTableProvides[i] = o.R.FinalRoutingTableProvides[ln-1]
+			}
+			o.R.FinalRoutingTableProvides = o.R.FinalRoutingTableProvides[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddInitialRoutingTableProvides adds the given related objects to the existing relationships
+// of the routing_table_snapshot, optionally inserting them as new records.
+// Appends related to o.R.InitialRoutingTableProvides.
+// Sets related.R.InitialRoutingTable appropriately.
+func (o *RoutingTableSnapshot) AddInitialRoutingTableProvides(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Provide) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.InitialRoutingTableID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"provides\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"initial_routing_table_id"}),
+				strmangle.WhereClause("\"", "\"", 2, providePrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.InitialRoutingTableID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &routingTableSnapshotR{
+			InitialRoutingTableProvides: related,
+		}
+	} else {
+		o.R.InitialRoutingTableProvides = append(o.R.InitialRoutingTableProvides, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &provideR{
+				InitialRoutingTable: o,
+			}
+		} else {
+			rel.R.InitialRoutingTable = o
+		}
+	}
+	return nil
+}
+
+// AddFinalRoutingTableRetrievals adds the given related objects to the existing relationships
+// of the routing_table_snapshot, optionally inserting them as new records.
+// Appends related to o.R.FinalRoutingTableRetrievals.
+// Sets related.R.FinalRoutingTable appropriately.
+func (o *RoutingTableSnapshot) AddFinalRoutingTableRetrievals(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Retrieval) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.FinalRoutingTableID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"retrievals\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"final_routing_table_id"}),
+				strmangle.WhereClause("\"", "\"", 2, retrievalPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.FinalRoutingTableID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &routingTableSnapshotR{
+			FinalRoutingTableRetrievals: related,
+		}
+	} else {
+		o.R.FinalRoutingTableRetrievals = append(o.R.FinalRoutingTableRetrievals, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &retrievalR{
+				FinalRoutingTable: o,
+			}
+		} else {
+			rel.R.FinalRoutingTable = o
+		}
+	}
+	return nil
+}
+
+// SetFinalRoutingTableRetrievals removes all previously related items of the
+// routing_table_snapshot replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.FinalRoutingTable's FinalRoutingTableRetrievals accordingly.
+// Replaces o.R.FinalRoutingTableRetrievals with related.
+// Sets related.R.FinalRoutingTable's FinalRoutingTableRetrievals accordingly.
+func (o *RoutingTableSnapshot) SetFinalRoutingTableRetrievals(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Retrieval) error {
+	query := "update \"retrievals\" set \"final_routing_table_id\" = null where \"final_routing_table_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.FinalRoutingTableRetrievals {
+			queries.SetScanner(&rel.FinalRoutingTableID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.FinalRoutingTable = nil
+		}
+
+		o.R.FinalRoutingTableRetrievals = nil
+	}
+	return o.AddFinalRoutingTableRetrievals(ctx, exec, insert, related...)
+}
+
+// RemoveFinalRoutingTableRetrievals relationships from objects passed in.
+// Removes related items from R.FinalRoutingTableRetrievals (uses pointer comparison, removal does not keep order)
+// Sets related.R.FinalRoutingTable.
+func (o *RoutingTableSnapshot) RemoveFinalRoutingTableRetrievals(ctx context.Context, exec boil.ContextExecutor, related ...*Retrieval) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.FinalRoutingTableID, nil)
+		if rel.R != nil {
+			rel.R.FinalRoutingTable = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("final_routing_table_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.FinalRoutingTableRetrievals {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.FinalRoutingTableRetrievals)
+			if ln > 1 && i < ln-1 {
+				o.R.FinalRoutingTableRetrievals[i] = o.R.FinalRoutingTableRetrievals[ln-1]
+			}
+			o.R.FinalRoutingTableRetrievals = o.R.FinalRoutingTableRetrievals[:ln-1]
+			break
+		}
+	}
+
+	return nil
+}
+
+// AddInitialRoutingTableRetrievals adds the given related objects to the existing relationships
+// of the routing_table_snapshot, optionally inserting them as new records.
+// Appends related to o.R.InitialRoutingTableRetrievals.
+// Sets related.R.InitialRoutingTable appropriately.
+func (o *RoutingTableSnapshot) AddInitialRoutingTableRetrievals(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Retrieval) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.InitialRoutingTableID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"retrievals\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"initial_routing_table_id"}),
+				strmangle.WhereClause("\"", "\"", 2, retrievalPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.InitialRoutingTableID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &routingTableSnapshotR{
+			InitialRoutingTableRetrievals: related,
+		}
+	} else {
+		o.R.InitialRoutingTableRetrievals = append(o.R.InitialRoutingTableRetrievals, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &retrievalR{
+				InitialRoutingTable: o,
+			}
+		} else {
+			rel.R.InitialRoutingTable = o
+		}
+	}
 	return nil
 }
 

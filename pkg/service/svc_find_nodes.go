@@ -3,93 +3,90 @@ package service
 import (
 	"context"
 
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/dht"
+
+	"github.com/volatiletech/sqlboiler/v4/boil"
+
 	"github.com/volatiletech/null/v8"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
 	"github.com/dennis-tra/optimistic-provide/pkg/repo"
-	"github.com/libp2p/go-libp2p-core/host"
 )
 
 type FindNodesService interface {
-	Save(ctx context.Context, h host.Host, provideID int, fnReqs []*FindNodesSpan) error
-	List(ctx context.Context, provideID int) ([]*models.FindNode, error)
+	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, fnReqs []*FindNodesSpan) (models.FindNodesRPCSlice, error)
 }
 
 var _ FindNodesService = &FindNodes{}
 
 type FindNodes struct {
 	peerService PeerService
-	fnRepo      repo.FindNodesRepo
+	maService   MultiAddressService
+	fnRepo      repo.FindNodesRPCRepo
 	cpRepo      repo.CloserPeersRepo
 }
 
-func NewFindNodesService(peerService PeerService, fnRepo repo.FindNodesRepo, cpRepo repo.CloserPeersRepo) FindNodesService {
+func NewFindNodesService(peerService PeerService, maService MultiAddressService, fnRepo repo.FindNodesRPCRepo, cpRepo repo.CloserPeersRepo) FindNodesService {
 	return &FindNodes{
 		peerService: peerService,
+		maService:   maService,
 		fnRepo:      fnRepo,
 		cpRepo:      cpRepo,
 	}
 }
 
-func (fn *FindNodes) List(ctx context.Context, provideID int) ([]*models.FindNode, error) {
-	return fn.fnRepo.List(ctx, provideID)
-}
+func (fn *FindNodes) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, fnReqs []*FindNodesSpan) (models.FindNodesRPCSlice, error) {
+	log.Info("Saving Find Nodes RPCs")
 
-func (fn *FindNodes) Save(ctx context.Context, h host.Host, provideID int, fnReqs []*FindNodesSpan) error {
-	log.Info("Saving find nodes requests...")
-	defer log.Info("Done saving find nodes requests")
+	dbFindNodesRPCs := make([]*models.FindNodesRPC, len(fnReqs))
+	for i, fnReq := range fnReqs {
 
-	localPeer, err := fn.peerService.UpsertLocalPeer(h)
-	if err != nil {
-		return err
-	}
-
-	for _, fnReq := range fnReqs {
-
-		remotePeer, err := fn.peerService.UpsertPeer(h, fnReq.RemotePeerID)
+		remotePeer, err := fn.peerService.UpsertPeer(ctx, exec, h, fnReq.RemotePeerID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		errStr := null.NewString("", false)
-		cpCount := null.NewInt(0, false)
-		if fnReq.Error != nil {
-			errStr = null.StringFrom(fnReq.Error.Error())
-		} else {
-			cpCount = null.IntFrom(len(fnReq.CloserPeers))
-		}
-
-		dbfn := &models.FindNode{
-			ProvideID:        provideID,
-			LocalID:          localPeer.ID,
+		dbfn := &models.FindNodesRPC{
+			LocalID:          h.DBPeer.ID,
 			RemoteID:         remotePeer.ID,
 			StartedAt:        fnReq.Start,
 			EndedAt:          fnReq.End,
-			Error:            errStr,
-			CloserPeersCount: cpCount,
-		}
-		dbfn, err = fn.fnRepo.Save(ctx, dbfn)
-		if err != nil {
-			return err
+			Error:            null.StringFromPtr(util.ErrorStr(fnReq.Error)),
+			CloserPeersCount: null.NewInt(len(fnReq.CloserPeers), fnReq.Error == nil),
 		}
 
-		for _, closerPeer := range fnReq.CloserPeers {
+		if err = dbfn.Insert(ctx, exec, boil.Infer()); err != nil {
+			return nil, err
+		}
 
-			cp, err := fn.peerService.UpsertPeer(h, closerPeer.ID)
+		dbcps := make([]*models.CloserPeer, len(fnReq.CloserPeers))
+		for j, closerPeer := range fnReq.CloserPeers {
+			cp, err := fn.peerService.UpsertPeer(ctx, exec, h, closerPeer.ID)
 			if err != nil {
-				return err
+				return nil, err
+			}
+
+			maids, err := fn.maService.UpsertMultiAddresses(ctx, exec, closerPeer.Addrs)
+			if err != nil {
+				return nil, err
 			}
 
 			dbcp := &models.CloserPeer{
-				ProvideID:  provideID,
-				FindNodeID: dbfn.ID,
-				PeerID:     cp.ID,
+				PeerID:          cp.ID,
+				MultiAddressIds: maids,
 			}
-			if _, err = fn.cpRepo.Save(ctx, dbcp); err != nil {
-				return err
-			}
+
+			dbcps[j] = dbcp
 		}
 
+		if err = dbfn.AddFindNodeRPCCloserPeers(ctx, exec, true, dbcps...); err != nil {
+			return nil, err
+		}
+
+		dbFindNodesRPCs[i] = dbfn
 	}
-	return nil
+
+	return dbFindNodesRPCs, nil
 }

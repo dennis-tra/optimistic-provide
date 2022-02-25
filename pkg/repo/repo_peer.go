@@ -4,6 +4,8 @@ import (
 	"context"
 	"sort"
 
+	"github.com/volatiletech/sqlboiler/v4/boil"
+
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/queries"
@@ -15,7 +17,7 @@ import (
 
 type PeerRepo interface {
 	Find(context.Context, peer.ID) (*models.Peer, error)
-	UpsertPeer(pid peer.ID, av string, protocols []string) (*models.Peer, error)
+	UpsertPeer(ctx context.Context, exec boil.ContextExecutor, pid peer.ID, av string, protocols []string) (*models.Peer, error)
 }
 
 var _ PeerRepo = &Peer{}
@@ -34,7 +36,7 @@ func (p *Peer) Find(ctx context.Context, pid peer.ID) (*models.Peer, error) {
 	return models.Peers(models.PeerWhere.MultiHash.EQ(pid.Pretty())).One(ctx, p.dbc)
 }
 
-func (p *Peer) UpsertPeer(pid peer.ID, av string, protocols []string) (*models.Peer, error) {
+func (p *Peer) UpsertPeer(ctx context.Context, exec boil.ContextExecutor, pid peer.ID, av string, protocols []string) (*models.Peer, error) {
 	sort.Strings(protocols)
 
 	dbPeer := &models.Peer{
@@ -47,15 +49,18 @@ func (p *Peer) UpsertPeer(pid peer.ID, av string, protocols []string) (*models.P
 		prots = nil
 	}
 
-	rows, err := queries.Raw("SELECT upsert_peer($1, $2, $3)", dbPeer.MultiHash, dbPeer.AgentVersion.Ptr(), prots).Query(p.dbc)
+	rows, err := queries.Raw("SELECT upsert_peer($1, $2, $3)", dbPeer.MultiHash, dbPeer.AgentVersion.Ptr(), prots).QueryContext(ctx, exec)
 	if err != nil {
 		return nil, err
 	}
+
 	if !rows.Next() {
 		return nil, rows.Err()
 	}
+
 	if err = rows.Scan(&dbPeer.ID); err != nil {
 		return nil, err
 	}
+
 	return dbPeer, rows.Close()
 }

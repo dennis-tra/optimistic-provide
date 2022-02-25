@@ -27,6 +27,8 @@ CREATE TABLE provides
     created_at               TIMESTAMPTZ NOT NULL,
 
     CONSTRAINT fk_provides_provider_id FOREIGN KEY (provider_id) REFERENCES peers (id),
+    CONSTRAINT fk_provides_initial_routing_table_id FOREIGN KEY (initial_routing_table_id) REFERENCES routing_table_snapshots (id),
+    CONSTRAINT fk_provides_final_routing_table_id FOREIGN KEY (final_routing_table_id) REFERENCES routing_table_snapshots (id),
 
     PRIMARY KEY (id)
 );

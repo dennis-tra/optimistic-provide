@@ -3,37 +3,30 @@ package repo
 import (
 	"context"
 
-	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/db"
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
 )
 
-type FindNodesRepo interface {
-	Save(ctx context.Context, dial *models.FindNode) (*models.FindNode, error)
-	List(ctx context.Context, provideID int) ([]*models.FindNode, error)
+type FindNodesRPCRepo interface {
+	List(ctx context.Context, provide *models.Provide) ([]*models.FindNodesRPC, error)
 }
 
-var _ FindNodesRepo = &FindNodes{}
+var _ FindNodesRPCRepo = &FindNodesRPC{}
 
-type FindNodes struct {
+type FindNodesRPC struct {
 	dbc *db.Client
 }
 
-func NewFindNodesRepo(dbc *db.Client) FindNodesRepo {
-	return &FindNodes{
+func NewFindNodesRPCRepo(dbc *db.Client) FindNodesRPCRepo {
+	return &FindNodesRPC{
 		dbc: dbc,
 	}
 }
 
-func (fn FindNodes) List(ctx context.Context, provideID int) ([]*models.FindNode, error) {
-	return models.FindNodes(
-		models.FindNodeWhere.ProvideID.EQ(provideID),
-		qm.Load(models.FindNodeRels.Remote),
-	).All(ctx, fn.dbc)
-}
-
-func (fn FindNodes) Save(ctx context.Context, dial *models.FindNode) (*models.FindNode, error) {
-	return dial, dial.Insert(ctx, fn.dbc, boil.Infer())
+func (fn FindNodesRPC) List(ctx context.Context, provide *models.Provide) ([]*models.FindNodesRPC, error) {
+	return provide.FindNodesRPCS(
+		qm.Load(models.FindNodesRPCRels.Remote),
+	).All(ctx, fn.dbc.DB)
 }

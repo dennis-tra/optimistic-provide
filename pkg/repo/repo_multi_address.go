@@ -3,6 +3,8 @@ package repo
 import (
 	"context"
 
+	"github.com/volatiletech/sqlboiler/v4/boil"
+
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/types"
@@ -13,7 +15,7 @@ import (
 )
 
 type MultiAddressRepo interface {
-	UpsertMultiAddress(ctx context.Context, maddr *models.MultiAddress, addrs []*models.IPAddress, isPublic bool) (*models.MultiAddress, error)
+	UpsertMultiAddress(ctx context.Context, exec boil.ContextExecutor, maddr *models.MultiAddress, addrs []*models.IPAddress, isPublic bool) (*models.MultiAddress, error)
 }
 
 var _ MultiAddressRepo = &MultiAddress{}
@@ -28,7 +30,7 @@ func NewMultiAddressRepo(dbc *db.Client) MultiAddressRepo {
 	}
 }
 
-func (c *MultiAddress) UpsertMultiAddress(ctx context.Context, maddr *models.MultiAddress, ipAddresses []*models.IPAddress, isPublic bool) (*models.MultiAddress, error) {
+func (c *MultiAddress) UpsertMultiAddress(ctx context.Context, exec boil.ContextExecutor, maddr *models.MultiAddress, ipAddresses []*models.IPAddress, isPublic bool) (*models.MultiAddress, error) {
 	var countries []string
 	var continents []string
 	var asns []int
@@ -56,7 +58,7 @@ func (c *MultiAddress) UpsertMultiAddress(ctx context.Context, maddr *models.Mul
 		isPublic,
 		types.Int64Array(ipAddressIDs),
 	)
-	rows, err := query.Query(c.dbc)
+	rows, err := query.QueryContext(ctx, exec)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +71,5 @@ func (c *MultiAddress) UpsertMultiAddress(ctx context.Context, maddr *models.Mul
 		return nil, err
 	}
 
-	if err = rows.Close(); err != nil {
-		return nil, err
-	}
-
-	return maddr, err
+	return maddr, rows.Close()
 }

@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/pkg/errors"
-
 	"github.com/libp2p/go-libp2p-core/peer"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
@@ -17,7 +15,6 @@ type HostService interface {
 	Hosts() map[string]*dht.Host
 	Host(p peer.ID) (*dht.Host, bool)
 	Stop(p peer.ID) error
-	RefreshRoutingTableAsync(ctx context.Context, p peer.ID) error
 }
 
 var _ HostService = &Host{}
@@ -49,7 +46,7 @@ func (hs *Host) Create(ctx context.Context, name string) (*dht.Host, error) {
 
 	hs.hosts[h.Host.ID().String()] = h
 
-	dbPeer, err := hs.peerService.UpsertLocalPeer(h.Host)
+	dbPeer, err := hs.peerService.UpsertLocalPeerTxn(ctx, h.Host)
 	if err != nil {
 		return nil, err
 	}
@@ -93,17 +90,6 @@ func (hs *Host) Stop(p peer.ID) error {
 	}
 
 	delete(hs.hosts, p.String())
-
-	return nil
-}
-
-func (hs *Host) RefreshRoutingTableAsync(ctx context.Context, p peer.ID) error {
-	_, found := hs.Host(p)
-	if !found {
-		return errors.New("peer not found")
-	}
-
-	// go h.RefreshRoutingTable(ctx)
 
 	return nil
 }

@@ -3,9 +3,14 @@ package service
 import (
 	"context"
 
+	"github.com/volatiletech/sqlboiler/v4/boil"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/dht"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
+
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
 	"github.com/dennis-tra/optimistic-provide/pkg/repo"
-	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/volatiletech/null/v8"
 )
 
@@ -17,8 +22,7 @@ const (
 )
 
 type DialService interface {
-	Save(ctx context.Context, h host.Host, op HostOperation, id int, dials []*DialSpan) error
-	List(ctx context.Context, op HostOperation, id int) ([]*models.Dial, error)
+	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, dials []*DialSpan) (models.DialSlice, error)
 }
 
 var _ DialService = &Dial{}
@@ -37,64 +41,37 @@ func NewDialService(peerService PeerService, maService MultiAddressService, dial
 	}
 }
 
-func (d *Dial) List(ctx context.Context, op HostOperation, id int) ([]*models.Dial, error) {
-	switch op {
-	case HostOperationProvide:
-		return d.dialRepo.ListFromProvide(ctx, id)
-	case HostOperationRetrieval:
-		return d.dialRepo.ListFromRetrieval(ctx, id)
-	default:
-		panic(op)
-	}
-}
+func (d *Dial) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, dials []*DialSpan) (models.DialSlice, error) {
+	log.Info("Saving Dials")
 
-func (d *Dial) Save(ctx context.Context, h host.Host, op HostOperation, id int, dials []*DialSpan) error {
-	log.Info("Saving dials...")
-	defer log.Info("Done saving dials")
-
-	localPeer, err := d.peerService.UpsertLocalPeer(h)
-	if err != nil {
-		return err
-	}
-
-	for _, dial := range dials {
-		remotePeer, err := d.peerService.UpsertPeer(h, dial.RemotePeerID)
+	dbDials := make([]*models.Dial, len(dials))
+	for i, dial := range dials {
+		remotePeer, err := d.peerService.UpsertPeer(ctx, exec, h, dial.RemotePeerID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		maddr, err := d.maService.UpsertMultiAddress(ctx, dial.Maddr)
+		maddr, err := d.maService.UpsertMultiAddress(ctx, exec, dial.Maddr)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		errStr := ""
-		if dial.Error != nil {
-			errStr = dial.Error.Error()
-		}
 		dbDial := &models.Dial{
-			LocalID:        localPeer.ID,
+			LocalID:        h.DBPeer.ID,
 			RemoteID:       remotePeer.ID,
 			Transport:      dial.Trpt,
 			MultiAddressID: maddr.ID,
 			StartedAt:      dial.Start,
 			EndedAt:        dial.End,
-			Error:          null.NewString(errStr, errStr != ""),
+			Error:          null.StringFromPtr(util.ErrorStr(dial.Error)),
 		}
 
-		switch op {
-		case HostOperationProvide:
-			dbDial.ProvideID = null.IntFrom(id)
-		case HostOperationRetrieval:
-			dbDial.RetrievalID = null.IntFrom(id)
-		default:
-			panic(op)
+		if dbDial, err = d.dialRepo.Save(ctx, exec, dbDial); err != nil {
+			return nil, err
 		}
 
-		if dbDial, err = d.dialRepo.Save(ctx, dbDial); err != nil {
-			return err
-		}
+		dbDials[i] = dbDial
 	}
 
-	return nil
+	return dbDials, nil
 }

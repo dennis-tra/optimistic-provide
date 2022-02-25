@@ -4,6 +4,10 @@ import (
 	"context"
 	"sort"
 
+	"github.com/pkg/errors"
+
+	"github.com/volatiletech/sqlboiler/v4/boil"
+
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -15,8 +19,9 @@ import (
 
 type PeerService interface {
 	Find(ctx context.Context, p peer.ID) (*models.Peer, error)
-	UpsertLocalPeer(h host.Host) (*models.Peer, error)
-	UpsertPeer(h host.Host, pid peer.ID) (*models.Peer, error)
+	UpsertLocalPeer(ctx context.Context, exec boil.ContextExecutor, h host.Host) (*models.Peer, error)
+	UpsertLocalPeerTxn(ctx context.Context, h host.Host) (*models.Peer, error)
+	UpsertPeer(ctx context.Context, exec boil.ContextExecutor, h host.Host, pid peer.ID) (*models.Peer, error)
 }
 
 var _ PeerService = &Peer{}
@@ -42,15 +47,38 @@ func NewPeerService(repo repo.PeerRepo) PeerService {
 	}
 }
 
-func (ps *Peer) UpsertLocalPeer(h host.Host) (*models.Peer, error) {
+func (ps *Peer) UpsertLocalPeerTxn(ctx context.Context, h host.Host) (*models.Peer, error) {
+	txn, err := boil.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "begin transaction")
+	}
+
+	snapshot, err := ps.UpsertLocalPeer(ctx, txn, h)
+	if err != nil {
+		if err2 := txn.Rollback(); err != nil {
+			log.Warn("error rolling back transaction", err2)
+		}
+		return nil, err
+	}
+	if err := txn.Commit(); err != nil {
+		if err2 := txn.Rollback(); err != nil {
+			log.Warn("error rolling back transaction", err2)
+		}
+		return nil, errors.Wrap(err, "committing transaction")
+	}
+
+	return snapshot, nil
+}
+
+func (ps *Peer) UpsertLocalPeer(ctx context.Context, exec boil.ContextExecutor, h host.Host) (*models.Peer, error) {
 	protocols := []string{}
 	for _, prot := range kaddht.DefaultProtocols {
 		protocols = append(protocols, string(prot))
 	}
-	return ps.repo.UpsertPeer(h.ID(), "optprov", protocols)
+	return ps.repo.UpsertPeer(ctx, exec, h.ID(), "optprov", protocols)
 }
 
-func (ps *Peer) UpsertPeer(h host.Host, pid peer.ID) (*models.Peer, error) {
+func (ps *Peer) UpsertPeer(ctx context.Context, exec boil.ContextExecutor, h host.Host, pid peer.ID) (*models.Peer, error) {
 	av := ""
 	if agent, err := h.Peerstore().Get(pid, "AgentVersion"); err == nil {
 		av = agent.(string)
@@ -60,7 +88,6 @@ func (ps *Peer) UpsertPeer(h host.Host, pid peer.ID) (*models.Peer, error) {
 	if prots, err := h.Peerstore().GetProtocols(pid); err == nil {
 		protocols = prots
 	}
-	sort.Strings(protocols)
 
 	cached, found := ps.cache.Get(pid.String())
 	if found {
@@ -84,7 +111,7 @@ func (ps *Peer) UpsertPeer(h host.Host, pid peer.ID) (*models.Peer, error) {
 		}
 	}
 
-	dbPeer, err := ps.repo.UpsertPeer(pid, av, protocols)
+	dbPeer, err := ps.repo.UpsertPeer(ctx, exec, pid, av, protocols)
 	if err != nil {
 		return nil, err
 	}

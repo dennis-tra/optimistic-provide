@@ -27,6 +27,8 @@ CREATE TABLE retrievals
     created_at               TIMESTAMPTZ NOT NULL,
 
     CONSTRAINT fk_retrievals_retriever_id FOREIGN KEY (retriever_id) REFERENCES peers (id),
+    CONSTRAINT fk_retrievals_initial_routing_table_id FOREIGN KEY (initial_routing_table_id) REFERENCES routing_table_snapshots (id),
+    CONSTRAINT fk_retrievals_final_routing_table_id FOREIGN KEY (final_routing_table_id) REFERENCES routing_table_snapshots (id),
 
     PRIMARY KEY (id)
 );

@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/volatiletech/sqlboiler/v4/boil"
+
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -52,6 +54,8 @@ func NewClient(cfg *config.Config) (*Client, error) {
 	if err != nil && err != migrate.ErrNoChange {
 		return nil, err
 	}
+
+	boil.SetDB(dbh)
 
 	return &Client{DB: dbh}, nil
 }

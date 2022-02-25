@@ -22,10 +22,12 @@ var TableNames = struct {
 	ProvidesXConnections        string
 	ProvidesXDials              string
 	ProvidesXFindNodesRPCS      string
+	ProvidesXPeerStates         string
 	Retrievals                  string
 	RetrievalsXConnections      string
 	RetrievalsXDials            string
 	RetrievalsXGetProvidersRPCS string
+	RetrievalsXPeerStates       string
 	RoutingTableEntries         string
 	RoutingTableSnapshots       string
 }{
@@ -47,10 +49,12 @@ var TableNames = struct {
 	ProvidesXConnections:        "provides_x_connections",
 	ProvidesXDials:              "provides_x_dials",
 	ProvidesXFindNodesRPCS:      "provides_x_find_nodes_rpcs",
+	ProvidesXPeerStates:         "provides_x_peer_states",
 	Retrievals:                  "retrievals",
 	RetrievalsXConnections:      "retrievals_x_connections",
 	RetrievalsXDials:            "retrievals_x_dials",
 	RetrievalsXGetProvidersRPCS: "retrievals_x_get_providers_rpcs",
+	RetrievalsXPeerStates:       "retrievals_x_peer_states",
 	RoutingTableEntries:         "routing_table_entries",
 	RoutingTableSnapshots:       "routing_table_snapshots",
 }

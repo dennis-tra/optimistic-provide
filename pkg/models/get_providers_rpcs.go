@@ -461,7 +461,7 @@ func (o *GetProvidersRPC) Retrievals(mods ...qm.QueryMod) retrievalQuery {
 
 	queryMods = append(queryMods,
 		qm.InnerJoin("\"retrievals_x_get_providers_rpcs\" on \"retrievals\".\"id\" = \"retrievals_x_get_providers_rpcs\".\"retrieval_id\""),
-		qm.Where("\"retrievals_x_get_providers_rpcs\".\"get_provider_rpc_id\"=?", o.ID),
+		qm.Where("\"retrievals_x_get_providers_rpcs\".\"get_providers_rpc_id\"=?", o.ID),
 	)
 
 	query := Retrievals(queryMods...)
@@ -820,10 +820,10 @@ func (getProvidersRPCL) LoadRetrievals(ctx context.Context, e boil.ContextExecut
 	}
 
 	query := NewQuery(
-		qm.Select("\"retrievals\".id, \"retrievals\".retriever_id, \"retrievals\".content_id, \"retrievals\".distance, \"retrievals\".initial_routing_table_id, \"retrievals\".final_routing_table_id, \"retrievals\".started_at, \"retrievals\".ended_at, \"retrievals\".error, \"retrievals\".done_at, \"retrievals\".updated_at, \"retrievals\".created_at, \"a\".\"get_provider_rpc_id\""),
+		qm.Select("\"retrievals\".id, \"retrievals\".retriever_id, \"retrievals\".content_id, \"retrievals\".distance, \"retrievals\".initial_routing_table_id, \"retrievals\".final_routing_table_id, \"retrievals\".started_at, \"retrievals\".ended_at, \"retrievals\".error, \"retrievals\".done_at, \"retrievals\".updated_at, \"retrievals\".created_at, \"a\".\"get_providers_rpc_id\""),
 		qm.From("\"retrievals\""),
 		qm.InnerJoin("\"retrievals_x_get_providers_rpcs\" as \"a\" on \"retrievals\".\"id\" = \"a\".\"retrieval_id\""),
-		qm.WhereIn("\"a\".\"get_provider_rpc_id\" in ?", args...),
+		qm.WhereIn("\"a\".\"get_providers_rpc_id\" in ?", args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -873,7 +873,7 @@ func (getProvidersRPCL) LoadRetrievals(ctx context.Context, e boil.ContextExecut
 			if foreign.R == nil {
 				foreign.R = &retrievalR{}
 			}
-			foreign.R.GetProviderRPCGetProvidersRPCS = append(foreign.R.GetProviderRPCGetProvidersRPCS, object)
+			foreign.R.GetProvidersRPCS = append(foreign.R.GetProvidersRPCS, object)
 		}
 		return nil
 	}
@@ -886,7 +886,7 @@ func (getProvidersRPCL) LoadRetrievals(ctx context.Context, e boil.ContextExecut
 				if foreign.R == nil {
 					foreign.R = &retrievalR{}
 				}
-				foreign.R.GetProviderRPCGetProvidersRPCS = append(foreign.R.GetProviderRPCGetProvidersRPCS, local)
+				foreign.R.GetProvidersRPCS = append(foreign.R.GetProvidersRPCS, local)
 				break
 			}
 		}
@@ -1045,7 +1045,7 @@ func (o *GetProvidersRPC) AddProviderPeers(ctx context.Context, exec boil.Contex
 // AddRetrievals adds the given related objects to the existing relationships
 // of the get_providers_rpc, optionally inserting them as new records.
 // Appends related to o.R.Retrievals.
-// Sets related.R.GetProviderRPCGetProvidersRPCS appropriately.
+// Sets related.R.GetProvidersRPCS appropriately.
 func (o *GetProvidersRPC) AddRetrievals(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Retrieval) error {
 	var err error
 	for _, rel := range related {
@@ -1057,7 +1057,7 @@ func (o *GetProvidersRPC) AddRetrievals(ctx context.Context, exec boil.ContextEx
 	}
 
 	for _, rel := range related {
-		query := "insert into \"retrievals_x_get_providers_rpcs\" (\"get_provider_rpc_id\", \"retrieval_id\") values ($1, $2)"
+		query := "insert into \"retrievals_x_get_providers_rpcs\" (\"get_providers_rpc_id\", \"retrieval_id\") values ($1, $2)"
 		values := []interface{}{o.ID, rel.ID}
 
 		if boil.IsDebug(ctx) {
@@ -1081,10 +1081,10 @@ func (o *GetProvidersRPC) AddRetrievals(ctx context.Context, exec boil.ContextEx
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &retrievalR{
-				GetProviderRPCGetProvidersRPCS: GetProvidersRPCSlice{o},
+				GetProvidersRPCS: GetProvidersRPCSlice{o},
 			}
 		} else {
-			rel.R.GetProviderRPCGetProvidersRPCS = append(rel.R.GetProviderRPCGetProvidersRPCS, o)
+			rel.R.GetProvidersRPCS = append(rel.R.GetProvidersRPCS, o)
 		}
 	}
 	return nil
@@ -1093,11 +1093,11 @@ func (o *GetProvidersRPC) AddRetrievals(ctx context.Context, exec boil.ContextEx
 // SetRetrievals removes all previously related items of the
 // get_providers_rpc replacing them completely with the passed
 // in related items, optionally inserting them as new records.
-// Sets o.R.GetProviderRPCGetProvidersRPCS's Retrievals accordingly.
+// Sets o.R.GetProvidersRPCS's Retrievals accordingly.
 // Replaces o.R.Retrievals with related.
-// Sets related.R.GetProviderRPCGetProvidersRPCS's Retrievals accordingly.
+// Sets related.R.GetProvidersRPCS's Retrievals accordingly.
 func (o *GetProvidersRPC) SetRetrievals(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Retrieval) error {
-	query := "delete from \"retrievals_x_get_providers_rpcs\" where \"get_provider_rpc_id\" = $1"
+	query := "delete from \"retrievals_x_get_providers_rpcs\" where \"get_providers_rpc_id\" = $1"
 	values := []interface{}{o.ID}
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1109,7 +1109,7 @@ func (o *GetProvidersRPC) SetRetrievals(ctx context.Context, exec boil.ContextEx
 		return errors.Wrap(err, "failed to remove relationships before set")
 	}
 
-	removeRetrievalsFromGetProviderRPCGetProvidersRPCSSlice(o, related)
+	removeRetrievalsFromGetProvidersRPCSSlice(o, related)
 	if o.R != nil {
 		o.R.Retrievals = nil
 	}
@@ -1118,7 +1118,7 @@ func (o *GetProvidersRPC) SetRetrievals(ctx context.Context, exec boil.ContextEx
 
 // RemoveRetrievals relationships from objects passed in.
 // Removes related items from R.Retrievals (uses pointer comparison, removal does not keep order)
-// Sets related.R.GetProviderRPCGetProvidersRPCS.
+// Sets related.R.GetProvidersRPCS.
 func (o *GetProvidersRPC) RemoveRetrievals(ctx context.Context, exec boil.ContextExecutor, related ...*Retrieval) error {
 	if len(related) == 0 {
 		return nil
@@ -1126,7 +1126,7 @@ func (o *GetProvidersRPC) RemoveRetrievals(ctx context.Context, exec boil.Contex
 
 	var err error
 	query := fmt.Sprintf(
-		"delete from \"retrievals_x_get_providers_rpcs\" where \"get_provider_rpc_id\" = $1 and \"retrieval_id\" in (%s)",
+		"delete from \"retrievals_x_get_providers_rpcs\" where \"get_providers_rpc_id\" = $1 and \"retrieval_id\" in (%s)",
 		strmangle.Placeholders(dialect.UseIndexPlaceholders, len(related), 2, 1),
 	)
 	values := []interface{}{o.ID}
@@ -1143,7 +1143,7 @@ func (o *GetProvidersRPC) RemoveRetrievals(ctx context.Context, exec boil.Contex
 	if err != nil {
 		return errors.Wrap(err, "failed to remove relationships before set")
 	}
-	removeRetrievalsFromGetProviderRPCGetProvidersRPCSSlice(o, related)
+	removeRetrievalsFromGetProvidersRPCSSlice(o, related)
 	if o.R == nil {
 		return nil
 	}
@@ -1166,21 +1166,21 @@ func (o *GetProvidersRPC) RemoveRetrievals(ctx context.Context, exec boil.Contex
 	return nil
 }
 
-func removeRetrievalsFromGetProviderRPCGetProvidersRPCSSlice(o *GetProvidersRPC, related []*Retrieval) {
+func removeRetrievalsFromGetProvidersRPCSSlice(o *GetProvidersRPC, related []*Retrieval) {
 	for _, rel := range related {
 		if rel.R == nil {
 			continue
 		}
-		for i, ri := range rel.R.GetProviderRPCGetProvidersRPCS {
+		for i, ri := range rel.R.GetProvidersRPCS {
 			if o.ID != ri.ID {
 				continue
 			}
 
-			ln := len(rel.R.GetProviderRPCGetProvidersRPCS)
+			ln := len(rel.R.GetProvidersRPCS)
 			if ln > 1 && i < ln-1 {
-				rel.R.GetProviderRPCGetProvidersRPCS[i] = rel.R.GetProviderRPCGetProvidersRPCS[ln-1]
+				rel.R.GetProvidersRPCS[i] = rel.R.GetProvidersRPCS[ln-1]
 			}
-			rel.R.GetProviderRPCGetProvidersRPCS = rel.R.GetProviderRPCGetProvidersRPCS[:ln-1]
+			rel.R.GetProvidersRPCS = rel.R.GetProvidersRPCS[:ln-1]
 			break
 		}
 	}

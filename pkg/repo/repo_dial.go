@@ -3,8 +3,6 @@ package repo
 import (
 	"context"
 
-	"github.com/volatiletech/null/v8"
-
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
@@ -13,9 +11,9 @@ import (
 )
 
 type DialRepo interface {
-	Save(ctx context.Context, dial *models.Dial) (*models.Dial, error)
-	ListFromProvide(ctx context.Context, provideID int) ([]*models.Dial, error)
-	ListFromRetrieval(ctx context.Context, retrievalID int) ([]*models.Dial, error)
+	ListFromProvide(ctx context.Context, provide *models.Provide) ([]*models.Dial, error)
+	ListFromRetrieval(ctx context.Context, retrieval *models.Retrieval) ([]*models.Dial, error)
+	Save(ctx context.Context, exec boil.ContextExecutor, dial *models.Dial) (*models.Dial, error)
 }
 
 var _ DialRepo = &Dial{}
@@ -30,22 +28,20 @@ func NewDialRepo(dbc *db.Client) DialRepo {
 	}
 }
 
-func (d Dial) ListFromProvide(ctx context.Context, provideID int) ([]*models.Dial, error) {
-	return models.Dials(
-		models.DialWhere.ProvideID.EQ(null.IntFrom(provideID)),
+func (d Dial) ListFromProvide(ctx context.Context, provide *models.Provide) ([]*models.Dial, error) {
+	return provide.Dials(
 		qm.Load(models.DialRels.Remote),
 		qm.Load(models.DialRels.MultiAddress),
 	).All(ctx, d.dbc)
 }
 
-func (d Dial) ListFromRetrieval(ctx context.Context, retrievalID int) ([]*models.Dial, error) {
-	return models.Dials(
-		models.DialWhere.RetrievalID.EQ(null.IntFrom(retrievalID)),
+func (d Dial) ListFromRetrieval(ctx context.Context, retrieval *models.Retrieval) ([]*models.Dial, error) {
+	return retrieval.Dials(
 		qm.Load(models.DialRels.Remote),
 		qm.Load(models.DialRels.MultiAddress),
 	).All(ctx, d.dbc)
 }
 
-func (d Dial) Save(ctx context.Context, dial *models.Dial) (*models.Dial, error) {
-	return dial, dial.Insert(ctx, d.dbc, boil.Infer())
+func (d Dial) Save(ctx context.Context, exec boil.ContextExecutor, dial *models.Dial) (*models.Dial, error) {
+	return dial, dial.Insert(ctx, exec, boil.Infer())
 }

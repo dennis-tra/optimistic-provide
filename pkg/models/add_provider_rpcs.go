@@ -26,7 +26,6 @@ import (
 // AddProviderRPC is an object representing the database table.
 type AddProviderRPC struct {
 	ID              int              `boil:"id" json:"id" toml:"id" yaml:"id"`
-	ProvideID       int              `boil:"provide_id" json:"provide_id" toml:"provide_id" yaml:"provide_id"`
 	LocalID         int              `boil:"local_id" json:"local_id" toml:"local_id" yaml:"local_id"`
 	RemoteID        int              `boil:"remote_id" json:"remote_id" toml:"remote_id" yaml:"remote_id"`
 	Distance        []byte           `boil:"distance" json:"distance" toml:"distance" yaml:"distance"`
@@ -41,7 +40,6 @@ type AddProviderRPC struct {
 
 var AddProviderRPCColumns = struct {
 	ID              string
-	ProvideID       string
 	LocalID         string
 	RemoteID        string
 	Distance        string
@@ -51,7 +49,6 @@ var AddProviderRPCColumns = struct {
 	Error           string
 }{
 	ID:              "id",
-	ProvideID:       "provide_id",
 	LocalID:         "local_id",
 	RemoteID:        "remote_id",
 	Distance:        "distance",
@@ -63,7 +60,6 @@ var AddProviderRPCColumns = struct {
 
 var AddProviderRPCTableColumns = struct {
 	ID              string
-	ProvideID       string
 	LocalID         string
 	RemoteID        string
 	Distance        string
@@ -73,7 +69,6 @@ var AddProviderRPCTableColumns = struct {
 	Error           string
 }{
 	ID:              "add_provider_rpcs.id",
-	ProvideID:       "add_provider_rpcs.provide_id",
 	LocalID:         "add_provider_rpcs.local_id",
 	RemoteID:        "add_provider_rpcs.remote_id",
 	Distance:        "add_provider_rpcs.distance",
@@ -184,7 +179,6 @@ func (w whereHelpernull_String) GTE(x null.String) qm.QueryMod {
 
 var AddProviderRPCWhere = struct {
 	ID              whereHelperint
-	ProvideID       whereHelperint
 	LocalID         whereHelperint
 	RemoteID        whereHelperint
 	Distance        whereHelper__byte
@@ -194,7 +188,6 @@ var AddProviderRPCWhere = struct {
 	Error           whereHelpernull_String
 }{
 	ID:              whereHelperint{field: "\"add_provider_rpcs\".\"id\""},
-	ProvideID:       whereHelperint{field: "\"add_provider_rpcs\".\"provide_id\""},
 	LocalID:         whereHelperint{field: "\"add_provider_rpcs\".\"local_id\""},
 	RemoteID:        whereHelperint{field: "\"add_provider_rpcs\".\"remote_id\""},
 	Distance:        whereHelper__byte{field: "\"add_provider_rpcs\".\"distance\""},
@@ -207,12 +200,10 @@ var AddProviderRPCWhere = struct {
 // AddProviderRPCRels is where relationship names are stored.
 var AddProviderRPCRels = struct {
 	Local    string
-	Provide  string
 	Remote   string
 	Provides string
 }{
 	Local:    "Local",
-	Provide:  "Provide",
 	Remote:   "Remote",
 	Provides: "Provides",
 }
@@ -220,7 +211,6 @@ var AddProviderRPCRels = struct {
 // addProviderRPCR is where relationships are stored.
 type addProviderRPCR struct {
 	Local    *Peer        `boil:"Local" json:"Local" toml:"Local" yaml:"Local"`
-	Provide  *Provide     `boil:"Provide" json:"Provide" toml:"Provide" yaml:"Provide"`
 	Remote   *Peer        `boil:"Remote" json:"Remote" toml:"Remote" yaml:"Remote"`
 	Provides ProvideSlice `boil:"Provides" json:"Provides" toml:"Provides" yaml:"Provides"`
 }
@@ -234,8 +224,8 @@ func (*addProviderRPCR) NewStruct() *addProviderRPCR {
 type addProviderRPCL struct{}
 
 var (
-	addProviderRPCAllColumns            = []string{"id", "provide_id", "local_id", "remote_id", "distance", "multi_address_ids", "started_at", "ended_at", "error"}
-	addProviderRPCColumnsWithoutDefault = []string{"provide_id", "local_id", "remote_id", "distance", "multi_address_ids", "started_at", "ended_at", "error"}
+	addProviderRPCAllColumns            = []string{"id", "local_id", "remote_id", "distance", "multi_address_ids", "started_at", "ended_at", "error"}
+	addProviderRPCColumnsWithoutDefault = []string{"local_id", "remote_id", "distance", "multi_address_ids", "started_at", "ended_at", "error"}
 	addProviderRPCColumnsWithDefault    = []string{"id"}
 	addProviderRPCPrimaryKeyColumns     = []string{"id"}
 )
@@ -529,20 +519,6 @@ func (o *AddProviderRPC) Local(mods ...qm.QueryMod) peerQuery {
 	return query
 }
 
-// Provide pointed to by the foreign key.
-func (o *AddProviderRPC) Provide(mods ...qm.QueryMod) provideQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.ProvideID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := Provides(queryMods...)
-	queries.SetFrom(query.Query, "\"provides\"")
-
-	return query
-}
-
 // Remote pointed to by the foreign key.
 func (o *AddProviderRPC) Remote(mods ...qm.QueryMod) peerQuery {
 	queryMods := []qm.QueryMod{
@@ -675,110 +651,6 @@ func (addProviderRPCL) LoadLocal(ctx context.Context, e boil.ContextExecutor, si
 					foreign.R = &peerR{}
 				}
 				foreign.R.LocalAddProviderRPCS = append(foreign.R.LocalAddProviderRPCS, local)
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadProvide allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (addProviderRPCL) LoadProvide(ctx context.Context, e boil.ContextExecutor, singular bool, maybeAddProviderRPC interface{}, mods queries.Applicator) error {
-	var slice []*AddProviderRPC
-	var object *AddProviderRPC
-
-	if singular {
-		object = maybeAddProviderRPC.(*AddProviderRPC)
-	} else {
-		slice = *maybeAddProviderRPC.(*[]*AddProviderRPC)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &addProviderRPCR{}
-		}
-		args = append(args, object.ProvideID)
-
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &addProviderRPCR{}
-			}
-
-			for _, a := range args {
-				if a == obj.ProvideID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ProvideID)
-
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`provides`),
-		qm.WhereIn(`provides.id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Provide")
-	}
-
-	var resultSlice []*Provide
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Provide")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for provides")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for provides")
-	}
-
-	if len(addProviderRPCAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Provide = foreign
-		if foreign.R == nil {
-			foreign.R = &provideR{}
-		}
-		foreign.R.AddProviderRPCS = append(foreign.R.AddProviderRPCS, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.ProvideID == foreign.ID {
-				local.R.Provide = foreign
-				if foreign.R == nil {
-					foreign.R = &provideR{}
-				}
-				foreign.R.AddProviderRPCS = append(foreign.R.AddProviderRPCS, local)
 				break
 			}
 		}
@@ -1048,53 +920,6 @@ func (o *AddProviderRPC) SetLocal(ctx context.Context, exec boil.ContextExecutor
 		}
 	} else {
 		related.R.LocalAddProviderRPCS = append(related.R.LocalAddProviderRPCS, o)
-	}
-
-	return nil
-}
-
-// SetProvide of the addProviderRPC to the related item.
-// Sets o.R.Provide to related.
-// Adds o to related.R.AddProviderRPCS.
-func (o *AddProviderRPC) SetProvide(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Provide) error {
-	var err error
-	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"add_provider_rpcs\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"provide_id"}),
-		strmangle.WhereClause("\"", "\"", 2, addProviderRPCPrimaryKeyColumns),
-	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, updateQuery)
-		fmt.Fprintln(writer, values)
-	}
-	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.ProvideID = related.ID
-	if o.R == nil {
-		o.R = &addProviderRPCR{
-			Provide: related,
-		}
-	} else {
-		o.R.Provide = related
-	}
-
-	if related.R == nil {
-		related.R = &provideR{
-			AddProviderRPCS: AddProviderRPCSlice{o},
-		}
-	} else {
-		related.R.AddProviderRPCS = append(related.R.AddProviderRPCS, o)
 	}
 
 	return nil

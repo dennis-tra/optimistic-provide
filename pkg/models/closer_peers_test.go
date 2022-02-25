@@ -149,7 +149,7 @@ func testCloserPeersExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := CloserPeerExists(ctx, tx, o.ProvideID, o.FindNodeRPCID, o.PeerID)
+	e, err := CloserPeerExists(ctx, tx, o.FindNodeRPCID, o.PeerID)
 	if err != nil {
 		t.Errorf("Unable to check if CloserPeer exists: %s", err)
 	}
@@ -175,7 +175,7 @@ func testCloserPeersFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	closerPeerFound, err := FindCloserPeer(ctx, tx, o.ProvideID, o.FindNodeRPCID, o.PeerID)
+	closerPeerFound, err := FindCloserPeer(ctx, tx, o.FindNodeRPCID, o.PeerID)
 	if err != nil {
 		t.Error(err)
 	}
@@ -596,57 +596,6 @@ func testCloserPeerToOnePeerUsingPeer(t *testing.T) {
 	}
 }
 
-func testCloserPeerToOneProvideUsingProvide(t *testing.T) {
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var local CloserPeer
-	var foreign Provide
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, closerPeerDBTypes, false, closerPeerColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize CloserPeer struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &foreign, provideDBTypes, false, provideColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Provide struct: %s", err)
-	}
-
-	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	local.ProvideID = foreign.ID
-	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.Provide().One(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if check.ID != foreign.ID {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
-
-	slice := CloserPeerSlice{&local}
-	if err = local.L.LoadProvide(ctx, tx, false, (*[]*CloserPeer)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Provide == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.Provide = nil
-	if err = local.L.LoadProvide(ctx, tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.Provide == nil {
-		t.Error("struct should have been eager loaded")
-	}
-}
-
 func testCloserPeerToOneSetOpFindNodesRPCUsingFindNodeRPC(t *testing.T) {
 	var err error
 
@@ -692,7 +641,7 @@ func testCloserPeerToOneSetOpFindNodesRPCUsingFindNodeRPC(t *testing.T) {
 			t.Error("foreign key was wrong value", a.FindNodeRPCID)
 		}
 
-		if exists, err := CloserPeerExists(ctx, tx, a.ProvideID, a.FindNodeRPCID, a.PeerID); err != nil {
+		if exists, err := CloserPeerExists(ctx, tx, a.FindNodeRPCID, a.PeerID); err != nil {
 			t.Fatal(err)
 		} else if !exists {
 			t.Error("want 'a' to exist")
@@ -745,60 +694,7 @@ func testCloserPeerToOneSetOpPeerUsingPeer(t *testing.T) {
 			t.Error("foreign key was wrong value", a.PeerID)
 		}
 
-		if exists, err := CloserPeerExists(ctx, tx, a.ProvideID, a.FindNodeRPCID, a.PeerID); err != nil {
-			t.Fatal(err)
-		} else if !exists {
-			t.Error("want 'a' to exist")
-		}
-
-	}
-}
-func testCloserPeerToOneSetOpProvideUsingProvide(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a CloserPeer
-	var b, c Provide
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, closerPeerDBTypes, false, strmangle.SetComplement(closerPeerPrimaryKeyColumns, closerPeerColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	for i, x := range []*Provide{&b, &c} {
-		err = a.SetProvide(ctx, tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if a.R.Provide != x {
-			t.Error("relationship struct not set to correct value")
-		}
-
-		if x.R.CloserPeers[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if a.ProvideID != x.ID {
-			t.Error("foreign key was wrong value", a.ProvideID)
-		}
-
-		if exists, err := CloserPeerExists(ctx, tx, a.ProvideID, a.FindNodeRPCID, a.PeerID); err != nil {
+		if exists, err := CloserPeerExists(ctx, tx, a.FindNodeRPCID, a.PeerID); err != nil {
 			t.Fatal(err)
 		} else if !exists {
 			t.Error("want 'a' to exist")
@@ -881,7 +777,7 @@ func testCloserPeersSelect(t *testing.T) {
 }
 
 var (
-	closerPeerDBTypes = map[string]string{`ProvideID`: `integer`, `FindNodeRPCID`: `integer`, `PeerID`: `integer`}
+	closerPeerDBTypes = map[string]string{`ID`: `integer`, `FindNodeRPCID`: `integer`, `PeerID`: `integer`, `MultiAddressIds`: `ARRAYinteger`}
 	_                 = bytes.MinRead
 )
 

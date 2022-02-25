@@ -11,10 +11,9 @@ import (
 )
 
 type RetrievalRepo interface {
-	Save(ctx context.Context, provide *models.Retrieval) (*models.Retrieval, error)
-	Update(ctx context.Context, provide *models.Retrieval) (*models.Retrieval, error)
+	Update(ctx context.Context, retrieval *models.Retrieval) (*models.Retrieval, error)
 	List(ctx context.Context, hostID string) ([]*models.Retrieval, error)
-	Get(ctx context.Context, hostID string, provideID int) (*models.Retrieval, error)
+	Get(ctx context.Context, hostID string, retrievalID int) (*models.Retrieval, error)
 }
 
 var _ RetrievalRepo = &Retrieval{}
@@ -29,27 +28,23 @@ func NewRetrievalRepo(dbc *db.Client) RetrievalRepo {
 	}
 }
 
-func (p Retrieval) Save(ctx context.Context, provide *models.Retrieval) (*models.Retrieval, error) {
-	return provide, provide.Insert(ctx, p.dbc, boil.Infer())
+func (r Retrieval) Update(ctx context.Context, retrieval *models.Retrieval) (*models.Retrieval, error) {
+	_, err := retrieval.Update(ctx, r.dbc, boil.Infer())
+	return retrieval, err
 }
 
-func (p Retrieval) Update(ctx context.Context, provide *models.Retrieval) (*models.Retrieval, error) {
-	_, err := provide.Update(ctx, p.dbc, boil.Infer())
-	return provide, err
-}
-
-func (p Retrieval) List(ctx context.Context, hostID string) ([]*models.Retrieval, error) {
+func (r Retrieval) List(ctx context.Context, hostID string) ([]*models.Retrieval, error) {
 	return models.Retrievals(
 		qm.InnerJoin(models.TableNames.Peers+" ON "+models.TableNames.Peers+"."+models.PeerColumns.ID+" = "+models.RetrievalColumns.RetrieverID),
 		models.PeerWhere.MultiHash.EQ(hostID),
 		qm.OrderBy(models.RetrievalColumns.CreatedAt),
-	).All(ctx, p.dbc)
+	).All(ctx, r.dbc)
 }
 
-func (p Retrieval) Get(ctx context.Context, hostID string, provideID int) (*models.Retrieval, error) {
+func (r Retrieval) Get(ctx context.Context, hostID string, retrievalID int) (*models.Retrieval, error) {
 	return models.Retrievals(
 		qm.InnerJoin(models.TableNames.Peers+" ON "+models.TableNames.Peers+"."+models.PeerColumns.ID+" = "+models.RetrievalColumns.RetrieverID),
 		models.PeerWhere.MultiHash.EQ(hostID),
-		models.RetrievalWhere.ID.EQ(provideID),
-	).One(ctx, p.dbc)
+		models.RetrievalWhere.ID.EQ(retrievalID),
+	).One(ctx, r.dbc)
 }

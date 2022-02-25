@@ -19,12 +19,12 @@ CREATE TABLE get_providers_rpcs
 CREATE TABLE retrievals_x_get_providers_rpcs
 (
     retrieval_id        INT NOT NULL,
-    get_provider_rpc_id INT NOT NULL,
+    get_providers_rpc_id INT NOT NULL,
 
     CONSTRAINT fk_retrievals_x_get_providers_rpcs_retrieval_id FOREIGN KEY (retrieval_id) REFERENCES retrievals (id),
-    CONSTRAINT fk_retrievals_x_get_providers_rpcs_get_provider_rpc_id FOREIGN KEY (get_provider_rpc_id) REFERENCES get_providers_rpcs (id),
+    CONSTRAINT fk_retrievals_x_get_providers_rpcs_get_providers_rpc_id FOREIGN KEY (get_providers_rpc_id) REFERENCES get_providers_rpcs (id),
 
-    PRIMARY KEY (retrieval_id, get_provider_rpc_id)
+    PRIMARY KEY (retrieval_id, get_providers_rpc_id)
 );
 
 COMMIT;

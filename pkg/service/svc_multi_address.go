@@ -2,6 +2,9 @@ package service
 
 import (
 	"context"
+	"sort"
+
+	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	lru "github.com/hashicorp/golang-lru"
 
@@ -14,7 +17,8 @@ import (
 )
 
 type MultiAddressService interface {
-	UpsertMultiAddress(ctx context.Context, maddr ma.Multiaddr) (*models.MultiAddress, error)
+	UpsertMultiAddress(ctx context.Context, exec boil.ContextExecutor, maddr ma.Multiaddr) (*models.MultiAddress, error)
+	UpsertMultiAddresses(ctx context.Context, exec boil.ContextExecutor, maddr []ma.Multiaddr) ([]int64, error)
 }
 
 var _ MultiAddressService = &MultiAddress{}
@@ -32,7 +36,7 @@ func NewMultiAddressService(maRepo repo.MultiAddressRepo, iaRepo repo.IPAddressR
 		panic(err)
 	}
 
-	cache, err := lru.New(1000)
+	cache, err := lru.New(10000)
 	if err != nil {
 		panic(err)
 	}
@@ -45,17 +49,25 @@ func NewMultiAddressService(maRepo repo.MultiAddressRepo, iaRepo repo.IPAddressR
 	}
 }
 
-func (ma *MultiAddress) UpsertMultiAddress(ctx context.Context, maddr ma.Multiaddr) (*models.MultiAddress, error) {
+func (ma *MultiAddress) UpsertMultiAddress(ctx context.Context, exec boil.ContextExecutor, maddr ma.Multiaddr) (*models.MultiAddress, error) {
+	cached, found := ma.cache.Get(maddr.String())
+	if found {
+		return cached.(*models.MultiAddress), nil
+	}
+
 	isPublic := manet.IsPublicAddr(maddr)
 
 	infos, err := ma.mmclient.MaddrInfo(ctx, maddr)
 	if err != nil {
-		return nil, errors.Wrap(err, "resolve maddr infos")
+		dbMaddr := &models.MultiAddress{
+			Maddr: maddr.String(),
+		}
+		return ma.maRepo.UpsertMultiAddress(ctx, exec, dbMaddr, nil, isPublic)
 	}
 
 	ipAddresses := []*models.IPAddress{}
 	for address, info := range infos {
-		dbIPAddress, err := ma.iaRepo.UpsertIPAddress(ctx, address, info, isPublic)
+		dbIPAddress, err := ma.iaRepo.UpsertIPAddress(ctx, exec, address, info, isPublic)
 		if err != nil {
 			return nil, errors.Wrap(err, "upsert ip address")
 		}
@@ -66,5 +78,31 @@ func (ma *MultiAddress) UpsertMultiAddress(ctx context.Context, maddr ma.Multiad
 		Maddr: maddr.String(),
 	}
 
-	return ma.maRepo.UpsertMultiAddress(ctx, dbMaddr, ipAddresses, isPublic)
+	dbMaddr, err = ma.maRepo.UpsertMultiAddress(ctx, exec, dbMaddr, ipAddresses, isPublic)
+	if err != nil {
+		return nil, err
+	}
+
+	ma.cache.Add(maddr.String(), dbMaddr)
+
+	return dbMaddr, err
+}
+
+func (ma *MultiAddress) UpsertMultiAddresses(ctx context.Context, exec boil.ContextExecutor, maddrs []ma.Multiaddr) ([]int64, error) {
+	maids := make([]int, len(maddrs))
+	for i, addr := range maddrs {
+		dbma, err := ma.UpsertMultiAddress(ctx, exec, addr)
+		if err != nil {
+			return nil, errors.Wrap(err, "upsert multi address")
+		}
+		maids[i] = int(dbma.ID)
+	}
+
+	sort.Ints(maids)
+	maids64 := make([]int64, len(maids))
+	for i, x := range maids {
+		maids64[i] = int64(x)
+	}
+
+	return maids64, nil
 }

@@ -25,8 +25,6 @@ import (
 // Dial is an object representing the database table.
 type Dial struct {
 	ID             int         `boil:"id" json:"id" toml:"id" yaml:"id"`
-	ProvideID      null.Int    `boil:"provide_id" json:"provide_id,omitempty" toml:"provide_id" yaml:"provide_id,omitempty"`
-	RetrievalID    null.Int    `boil:"retrieval_id" json:"retrieval_id,omitempty" toml:"retrieval_id" yaml:"retrieval_id,omitempty"`
 	LocalID        int         `boil:"local_id" json:"local_id" toml:"local_id" yaml:"local_id"`
 	RemoteID       int         `boil:"remote_id" json:"remote_id" toml:"remote_id" yaml:"remote_id"`
 	Transport      string      `boil:"transport" json:"transport" toml:"transport" yaml:"transport"`
@@ -41,8 +39,6 @@ type Dial struct {
 
 var DialColumns = struct {
 	ID             string
-	ProvideID      string
-	RetrievalID    string
 	LocalID        string
 	RemoteID       string
 	Transport      string
@@ -52,8 +48,6 @@ var DialColumns = struct {
 	Error          string
 }{
 	ID:             "id",
-	ProvideID:      "provide_id",
-	RetrievalID:    "retrieval_id",
 	LocalID:        "local_id",
 	RemoteID:       "remote_id",
 	Transport:      "transport",
@@ -65,8 +59,6 @@ var DialColumns = struct {
 
 var DialTableColumns = struct {
 	ID             string
-	ProvideID      string
-	RetrievalID    string
 	LocalID        string
 	RemoteID       string
 	Transport      string
@@ -76,8 +68,6 @@ var DialTableColumns = struct {
 	Error          string
 }{
 	ID:             "dials.id",
-	ProvideID:      "dials.provide_id",
-	RetrievalID:    "dials.retrieval_id",
 	LocalID:        "dials.local_id",
 	RemoteID:       "dials.remote_id",
 	Transport:      "dials.transport",
@@ -88,29 +78,6 @@ var DialTableColumns = struct {
 }
 
 // Generated where
-
-type whereHelpernull_Int struct{ field string }
-
-func (w whereHelpernull_Int) EQ(x null.Int) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Int) NEQ(x null.Int) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Int) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Int) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Int) LT(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Int) LTE(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Int) GT(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Int) GTE(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
 
 type whereHelperstring struct{ field string }
 
@@ -137,8 +104,6 @@ func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
 
 var DialWhere = struct {
 	ID             whereHelperint
-	ProvideID      whereHelpernull_Int
-	RetrievalID    whereHelpernull_Int
 	LocalID        whereHelperint
 	RemoteID       whereHelperint
 	Transport      whereHelperstring
@@ -148,8 +113,6 @@ var DialWhere = struct {
 	Error          whereHelpernull_String
 }{
 	ID:             whereHelperint{field: "\"dials\".\"id\""},
-	ProvideID:      whereHelpernull_Int{field: "\"dials\".\"provide_id\""},
-	RetrievalID:    whereHelpernull_Int{field: "\"dials\".\"retrieval_id\""},
 	LocalID:        whereHelperint{field: "\"dials\".\"local_id\""},
 	RemoteID:       whereHelperint{field: "\"dials\".\"remote_id\""},
 	Transport:      whereHelperstring{field: "\"dials\".\"transport\""},
@@ -163,17 +126,13 @@ var DialWhere = struct {
 var DialRels = struct {
 	Local        string
 	MultiAddress string
-	Provide      string
 	Remote       string
-	Retrieval    string
 	Provides     string
 	Retrievals   string
 }{
 	Local:        "Local",
 	MultiAddress: "MultiAddress",
-	Provide:      "Provide",
 	Remote:       "Remote",
-	Retrieval:    "Retrieval",
 	Provides:     "Provides",
 	Retrievals:   "Retrievals",
 }
@@ -182,9 +141,7 @@ var DialRels = struct {
 type dialR struct {
 	Local        *Peer          `boil:"Local" json:"Local" toml:"Local" yaml:"Local"`
 	MultiAddress *MultiAddress  `boil:"MultiAddress" json:"MultiAddress" toml:"MultiAddress" yaml:"MultiAddress"`
-	Provide      *Provide       `boil:"Provide" json:"Provide" toml:"Provide" yaml:"Provide"`
 	Remote       *Peer          `boil:"Remote" json:"Remote" toml:"Remote" yaml:"Remote"`
-	Retrieval    *Retrieval     `boil:"Retrieval" json:"Retrieval" toml:"Retrieval" yaml:"Retrieval"`
 	Provides     ProvideSlice   `boil:"Provides" json:"Provides" toml:"Provides" yaml:"Provides"`
 	Retrievals   RetrievalSlice `boil:"Retrievals" json:"Retrievals" toml:"Retrievals" yaml:"Retrievals"`
 }
@@ -198,8 +155,8 @@ func (*dialR) NewStruct() *dialR {
 type dialL struct{}
 
 var (
-	dialAllColumns            = []string{"id", "provide_id", "retrieval_id", "local_id", "remote_id", "transport", "multi_address_id", "started_at", "ended_at", "error"}
-	dialColumnsWithoutDefault = []string{"provide_id", "retrieval_id", "local_id", "remote_id", "transport", "multi_address_id", "started_at", "ended_at", "error"}
+	dialAllColumns            = []string{"id", "local_id", "remote_id", "transport", "multi_address_id", "started_at", "ended_at", "error"}
+	dialColumnsWithoutDefault = []string{"local_id", "remote_id", "transport", "multi_address_id", "started_at", "ended_at", "error"}
 	dialColumnsWithDefault    = []string{"id"}
 	dialPrimaryKeyColumns     = []string{"id"}
 )
@@ -507,20 +464,6 @@ func (o *Dial) MultiAddress(mods ...qm.QueryMod) multiAddressQuery {
 	return query
 }
 
-// Provide pointed to by the foreign key.
-func (o *Dial) Provide(mods ...qm.QueryMod) provideQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.ProvideID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := Provides(queryMods...)
-	queries.SetFrom(query.Query, "\"provides\"")
-
-	return query
-}
-
 // Remote pointed to by the foreign key.
 func (o *Dial) Remote(mods ...qm.QueryMod) peerQuery {
 	queryMods := []qm.QueryMod{
@@ -531,20 +474,6 @@ func (o *Dial) Remote(mods ...qm.QueryMod) peerQuery {
 
 	query := Peers(queryMods...)
 	queries.SetFrom(query.Query, "\"peers\"")
-
-	return query
-}
-
-// Retrieval pointed to by the foreign key.
-func (o *Dial) Retrieval(mods ...qm.QueryMod) retrievalQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.RetrievalID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	query := Retrievals(queryMods...)
-	queries.SetFrom(query.Query, "\"retrievals\"")
 
 	return query
 }
@@ -801,114 +730,6 @@ func (dialL) LoadMultiAddress(ctx context.Context, e boil.ContextExecutor, singu
 	return nil
 }
 
-// LoadProvide allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (dialL) LoadProvide(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDial interface{}, mods queries.Applicator) error {
-	var slice []*Dial
-	var object *Dial
-
-	if singular {
-		object = maybeDial.(*Dial)
-	} else {
-		slice = *maybeDial.(*[]*Dial)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &dialR{}
-		}
-		if !queries.IsNil(object.ProvideID) {
-			args = append(args, object.ProvideID)
-		}
-
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &dialR{}
-			}
-
-			for _, a := range args {
-				if queries.Equal(a, obj.ProvideID) {
-					continue Outer
-				}
-			}
-
-			if !queries.IsNil(obj.ProvideID) {
-				args = append(args, obj.ProvideID)
-			}
-
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`provides`),
-		qm.WhereIn(`provides.id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Provide")
-	}
-
-	var resultSlice []*Provide
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Provide")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for provides")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for provides")
-	}
-
-	if len(dialAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Provide = foreign
-		if foreign.R == nil {
-			foreign.R = &provideR{}
-		}
-		foreign.R.Dials = append(foreign.R.Dials, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if queries.Equal(local.ProvideID, foreign.ID) {
-				local.R.Provide = foreign
-				if foreign.R == nil {
-					foreign.R = &provideR{}
-				}
-				foreign.R.Dials = append(foreign.R.Dials, local)
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
 // LoadRemote allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
 func (dialL) LoadRemote(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDial interface{}, mods queries.Applicator) error {
@@ -1005,114 +826,6 @@ func (dialL) LoadRemote(ctx context.Context, e boil.ContextExecutor, singular bo
 					foreign.R = &peerR{}
 				}
 				foreign.R.RemoteDials = append(foreign.R.RemoteDials, local)
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadRetrieval allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (dialL) LoadRetrieval(ctx context.Context, e boil.ContextExecutor, singular bool, maybeDial interface{}, mods queries.Applicator) error {
-	var slice []*Dial
-	var object *Dial
-
-	if singular {
-		object = maybeDial.(*Dial)
-	} else {
-		slice = *maybeDial.(*[]*Dial)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &dialR{}
-		}
-		if !queries.IsNil(object.RetrievalID) {
-			args = append(args, object.RetrievalID)
-		}
-
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &dialR{}
-			}
-
-			for _, a := range args {
-				if queries.Equal(a, obj.RetrievalID) {
-					continue Outer
-				}
-			}
-
-			if !queries.IsNil(obj.RetrievalID) {
-				args = append(args, obj.RetrievalID)
-			}
-
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`retrievals`),
-		qm.WhereIn(`retrievals.id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Retrieval")
-	}
-
-	var resultSlice []*Retrieval
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Retrieval")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for retrievals")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for retrievals")
-	}
-
-	if len(dialAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.Retrieval = foreign
-		if foreign.R == nil {
-			foreign.R = &retrievalR{}
-		}
-		foreign.R.Dials = append(foreign.R.Dials, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if queries.Equal(local.RetrievalID, foreign.ID) {
-				local.R.Retrieval = foreign
-				if foreign.R == nil {
-					foreign.R = &retrievalR{}
-				}
-				foreign.R.Dials = append(foreign.R.Dials, local)
 				break
 			}
 		}
@@ -1445,86 +1158,6 @@ func (o *Dial) SetMultiAddress(ctx context.Context, exec boil.ContextExecutor, i
 	return nil
 }
 
-// SetProvide of the dial to the related item.
-// Sets o.R.Provide to related.
-// Adds o to related.R.Dials.
-func (o *Dial) SetProvide(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Provide) error {
-	var err error
-	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"dials\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"provide_id"}),
-		strmangle.WhereClause("\"", "\"", 2, dialPrimaryKeyColumns),
-	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, updateQuery)
-		fmt.Fprintln(writer, values)
-	}
-	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	queries.Assign(&o.ProvideID, related.ID)
-	if o.R == nil {
-		o.R = &dialR{
-			Provide: related,
-		}
-	} else {
-		o.R.Provide = related
-	}
-
-	if related.R == nil {
-		related.R = &provideR{
-			Dials: DialSlice{o},
-		}
-	} else {
-		related.R.Dials = append(related.R.Dials, o)
-	}
-
-	return nil
-}
-
-// RemoveProvide relationship.
-// Sets o.R.Provide to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-func (o *Dial) RemoveProvide(ctx context.Context, exec boil.ContextExecutor, related *Provide) error {
-	var err error
-
-	queries.SetScanner(&o.ProvideID, nil)
-	if _, err = o.Update(ctx, exec, boil.Whitelist("provide_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	if o.R != nil {
-		o.R.Provide = nil
-	}
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.Dials {
-		if queries.Equal(o.ProvideID, ri.ProvideID) {
-			continue
-		}
-
-		ln := len(related.R.Dials)
-		if ln > 1 && i < ln-1 {
-			related.R.Dials[i] = related.R.Dials[ln-1]
-		}
-		related.R.Dials = related.R.Dials[:ln-1]
-		break
-	}
-	return nil
-}
-
 // SetRemote of the dial to the related item.
 // Sets o.R.Remote to related.
 // Adds o to related.R.RemoteDials.
@@ -1569,86 +1202,6 @@ func (o *Dial) SetRemote(ctx context.Context, exec boil.ContextExecutor, insert 
 		related.R.RemoteDials = append(related.R.RemoteDials, o)
 	}
 
-	return nil
-}
-
-// SetRetrieval of the dial to the related item.
-// Sets o.R.Retrieval to related.
-// Adds o to related.R.Dials.
-func (o *Dial) SetRetrieval(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Retrieval) error {
-	var err error
-	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"dials\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"retrieval_id"}),
-		strmangle.WhereClause("\"", "\"", 2, dialPrimaryKeyColumns),
-	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, updateQuery)
-		fmt.Fprintln(writer, values)
-	}
-	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	queries.Assign(&o.RetrievalID, related.ID)
-	if o.R == nil {
-		o.R = &dialR{
-			Retrieval: related,
-		}
-	} else {
-		o.R.Retrieval = related
-	}
-
-	if related.R == nil {
-		related.R = &retrievalR{
-			Dials: DialSlice{o},
-		}
-	} else {
-		related.R.Dials = append(related.R.Dials, o)
-	}
-
-	return nil
-}
-
-// RemoveRetrieval relationship.
-// Sets o.R.Retrieval to nil.
-// Removes o from all passed in related items' relationships struct (Optional).
-func (o *Dial) RemoveRetrieval(ctx context.Context, exec boil.ContextExecutor, related *Retrieval) error {
-	var err error
-
-	queries.SetScanner(&o.RetrievalID, nil)
-	if _, err = o.Update(ctx, exec, boil.Whitelist("retrieval_id")); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	if o.R != nil {
-		o.R.Retrieval = nil
-	}
-	if related == nil || related.R == nil {
-		return nil
-	}
-
-	for i, ri := range related.R.Dials {
-		if queries.Equal(o.RetrievalID, ri.RetrievalID) {
-			continue
-		}
-
-		ln := len(related.R.Dials)
-		if ln > 1 && i < ln-1 {
-			related.R.Dials[i] = related.R.Dials[ln-1]
-		}
-		related.R.Dials = related.R.Dials[:ln-1]
-		break
-	}
 	return nil
 }
 

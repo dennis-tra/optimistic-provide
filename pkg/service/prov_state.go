@@ -44,6 +44,25 @@ type ProvideState struct {
 	relevantPeers sync.Map
 }
 
+func NewProvideState(h *dht.Host, content *util.Content) *ProvideState {
+	return &ProvideState{
+		h:                    h,
+		content:              content,
+		dialsLk:              sync.RWMutex{},
+		dials:                []*DialSpan{},
+		findNodesLk:          sync.RWMutex{},
+		findNodes:            []*FindNodesSpan{},
+		addProvidersLk:       sync.RWMutex{},
+		addProviders:         []*AddProvidersSpan{},
+		connectionsStartedLk: sync.RWMutex{},
+		connectionsStarted:   map[peer.ID]time.Time{},
+		connectionsLk:        sync.RWMutex{},
+		connections:          []*ConnectionSpan{},
+		relevantPeers:        sync.Map{},
+		peerSet:              qpeerset.NewQueryPeerset(string(content.CID.Hash())),
+	}
+}
+
 func (ps *ProvideState) Register(ctx context.Context) context.Context {
 	if ps.cancel != nil {
 		panic("already registered for events")

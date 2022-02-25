@@ -11,7 +11,7 @@ import (
 )
 
 type IPAddressRepo interface {
-	UpsertIPAddress(ctx context.Context, address string, info *maxmind.AddrInfo, isPublic bool) (*models.IPAddress, error)
+	UpsertIPAddress(ctx context.Context, exec boil.ContextExecutor, address string, info *maxmind.AddrInfo, isPublic bool) (*models.IPAddress, error)
 }
 
 var _ IPAddressRepo = &IPAddress{}
@@ -26,7 +26,7 @@ func NewIPAddressRepo(dbc *db.Client) IPAddressRepo {
 	}
 }
 
-func (ia *IPAddress) UpsertIPAddress(ctx context.Context, address string, info *maxmind.AddrInfo, isPublic bool) (*models.IPAddress, error) {
+func (ia *IPAddress) UpsertIPAddress(ctx context.Context, exec boil.ContextExecutor, address string, info *maxmind.AddrInfo, isPublic bool) (*models.IPAddress, error) {
 	dbAddress := &models.IPAddress{
 		Address:   address,
 		Country:   null.NewString(info.Country, info.Country != ""),
@@ -34,5 +34,5 @@ func (ia *IPAddress) UpsertIPAddress(ctx context.Context, address string, info *
 		Asn:       null.NewInt(int(info.ASN), info.ASN != 0),
 		IsPublic:  isPublic,
 	}
-	return dbAddress, dbAddress.Upsert(ctx, ia.dbc, true, []string{models.IPAddressColumns.Address}, boil.Whitelist(models.IPAddressColumns.UpdatedAt), boil.Infer())
+	return dbAddress, dbAddress.Upsert(ctx, exec, true, []string{models.IPAddressColumns.Address}, boil.Whitelist(models.IPAddressColumns.UpdatedAt), boil.Infer())
 }

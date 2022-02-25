@@ -3,11 +3,11 @@ package repo
 import (
 	"context"
 
+	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/db"
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
-	"github.com/volatiletech/sqlboiler/v4/boil"
 )
 
 type ProvideRepo interface {
@@ -51,5 +51,10 @@ func (p Provide) Get(ctx context.Context, hostID string, provideID int) (*models
 		qm.InnerJoin(models.TableNames.Peers+" ON "+models.TableNames.Peers+"."+models.PeerColumns.ID+" = "+models.ProvideColumns.ProviderID),
 		models.PeerWhere.MultiHash.EQ(hostID),
 		models.ProvideWhere.ID.EQ(provideID),
+		qm.Load(models.ProvideRels.Dials),
+		qm.Load(models.ProvideRels.Connections),
+		qm.Load(models.ProvideRels.AddProviderRPCS),
+		qm.Load(models.ProvideRels.FindNodesRPCS),
+		qm.Load(models.ProvideRels.PeerStates),
 	).One(ctx, p.dbc)
 }

@@ -21,7 +21,12 @@ const HostDetailsOverviewCard: React.FC<HostDetailsOverviewCardProps> = ({ host 
           {host.name}
         </Typography>
         <Typography variant="h6">Peer ID</Typography>
-        <Typography sx={{ mb: 1.5 }} color="text.secondary" noWrap>
+        <Typography
+          color="text.secondary"
+          noWrap
+          onClick={() => navigator.clipboard.writeText(host.hostId)}
+          sx={{ cursor: "pointer", mb: 1.5 }}
+        >
           {host.hostId}
         </Typography>
         <Typography variant="h6">Created At</Typography>

@@ -2,7 +2,10 @@ package service
 
 import (
 	"context"
-	"sort"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/dht"
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	ks "github.com/whyrusleeping/go-keyspace"
 
@@ -12,12 +15,11 @@ import (
 
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
 	"github.com/dennis-tra/optimistic-provide/pkg/repo"
-	"github.com/libp2p/go-libp2p-core/host"
 )
 
 type AddProvidersService interface {
-	Save(ctx context.Context, h host.Host, provideID int, apReqs []*AddProvidersSpan) error
-	List(ctx context.Context, provideID int) ([]*models.AddProvider, error)
+	List(ctx context.Context, provide *models.Provide) ([]*models.AddProviderRPC, error)
+	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, apReqs []*AddProvidersSpan) (models.AddProviderRPCSlice, error)
 }
 
 var _ AddProvidersService = &AddProviders{}
@@ -38,61 +40,41 @@ func NewAddProvidersService(peerService PeerService, maService MultiAddressServi
 	}
 }
 
-func (ap *AddProviders) List(ctx context.Context, provideID int) ([]*models.AddProvider, error) {
-	return ap.apRepo.List(ctx, provideID)
+func (ap *AddProviders) List(ctx context.Context, provide *models.Provide) ([]*models.AddProviderRPC, error) {
+	return ap.apRepo.List(ctx, provide)
 }
 
-func (ap *AddProviders) Save(ctx context.Context, h host.Host, provideID int, apReqs []*AddProvidersSpan) error {
-	log.Info("Saving add provider requests...")
-	defer log.Info("Done saving add provider requests")
+func (ap *AddProviders) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, apReqs []*AddProvidersSpan) (models.AddProviderRPCSlice, error) {
+	log.Info("Saving Add Provider RPCs")
 
-	localPeer, err := ap.peerService.UpsertLocalPeer(h)
-	if err != nil {
-		return err
-	}
-
-	for _, fnReq := range apReqs {
-
-		remotePeer, err := ap.peerService.UpsertPeer(h, fnReq.RemotePeerID)
+	dbaps := make([]*models.AddProviderRPC, len(apReqs))
+	for i, fnReq := range apReqs {
+		remotePeer, err := ap.peerService.UpsertPeer(ctx, exec, h, fnReq.RemotePeerID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		errStr := null.NewString("", false)
-		if fnReq.Error != nil {
-			errStr = null.StringFrom(fnReq.Error.Error())
+		maids, err := ap.maService.UpsertMultiAddresses(ctx, exec, fnReq.ProviderAddrs)
+		if err != nil {
+			return nil, errors.Wrap(err, "upsert multi address")
 		}
 
-		maids := make([]int, len(fnReq.ProviderAddrs))
-		for i, addr := range fnReq.ProviderAddrs {
-			dbma, err := ap.maService.UpsertMultiAddress(ctx, addr)
-			if err != nil {
-				return errors.Wrap(err, "upsert multi address")
-			}
-			maids[i] = int(dbma.ID)
-		}
-
-		sort.Ints(maids)
-		maids64 := make([]int64, len(maids))
-		for i, x := range maids {
-			maids64[i] = int64(x)
-		}
-
-		dbap := &models.AddProvider{
-			ProvideID:       provideID,
-			LocalID:         localPeer.ID,
+		dbap := &models.AddProviderRPC{
+			LocalID:         h.DBPeer.ID,
 			RemoteID:        remotePeer.ID,
 			Distance:        ks.XORKeySpace.Key([]byte(fnReq.RemotePeerID)).Distance(ks.XORKeySpace.Key(fnReq.Content.CID.Hash())).Bytes(),
-			MultiAddressIds: maids64,
+			MultiAddressIds: maids,
 			StartedAt:       fnReq.Start,
 			EndedAt:         fnReq.End,
-			Error:           errStr,
+			Error:           null.StringFromPtr(util.ErrorStr(fnReq.Error)),
 		}
-		dbap, err = ap.apRepo.Save(ctx, dbap)
-		if err != nil {
-			return err
+
+		if err = dbap.Insert(ctx, exec, boil.Infer()); err != nil {
+			return nil, err
 		}
+
+		dbaps[i] = dbap
 	}
 
-	return nil
+	return dbaps, nil
 }

@@ -43,6 +43,23 @@ type RetrievalState struct {
 	relevantPeers sync.Map
 }
 
+func NewRetrievalState(h *dht.Host, contentID cid.Cid) *RetrievalState {
+	return &RetrievalState{
+		h:                    h,
+		content:              contentID,
+		dialsLk:              sync.RWMutex{},
+		dials:                []*DialSpan{},
+		getProvidersLk:       sync.RWMutex{},
+		getProviders:         []*GetProvidersSpan{},
+		connectionsStartedLk: sync.RWMutex{},
+		connectionsStarted:   map[peer.ID]time.Time{},
+		connectionsLk:        sync.RWMutex{},
+		connections:          []*ConnectionSpan{},
+		relevantPeers:        sync.Map{},
+		peerSet:              qpeerset.NewQueryPeerset(string(contentID.Hash())),
+	}
+}
+
 func (rs *RetrievalState) Register(ctx context.Context) context.Context {
 	if rs.cancel != nil {
 		panic("already registered for events")

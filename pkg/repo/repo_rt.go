@@ -15,8 +15,8 @@ type RoutingTableRepo interface {
 	Find(ctx context.Context, routingTableID int) (*models.RoutingTableSnapshot, error)
 	FindAll(ctx context.Context, hostID string) ([]*models.RoutingTableSnapshot, error)
 	FindByIDAndHostID(ctx context.Context, id int, hostID string) (*models.RoutingTableSnapshot, error)
-	SaveSnapshot(context.Context, int, int, int) (*models.RoutingTableSnapshot, error)
-	SaveRoutingTableEntry(context.Context, *models.RoutingTableEntry) (*models.RoutingTableEntry, error)
+	SaveSnapshot(context.Context, boil.ContextExecutor, int, int, int) (*models.RoutingTableSnapshot, error)
+	SaveRoutingTableEntry(context.Context, boil.ContextExecutor, *models.RoutingTableEntry) (*models.RoutingTableEntry, error)
 }
 
 var _ RoutingTableRepo = &RoutingTable{}
@@ -31,17 +31,17 @@ func NewRoutingTableRepo(dbc *db.Client) RoutingTableRepo {
 	}
 }
 
-func (r *RoutingTable) SaveSnapshot(ctx context.Context, peerID int, bucketSize int, entryCount int) (*models.RoutingTableSnapshot, error) {
+func (r *RoutingTable) SaveSnapshot(ctx context.Context, exec boil.ContextExecutor, peerID int, bucketSize int, entryCount int) (*models.RoutingTableSnapshot, error) {
 	rts := &models.RoutingTableSnapshot{
 		PeerID:     peerID,
 		BucketSize: bucketSize,
 		EntryCount: entryCount,
 	}
-	return rts, rts.Insert(ctx, r.dbc, boil.Infer())
+	return rts, rts.Insert(ctx, exec, boil.Infer())
 }
 
-func (r *RoutingTable) SaveRoutingTableEntry(ctx context.Context, rte *models.RoutingTableEntry) (*models.RoutingTableEntry, error) {
-	return rte, rte.Insert(ctx, r.dbc, boil.Infer())
+func (r *RoutingTable) SaveRoutingTableEntry(ctx context.Context, exec boil.ContextExecutor, rte *models.RoutingTableEntry) (*models.RoutingTableEntry, error) {
+	return rte, rte.Insert(ctx, exec, boil.Infer())
 }
 
 func (r *RoutingTable) Find(ctx context.Context, routingTableID int) (*models.RoutingTableSnapshot, error) {
