@@ -103,12 +103,12 @@ func (pc *ProvideController) Get(c *gin.Context) {
 	connections := make([]types.Connection, len(dbProvide.R.Connections))
 	for i, dbConn := range dbProvide.R.Connections {
 		connections[i] = types.Connection{
-			DurationInS:  float32(dbConn.EndedAt.Sub(dbConn.StartedAt).Seconds()),
-			EndedAt:      dbConn.EndedAt.Format(time.RFC3339),
-			Id:           dbConn.ID,
-			MultiAddress: dbConn.R.MultiAddress.Maddr,
-			RemoteId:     dbConn.R.Remote.MultiHash,
-			StartedAt:    dbConn.StartedAt.Format(time.RFC3339),
+			DurationInS: float32(dbConn.EndedAt.Sub(dbConn.StartedAt).Seconds()),
+			EndedAt:     dbConn.EndedAt.Format(time.RFC3339),
+			Id:          dbConn.ID,
+			// MultiAddress: dbConn.R.MultiAddress.Maddr,
+			// RemoteId:     dbConn.R.Remote.MultiHash,
+			StartedAt: dbConn.StartedAt.Format(time.RFC3339),
 		}
 	}
 
@@ -120,22 +120,22 @@ func (pc *ProvideController) Get(c *gin.Context) {
 			EndedAt:          dbFindNode.EndedAt.Format(time.RFC3339),
 			Error:            dbFindNode.Error.Ptr(),
 			Id:               dbFindNode.ID,
-			RemoteId:         dbFindNode.R.Remote.MultiHash,
-			StartedAt:        dbFindNode.StartedAt.Format(time.RFC3339),
+			// RemoteId:         dbFindNode.R.Remote.MultiHash,
+			StartedAt: dbFindNode.StartedAt.Format(time.RFC3339),
 		}
 	}
 
 	dials := make([]types.Dial, len(dbProvide.R.Dials))
 	for i, dbDial := range dbProvide.R.Dials {
 		dials[i] = types.Dial{
-			DurationInS:  float32(dbDial.EndedAt.Sub(dbDial.StartedAt).Seconds()),
-			EndedAt:      dbDial.EndedAt.Format(time.RFC3339),
-			Error:        dbDial.Error.Ptr(),
-			Id:           dbDial.ID,
-			MultiAddress: dbDial.R.MultiAddress.Maddr,
-			RemoteId:     dbDial.R.Remote.MultiHash,
-			StartedAt:    dbDial.StartedAt.Format(time.RFC3339),
-			Transport:    dbDial.Transport,
+			DurationInS: float32(dbDial.EndedAt.Sub(dbDial.StartedAt).Seconds()),
+			EndedAt:     dbDial.EndedAt.Format(time.RFC3339),
+			Error:       dbDial.Error.Ptr(),
+			Id:          dbDial.ID,
+			// MultiAddress: dbDial.R.MultiAddress.Maddr,
+			// RemoteId:     dbDial.R.Remote.MultiHash,
+			StartedAt: dbDial.StartedAt.Format(time.RFC3339),
+			Transport: dbDial.Transport,
 		}
 	}
 
@@ -147,8 +147,8 @@ func (pc *ProvideController) Get(c *gin.Context) {
 			EndedAt:     dbAddProvider.EndedAt.Format(time.RFC3339),
 			Error:       dbAddProvider.Error.Ptr(),
 			Id:          dbAddProvider.ID,
-			RemoteId:    dbAddProvider.R.Remote.MultiHash,
-			StartedAt:   dbAddProvider.StartedAt.Format(time.RFC3339),
+			// RemoteId:    dbAddProvider.R.Remote.MultiHash,
+			StartedAt: dbAddProvider.StartedAt.Format(time.RFC3339),
 		}
 	}
 

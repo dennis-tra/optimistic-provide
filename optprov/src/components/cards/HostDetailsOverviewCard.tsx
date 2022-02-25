@@ -3,7 +3,7 @@ import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import Tooltip from "@mui/material/Tooltip";
 import ReactTimeAgo from "react-time-ago";
-import { Host } from "../../api";
+import { Host } from "../../api/models/Host";
 
 interface HostDetailsOverviewCardProps {
   host: Host;

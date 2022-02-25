@@ -12,7 +12,7 @@ import Box from "@mui/material/Box";
 import Chip from "@mui/material/Chip";
 import ReactTimeAgo from "react-time-ago";
 import { useDeleteHostMutation, useBootstrapHostMutation } from "../store/api";
-import { Host } from "../api";
+import { Host } from "../api/models/Host";
 
 interface HostCardProps {
   host: Host;
