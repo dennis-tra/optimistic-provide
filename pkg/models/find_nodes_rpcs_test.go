@@ -1250,7 +1250,7 @@ func testFindNodesRPCSSelect(t *testing.T) {
 }
 
 var (
-	findNodesRPCDBTypes = map[string]string{`ID`: `integer`, `LocalID`: `integer`, `RemoteID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `CloserPeersCount`: `integer`, `Error`: `text`}
+	findNodesRPCDBTypes = map[string]string{`ID`: `integer`, `QueryID`: `character varying`, `LocalID`: `integer`, `RemoteID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `CloserPeersCount`: `integer`, `Error`: `text`}
 	_                   = bytes.MinRead
 )
 

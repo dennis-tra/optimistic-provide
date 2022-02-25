@@ -88,6 +88,29 @@ func (ps *ProvideState) Register(ctx context.Context) context.Context {
 	return ctx
 }
 
+func (ps *ProvideState) RegisterMultiQuery(ctx context.Context) context.Context {
+	if ps.cancel != nil {
+		panic("already registered for events")
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	ctx, queryEvents := routing.RegisterForQueryEvents(ctx)
+	ctx, rpcEvents := wrap.RegisterForRPCEvents(ctx)
+
+	go ps.consumeQueryEvents(queryEvents)
+	go ps.consumeRPCEvents(rpcEvents)
+
+	for _, notifier := range ps.h.Transports {
+		notifier.Notify(ps)
+	}
+
+	ps.h.Host.Network().Notify(ps)
+
+	ps.cancel = cancel
+
+	return ctx
+}
+
 func (ps *ProvideState) Unregister() {
 	ps.h.Host.Network().StopNotify(ps)
 
@@ -132,6 +155,7 @@ func (ps *ProvideState) trackConnectionEnd(p peer.ID, maddr ma.Multiaddr) {
 
 func (ps *ProvideState) trackFindNodeRequest(evt *wrap.RPCSendRequestEndedEvent) {
 	fns := &FindNodesSpan{
+		QueryID:      evt.QueryID,
 		RemotePeerID: evt.RemotePeer,
 		Start:        evt.StartedAt,
 		End:          evt.EndedAt,
@@ -153,6 +177,7 @@ func (ps *ProvideState) trackFindNodeRequest(evt *wrap.RPCSendRequestEndedEvent)
 
 func (ps *ProvideState) trackAddProvidersRequest(evt *wrap.RPCSendMessageEndedEvent) {
 	aps := &AddProvidersSpan{
+		QueryID:       evt.QueryID,
 		Content:       ps.content,
 		RemotePeerID:  evt.RemotePeer,
 		Start:         evt.StartedAt,

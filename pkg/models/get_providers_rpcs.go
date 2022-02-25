@@ -25,6 +25,7 @@ import (
 // GetProvidersRPC is an object representing the database table.
 type GetProvidersRPC struct {
 	ID                 int         `boil:"id" json:"id" toml:"id" yaml:"id"`
+	QueryID            string      `boil:"query_id" json:"query_id" toml:"query_id" yaml:"query_id"`
 	LocalID            int         `boil:"local_id" json:"local_id" toml:"local_id" yaml:"local_id"`
 	RemoteID           int         `boil:"remote_id" json:"remote_id" toml:"remote_id" yaml:"remote_id"`
 	StartedAt          time.Time   `boil:"started_at" json:"started_at" toml:"started_at" yaml:"started_at"`
@@ -38,6 +39,7 @@ type GetProvidersRPC struct {
 
 var GetProvidersRPCColumns = struct {
 	ID                 string
+	QueryID            string
 	LocalID            string
 	RemoteID           string
 	StartedAt          string
@@ -46,6 +48,7 @@ var GetProvidersRPCColumns = struct {
 	Error              string
 }{
 	ID:                 "id",
+	QueryID:            "query_id",
 	LocalID:            "local_id",
 	RemoteID:           "remote_id",
 	StartedAt:          "started_at",
@@ -56,6 +59,7 @@ var GetProvidersRPCColumns = struct {
 
 var GetProvidersRPCTableColumns = struct {
 	ID                 string
+	QueryID            string
 	LocalID            string
 	RemoteID           string
 	StartedAt          string
@@ -64,6 +68,7 @@ var GetProvidersRPCTableColumns = struct {
 	Error              string
 }{
 	ID:                 "get_providers_rpcs.id",
+	QueryID:            "get_providers_rpcs.query_id",
 	LocalID:            "get_providers_rpcs.local_id",
 	RemoteID:           "get_providers_rpcs.remote_id",
 	StartedAt:          "get_providers_rpcs.started_at",
@@ -76,6 +81,7 @@ var GetProvidersRPCTableColumns = struct {
 
 var GetProvidersRPCWhere = struct {
 	ID                 whereHelperint
+	QueryID            whereHelperstring
 	LocalID            whereHelperint
 	RemoteID           whereHelperint
 	StartedAt          whereHelpertime_Time
@@ -84,6 +90,7 @@ var GetProvidersRPCWhere = struct {
 	Error              whereHelpernull_String
 }{
 	ID:                 whereHelperint{field: "\"get_providers_rpcs\".\"id\""},
+	QueryID:            whereHelperstring{field: "\"get_providers_rpcs\".\"query_id\""},
 	LocalID:            whereHelperint{field: "\"get_providers_rpcs\".\"local_id\""},
 	RemoteID:           whereHelperint{field: "\"get_providers_rpcs\".\"remote_id\""},
 	StartedAt:          whereHelpertime_Time{field: "\"get_providers_rpcs\".\"started_at\""},
@@ -122,8 +129,8 @@ func (*getProvidersRPCR) NewStruct() *getProvidersRPCR {
 type getProvidersRPCL struct{}
 
 var (
-	getProvidersRPCAllColumns            = []string{"id", "local_id", "remote_id", "started_at", "ended_at", "provider_peers_count", "error"}
-	getProvidersRPCColumnsWithoutDefault = []string{"local_id", "remote_id", "started_at", "ended_at", "provider_peers_count", "error"}
+	getProvidersRPCAllColumns            = []string{"id", "query_id", "local_id", "remote_id", "started_at", "ended_at", "provider_peers_count", "error"}
+	getProvidersRPCColumnsWithoutDefault = []string{"query_id", "local_id", "remote_id", "started_at", "ended_at", "provider_peers_count", "error"}
 	getProvidersRPCColumnsWithDefault    = []string{"id"}
 	getProvidersRPCPrimaryKeyColumns     = []string{"id"}
 )

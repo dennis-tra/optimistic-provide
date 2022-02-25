@@ -3,6 +3,7 @@ BEGIN;
 CREATE TABLE get_providers_rpcs
 (
     id                   INT GENERATED ALWAYS AS IDENTITY,
+    query_id             VARCHAR(36) NOT NULL,
     local_id             INT         NOT NULL,
     remote_id            INT         NOT NULL,
     started_at           TIMESTAMPTZ NOT NULL,
@@ -18,7 +19,7 @@ CREATE TABLE get_providers_rpcs
 
 CREATE TABLE retrievals_x_get_providers_rpcs
 (
-    retrieval_id        INT NOT NULL,
+    retrieval_id         INT NOT NULL,
     get_providers_rpc_id INT NOT NULL,
 
     CONSTRAINT fk_retrievals_x_get_providers_rpcs_retrieval_id FOREIGN KEY (retrieval_id) REFERENCES retrievals (id),

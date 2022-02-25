@@ -18,6 +18,7 @@ import {
   LinearProgress,
 } from "@mui/material";
 import { useGetProvidesQuery, useLazyGetProvidesQuery, useStartProvideMutation } from "../store/api";
+import { ProvideType } from "../api/models/ProvideType";
 
 const ProvidePage: React.FC = (props) => {
   const { hostId } = useParams();
@@ -53,8 +54,19 @@ const ProvidePage: React.FC = (props) => {
                 <Button variant="outlined" onClick={() => getProvides(hostId!)} disabled={isGetProvidesLoading}>
                   Refresh
                 </Button>
-                <Button variant="contained" onClick={() => startProvide(hostId!)} disabled={isStartingProvide}>
-                  Start New
+                <Button
+                  variant="contained"
+                  onClick={() => startProvide({ hostId: hostId!, body: { type: ProvideType.SingleQuery } })}
+                  disabled={isStartingProvide}
+                >
+                  Start Singe Query
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => startProvide({ hostId: hostId!, body: { type: ProvideType.MultiQuery } })}
+                  disabled={isStartingProvide}
+                >
+                  Start Multi Query
                 </Button>
               </Stack>
             </Stack>

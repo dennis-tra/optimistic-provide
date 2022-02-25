@@ -297,6 +297,11 @@ paths:
           example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
           schema:
             type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProvideRequest'
       responses:
         '200':
           description: The provide instance.
@@ -665,6 +670,18 @@ components:
         - startedAt
         - endedAt
         - error
+    ProvideType:
+      type: string
+      enum:
+        - SINGLE_QUERY
+        - MULTI_QUERY
+    ProvideRequest:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ProvideType'
+      required:
+        - type
     Provide:
       type: object
       properties:

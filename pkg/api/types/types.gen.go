@@ -20,6 +20,13 @@ const (
 	ErrorCodeSAVINGROUTINGTABLE ErrorCode = "SAVING_ROUTING_TABLE"
 )
 
+// Defines values for ProvideType.
+const (
+	ProvideTypeMULTIQUERY ProvideType = "MULTI_QUERY"
+
+	ProvideTypeSINGLEQUERY ProvideType = "SINGLE_QUERY"
+)
+
 // Defines values for RoutingTableUpdateType.
 const (
 	RoutingTableUpdateTypeFULL RoutingTableUpdateType = "FULL"
@@ -134,6 +141,14 @@ type ProvideDetails struct {
 	FindNodes    []FindNode    `json:"findNodes"`
 }
 
+// ProvideRequest defines model for ProvideRequest.
+type ProvideRequest struct {
+	Type ProvideType `json:"type"`
+}
+
+// ProvideType defines model for ProvideType.
+type ProvideType string
+
 // Retrieval defines model for Retrieval.
 type Retrieval struct {
 	ContentId             string  `json:"contentId"`
@@ -208,11 +223,17 @@ type RoutingTableUpdateType string
 // CreateHostJSONBody defines parameters for CreateHost.
 type CreateHostJSONBody CreateHostRequest
 
+// StartProvideJSONBody defines parameters for StartProvide.
+type StartProvideJSONBody ProvideRequest
+
 // StartRetrievalJSONBody defines parameters for StartRetrieval.
 type StartRetrievalJSONBody RetrievalRequest
 
 // CreateHostJSONRequestBody defines body for CreateHost for application/json ContentType.
 type CreateHostJSONRequestBody CreateHostJSONBody
+
+// StartProvideJSONRequestBody defines body for StartProvide for application/json ContentType.
+type StartProvideJSONRequestBody StartProvideJSONBody
 
 // StartRetrievalJSONRequestBody defines body for StartRetrieval for application/json ContentType.
 type StartRetrievalJSONRequestBody StartRetrievalJSONBody

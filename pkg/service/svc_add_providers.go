@@ -48,13 +48,13 @@ func (ap *AddProviders) Save(ctx context.Context, exec boil.ContextExecutor, h *
 	log.Info("Saving Add Provider RPCs")
 
 	dbaps := make([]*models.AddProviderRPC, len(apReqs))
-	for i, fnReq := range apReqs {
-		remotePeer, err := ap.peerService.UpsertPeer(ctx, exec, h, fnReq.RemotePeerID)
+	for i, apReq := range apReqs {
+		remotePeer, err := ap.peerService.UpsertPeer(ctx, exec, h, apReq.RemotePeerID)
 		if err != nil {
 			return nil, err
 		}
 
-		maids, err := ap.maService.UpsertMultiAddresses(ctx, exec, fnReq.ProviderAddrs)
+		maids, err := ap.maService.UpsertMultiAddresses(ctx, exec, apReq.ProviderAddrs)
 		if err != nil {
 			return nil, errors.Wrap(err, "upsert multi address")
 		}
@@ -62,11 +62,11 @@ func (ap *AddProviders) Save(ctx context.Context, exec boil.ContextExecutor, h *
 		dbap := &models.AddProviderRPC{
 			LocalID:         h.DBPeer.ID,
 			RemoteID:        remotePeer.ID,
-			Distance:        ks.XORKeySpace.Key([]byte(fnReq.RemotePeerID)).Distance(ks.XORKeySpace.Key(fnReq.Content.CID.Hash())).Bytes(),
+			Distance:        ks.XORKeySpace.Key([]byte(apReq.RemotePeerID)).Distance(ks.XORKeySpace.Key(apReq.Content.CID.Hash())).Bytes(),
 			MultiAddressIds: maids,
-			StartedAt:       fnReq.Start,
-			EndedAt:         fnReq.End,
-			Error:           null.StringFromPtr(util.ErrorStr(fnReq.Error)),
+			StartedAt:       apReq.Start,
+			EndedAt:         apReq.End,
+			Error:           null.StringFromPtr(util.ErrorStr(apReq.Error)),
 		}
 
 		if err = dbap.Insert(ctx, exec, boil.Infer()); err != nil {

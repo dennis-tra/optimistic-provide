@@ -25,6 +25,7 @@ import (
 // FindNodesRPC is an object representing the database table.
 type FindNodesRPC struct {
 	ID               int         `boil:"id" json:"id" toml:"id" yaml:"id"`
+	QueryID          string      `boil:"query_id" json:"query_id" toml:"query_id" yaml:"query_id"`
 	LocalID          int         `boil:"local_id" json:"local_id" toml:"local_id" yaml:"local_id"`
 	RemoteID         int         `boil:"remote_id" json:"remote_id" toml:"remote_id" yaml:"remote_id"`
 	StartedAt        time.Time   `boil:"started_at" json:"started_at" toml:"started_at" yaml:"started_at"`
@@ -38,6 +39,7 @@ type FindNodesRPC struct {
 
 var FindNodesRPCColumns = struct {
 	ID               string
+	QueryID          string
 	LocalID          string
 	RemoteID         string
 	StartedAt        string
@@ -46,6 +48,7 @@ var FindNodesRPCColumns = struct {
 	Error            string
 }{
 	ID:               "id",
+	QueryID:          "query_id",
 	LocalID:          "local_id",
 	RemoteID:         "remote_id",
 	StartedAt:        "started_at",
@@ -56,6 +59,7 @@ var FindNodesRPCColumns = struct {
 
 var FindNodesRPCTableColumns = struct {
 	ID               string
+	QueryID          string
 	LocalID          string
 	RemoteID         string
 	StartedAt        string
@@ -64,6 +68,7 @@ var FindNodesRPCTableColumns = struct {
 	Error            string
 }{
 	ID:               "find_nodes_rpcs.id",
+	QueryID:          "find_nodes_rpcs.query_id",
 	LocalID:          "find_nodes_rpcs.local_id",
 	RemoteID:         "find_nodes_rpcs.remote_id",
 	StartedAt:        "find_nodes_rpcs.started_at",
@@ -99,6 +104,7 @@ func (w whereHelpernull_Int) GTE(x null.Int) qm.QueryMod {
 
 var FindNodesRPCWhere = struct {
 	ID               whereHelperint
+	QueryID          whereHelperstring
 	LocalID          whereHelperint
 	RemoteID         whereHelperint
 	StartedAt        whereHelpertime_Time
@@ -107,6 +113,7 @@ var FindNodesRPCWhere = struct {
 	Error            whereHelpernull_String
 }{
 	ID:               whereHelperint{field: "\"find_nodes_rpcs\".\"id\""},
+	QueryID:          whereHelperstring{field: "\"find_nodes_rpcs\".\"query_id\""},
 	LocalID:          whereHelperint{field: "\"find_nodes_rpcs\".\"local_id\""},
 	RemoteID:         whereHelperint{field: "\"find_nodes_rpcs\".\"remote_id\""},
 	StartedAt:        whereHelpertime_Time{field: "\"find_nodes_rpcs\".\"started_at\""},
@@ -145,8 +152,8 @@ func (*findNodesRPCR) NewStruct() *findNodesRPCR {
 type findNodesRPCL struct{}
 
 var (
-	findNodesRPCAllColumns            = []string{"id", "local_id", "remote_id", "started_at", "ended_at", "closer_peers_count", "error"}
-	findNodesRPCColumnsWithoutDefault = []string{"local_id", "remote_id", "started_at", "ended_at", "closer_peers_count", "error"}
+	findNodesRPCAllColumns            = []string{"id", "query_id", "local_id", "remote_id", "started_at", "ended_at", "closer_peers_count", "error"}
+	findNodesRPCColumnsWithoutDefault = []string{"query_id", "local_id", "remote_id", "started_at", "ended_at", "closer_peers_count", "error"}
 	findNodesRPCColumnsWithDefault    = []string{"id"}
 	findNodesRPCPrimaryKeyColumns     = []string{"id"}
 )

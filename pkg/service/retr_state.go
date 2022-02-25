@@ -236,6 +236,7 @@ func (rs *RetrievalState) consumeRPCEvents(rpcEvents <-chan interface{}) {
 
 func (rs *RetrievalState) trackGetProvidersRequest(evt *wrap.RPCSendRequestEndedEvent) {
 	gps := &GetProvidersSpan{
+		QueryID:      evt.QueryID,
 		RemotePeerID: evt.RemotePeer,
 		Start:        evt.StartedAt,
 		End:          evt.EndedAt,

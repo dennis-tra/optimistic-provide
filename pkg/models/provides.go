@@ -1326,7 +1326,7 @@ func (provideL) LoadFindNodesRPCS(ctx context.Context, e boil.ContextExecutor, s
 	}
 
 	query := NewQuery(
-		qm.Select("\"find_nodes_rpcs\".id, \"find_nodes_rpcs\".local_id, \"find_nodes_rpcs\".remote_id, \"find_nodes_rpcs\".started_at, \"find_nodes_rpcs\".ended_at, \"find_nodes_rpcs\".closer_peers_count, \"find_nodes_rpcs\".error, \"a\".\"provide_id\""),
+		qm.Select("\"find_nodes_rpcs\".id, \"find_nodes_rpcs\".query_id, \"find_nodes_rpcs\".local_id, \"find_nodes_rpcs\".remote_id, \"find_nodes_rpcs\".started_at, \"find_nodes_rpcs\".ended_at, \"find_nodes_rpcs\".closer_peers_count, \"find_nodes_rpcs\".error, \"a\".\"provide_id\""),
 		qm.From("\"find_nodes_rpcs\""),
 		qm.InnerJoin("\"provides_x_find_nodes_rpcs\" as \"a\" on \"find_nodes_rpcs\".\"id\" = \"a\".\"find_nodes_rpc_id\""),
 		qm.WhereIn("\"a\".\"provide_id\" in ?", args...),
@@ -1347,7 +1347,7 @@ func (provideL) LoadFindNodesRPCS(ctx context.Context, e boil.ContextExecutor, s
 		one := new(FindNodesRPC)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.LocalID, &one.RemoteID, &one.StartedAt, &one.EndedAt, &one.CloserPeersCount, &one.Error, &localJoinCol)
+		err = results.Scan(&one.ID, &one.QueryID, &one.LocalID, &one.RemoteID, &one.StartedAt, &one.EndedAt, &one.CloserPeersCount, &one.Error, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for find_nodes_rpcs")
 		}

@@ -1,6 +1,12 @@
 // Need to use the React-specific entry point to import createApi
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { Host, CreateHostRequest, RoutingTablePeer, RoutingTableUpdate, Provide, ProvideDetails } from "../api";
+import { Host } from "../api/models/Host";
+import { CreateHostRequest } from "../api/models/CreateHostRequest";
+import { RoutingTablePeer } from "../api/models/RoutingTablePeer";
+import { RoutingTableUpdate } from "../api/models/RoutingTableUpdate";
+import { Provide } from "../api/models/Provide";
+import { ProvideRequest } from "../api/models/ProvideRequest";
+import { ProvideDetails } from "../api/models/ProvideDetails";
 import { actions as bucketsActions } from "./bucketsSlice";
 
 // Define a service using a base URL and expected endpoints
@@ -9,8 +15,8 @@ export const optprovApi = createApi({
   baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:7000" }),
   tagTypes: ["Host", "RoutingTable", "Provide"],
   endpoints: (builder) => ({
-    startProvide: builder.mutation<Host, string>({
-      query: (hostId) => ({ url: `hosts/${hostId}/provides`, method: "POST" }),
+    startProvide: builder.mutation<Host, { hostId: string; body: ProvideRequest }>({
+      query: ({ hostId, body }) => ({ url: `hosts/${hostId}/provides`, method: "POST", body }),
       invalidatesTags: [{ type: "Provide", id: "LIST" }],
     }),
     getProvides: builder.query<Provide[], string>({

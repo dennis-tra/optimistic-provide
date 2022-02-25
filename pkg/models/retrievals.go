@@ -1163,7 +1163,7 @@ func (retrievalL) LoadGetProvidersRPCS(ctx context.Context, e boil.ContextExecut
 	}
 
 	query := NewQuery(
-		qm.Select("\"get_providers_rpcs\".id, \"get_providers_rpcs\".local_id, \"get_providers_rpcs\".remote_id, \"get_providers_rpcs\".started_at, \"get_providers_rpcs\".ended_at, \"get_providers_rpcs\".provider_peers_count, \"get_providers_rpcs\".error, \"a\".\"retrieval_id\""),
+		qm.Select("\"get_providers_rpcs\".id, \"get_providers_rpcs\".query_id, \"get_providers_rpcs\".local_id, \"get_providers_rpcs\".remote_id, \"get_providers_rpcs\".started_at, \"get_providers_rpcs\".ended_at, \"get_providers_rpcs\".provider_peers_count, \"get_providers_rpcs\".error, \"a\".\"retrieval_id\""),
 		qm.From("\"get_providers_rpcs\""),
 		qm.InnerJoin("\"retrievals_x_get_providers_rpcs\" as \"a\" on \"get_providers_rpcs\".\"id\" = \"a\".\"get_providers_rpc_id\""),
 		qm.WhereIn("\"a\".\"retrieval_id\" in ?", args...),
@@ -1184,7 +1184,7 @@ func (retrievalL) LoadGetProvidersRPCS(ctx context.Context, e boil.ContextExecut
 		one := new(GetProvidersRPC)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.LocalID, &one.RemoteID, &one.StartedAt, &one.EndedAt, &one.ProviderPeersCount, &one.Error, &localJoinCol)
+		err = results.Scan(&one.ID, &one.QueryID, &one.LocalID, &one.RemoteID, &one.StartedAt, &one.EndedAt, &one.ProviderPeersCount, &one.Error, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for get_providers_rpcs")
 		}

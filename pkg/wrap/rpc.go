@@ -4,6 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+	kaddht "github.com/libp2p/go-libp2p-kad-dht"
+
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -34,7 +37,12 @@ func (m *MessageSenderImpl) Init(h host.Host, protos []protocol.ID) pb.MessageSe
 }
 
 func (m *MessageSenderImpl) SendRequest(ctx context.Context, p peer.ID, pmes *pb.Message) (*pb.Message, error) {
+	var qid uuid.UUID
+	if val := ctx.Value(kaddht.QueryIdCtxKey{}); val != nil {
+		qid = val.(uuid.UUID)
+	}
 	started := &RPCSendRequestStartedEvent{
+		QueryID:    qid,
 		RemotePeer: p,
 		StartedAt:  time.Now(),
 		Request:    pmes,
@@ -42,6 +50,7 @@ func (m *MessageSenderImpl) SendRequest(ctx context.Context, p peer.ID, pmes *pb
 	PublishRPCEvent(ctx, started)
 	resp, err := m.messenger.SendRequest(ctx, p, pmes)
 	ended := &RPCSendRequestEndedEvent{
+		QueryID:    qid,
 		RemotePeer: p,
 		StartedAt:  started.StartedAt,
 		EndedAt:    time.Now(),
@@ -54,7 +63,12 @@ func (m *MessageSenderImpl) SendRequest(ctx context.Context, p peer.ID, pmes *pb
 }
 
 func (m *MessageSenderImpl) SendMessage(ctx context.Context, p peer.ID, pmes *pb.Message) error {
+	var qid uuid.UUID
+	if val := ctx.Value(kaddht.QueryIdCtxKey{}); val != nil {
+		qid = val.(uuid.UUID)
+	}
 	started := &RPCSendMessageStartedEvent{
+		QueryID:    qid,
 		RemotePeer: p,
 		StartedAt:  time.Now(),
 		Message:    pmes,
@@ -62,6 +76,7 @@ func (m *MessageSenderImpl) SendMessage(ctx context.Context, p peer.ID, pmes *pb
 	PublishRPCEvent(ctx, started)
 	err := m.messenger.SendMessage(ctx, p, pmes)
 	ended := &RPCSendMessageEndedEvent{
+		QueryID:    qid,
 		RemotePeer: p,
 		StartedAt:  started.StartedAt,
 		EndedAt:    time.Now(),

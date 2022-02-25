@@ -3,7 +3,10 @@ package service
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/api/types"
 
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
@@ -23,7 +26,7 @@ import (
 var log = logging.Logger("optprov")
 
 type ProvideService interface {
-	Provide(ctx context.Context, h *dht.Host) (*models.Provide, error)
+	Provide(ctx context.Context, h *dht.Host, t types.ProvideType) (*models.Provide, error)
 	List(ctx context.Context, h *dht.Host) ([]*models.Provide, error)
 	Get(ctx context.Context, h *dht.Host, id int) (*models.Provide, error)
 }
@@ -58,7 +61,7 @@ func NewProvideService(peerService PeerService, hostService HostService, rtServi
 	}
 }
 
-func (ps *Provide) Provide(ctx context.Context, h *dht.Host) (*models.Provide, error) {
+func (ps *Provide) Provide(ctx context.Context, h *dht.Host, t types.ProvideType) (*models.Provide, error) {
 	txn, err := boil.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "begin transaction")
@@ -91,7 +94,14 @@ func (ps *Provide) Provide(ctx context.Context, h *dht.Host) (*models.Provide, e
 		return nil, errors.Wrap(err, "committing transaction")
 	}
 
-	go ps.startProviding(h, provide, content)
+	switch t {
+	case types.ProvideTypeSINGLEQUERY:
+		go ps.startProviding(h, provide, content)
+	case types.ProvideTypeMULTIQUERY:
+		go ps.startProvidingMultiQuery(h, provide, content)
+	default:
+		return nil, fmt.Errorf("unexpected provide type %s", t)
+	}
 
 	return provide, nil
 }
@@ -102,6 +112,25 @@ func (ps *Provide) List(ctx context.Context, h *dht.Host) ([]*models.Provide, er
 
 func (ps *Provide) Get(ctx context.Context, h *dht.Host, provideID int) (*models.Provide, error) {
 	return ps.provideRepo.Get(ctx, h.ID().String(), provideID)
+}
+
+func (ps *Provide) startProvidingMultiQuery(h *dht.Host, provide *models.Provide, content *util.Content) {
+	ctx := context.Background()
+
+	state := NewProvideState(h, content)
+	ctx = state.RegisterMultiQuery(ctx)
+	log.Infow("Start providing content multi query", "cid", content.CID.String())
+	err := h.DHT.ProvideMultiQuery(ctx, content.CID)
+	log.Infow("Done providing content multi query", "cid", content.CID.String())
+	end := time.Now()
+	state.Unregister()
+
+	provide.Error = null.StringFromPtr(util.ErrorStr(err))
+	provide.EndedAt = null.TimeFrom(end)
+
+	if err = ps.saveProvide(h, provide, state); err != nil {
+		log.Errorw("error saving provide operation", "err", err)
+	}
 }
 
 func (ps *Provide) startProviding(h *dht.Host, provide *models.Provide, content *util.Content) {

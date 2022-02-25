@@ -3,10 +3,11 @@ package service
 import (
 	"time"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/util"
-
+	"github.com/google/uuid"
 	"github.com/libp2p/go-libp2p-core/peer"
 	ma "github.com/multiformats/go-multiaddr"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
 )
 
 type DialSpan struct {
@@ -25,14 +26,8 @@ type ConnectionSpan struct {
 	End          time.Time
 }
 
-type QuerySpan struct {
-	RemotePeerID peer.ID
-	Start        time.Time
-	End          time.Time
-	Error        error
-}
-
 type FindNodesSpan struct {
+	QueryID      uuid.UUID
 	RemotePeerID peer.ID
 	Start        time.Time
 	End          time.Time
@@ -41,6 +36,7 @@ type FindNodesSpan struct {
 }
 
 type GetProvidersSpan struct {
+	QueryID      uuid.UUID
 	RemotePeerID peer.ID
 	Start        time.Time
 	End          time.Time
@@ -49,6 +45,7 @@ type GetProvidersSpan struct {
 }
 
 type AddProvidersSpan struct {
+	QueryID       uuid.UUID
 	RemotePeerID  peer.ID
 	Content       *util.Content
 	Start         time.Time

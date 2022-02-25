@@ -5,9 +5,9 @@ import (
 	"sync"
 	"time"
 
-	pb "github.com/libp2p/go-libp2p-kad-dht/pb"
-
+	"github.com/google/uuid"
 	"github.com/libp2p/go-libp2p-core/peer"
+	pb "github.com/libp2p/go-libp2p-kad-dht/pb"
 )
 
 // RPCEventBufferSize defines the number of events to buffer.
@@ -15,6 +15,7 @@ var RPCEventBufferSize = 16
 
 // RPCSendRequestStartedEvent .
 type RPCSendRequestStartedEvent struct {
+	QueryID    uuid.UUID
 	RemotePeer peer.ID
 	StartedAt  time.Time
 	Request    *pb.Message
@@ -22,6 +23,7 @@ type RPCSendRequestStartedEvent struct {
 
 // RPCSendRequestEndedEvent .
 type RPCSendRequestEndedEvent struct {
+	QueryID    uuid.UUID
 	RemotePeer peer.ID
 	StartedAt  time.Time
 	EndedAt    time.Time
@@ -32,6 +34,7 @@ type RPCSendRequestEndedEvent struct {
 
 // RPCSendMessageStartedEvent .
 type RPCSendMessageStartedEvent struct {
+	QueryID    uuid.UUID
 	RemotePeer peer.ID
 	StartedAt  time.Time
 	Message    *pb.Message
@@ -39,6 +42,7 @@ type RPCSendMessageStartedEvent struct {
 
 // RPCSendMessageEndedEvent .
 type RPCSendMessageEndedEvent struct {
+	QueryID    uuid.UUID
 	RemotePeer peer.ID
 	StartedAt  time.Time
 	EndedAt    time.Time

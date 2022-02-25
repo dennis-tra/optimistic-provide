@@ -3,6 +3,7 @@ BEGIN;
 CREATE TABLE find_nodes_rpcs
 (
     id                 INT GENERATED ALWAYS AS IDENTITY,
+    query_id           VARCHAR(36) NOT NULL,
     local_id           INT         NOT NULL,
     remote_id          INT         NOT NULL,
     started_at         TIMESTAMPTZ NOT NULL,

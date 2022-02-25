@@ -34,7 +34,17 @@ func NewProvideController(ctx context.Context, ps service.ProvideService, hs ser
 func (pc *ProvideController) Create(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
 
-	provide, err := pc.ps.Provide(pc.ctx, h)
+	pr := &types.ProvideRequest{}
+	if err := c.BindJSON(pr); err != nil {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse{
+			Code:    types.ErrorCodeMALFORMEDREQUEST,
+			Message: "Could start provide because of a malformed JSON request",
+			Details: types.ErrDetails(err),
+		})
+		return
+	}
+
+	provide, err := pc.ps.Provide(pc.ctx, h, pr.Type)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,
