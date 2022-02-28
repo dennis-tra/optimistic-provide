@@ -62,7 +62,7 @@ func (rs *Retrieval) Retrieve(ctx context.Context, h *dht.Host, contentID cid.Ci
 	}
 
 	retrieval := &models.Retrieval{
-		RetrieverID:           h.DBPeer.ID,
+		RetrieverID:           h.DBHost.PeerID,
 		ContentID:             contentID.String(),
 		Distance:              ks.XORKeySpace.Key([]byte(h.ID())).Distance(ks.XORKeySpace.Key(contentID.Hash())).Bytes(),
 		InitialRoutingTableID: rts.ID,

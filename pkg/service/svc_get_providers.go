@@ -45,7 +45,7 @@ func (gp *GetProviders) Save(ctx context.Context, exec boil.ContextExecutor, h *
 
 		dbgp := &models.GetProvidersRPC{
 			QueryID:            gpReq.QueryID.String(),
-			LocalID:            h.DBPeer.ID,
+			LocalID:            h.DBHost.PeerID,
 			RemoteID:           remotePeer.ID,
 			StartedAt:          gpReq.Start,
 			EndedAt:            gpReq.End,

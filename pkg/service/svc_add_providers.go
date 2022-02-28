@@ -60,7 +60,7 @@ func (ap *AddProviders) Save(ctx context.Context, exec boil.ContextExecutor, h *
 		}
 
 		dbap := &models.AddProviderRPC{
-			LocalID:         h.DBPeer.ID,
+			LocalID:         h.DBHost.PeerID,
 			RemoteID:        remotePeer.ID,
 			Distance:        ks.XORKeySpace.Key([]byte(apReq.RemotePeerID)).Distance(ks.XORKeySpace.Key(apReq.Content.CID.Hash())).Bytes(),
 			MultiAddressIds: maids,

@@ -50,7 +50,7 @@ func (fn *FindNodes) Save(ctx context.Context, exec boil.ContextExecutor, h *dht
 
 		dbfn := &models.FindNodesRPC{
 			QueryID:          fnReq.QueryID.String(),
-			LocalID:          h.DBPeer.ID,
+			LocalID:          h.DBHost.PeerID,
 			RemoteID:         remotePeer.ID,
 			StartedAt:        fnReq.Start,
 			EndedAt:          fnReq.End,

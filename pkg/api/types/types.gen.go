@@ -7,6 +7,8 @@ package types
 const (
 	ErrorCodeHOSTNOTFOUND ErrorCode = "HOST_NOT_FOUND"
 
+	ErrorCodeHOSTSTOPPED ErrorCode = "HOST_STOPPED"
+
 	ErrorCodeINTERNAL ErrorCode = "INTERNAL"
 
 	ErrorCodeMALFORMEDPEERID ErrorCode = "MALFORMED_PEER_ID"
@@ -108,6 +110,7 @@ type Host struct {
 	HostId               string  `json:"hostId"`
 	Name                 string  `json:"name"`
 	RunningProvidesCount float32 `json:"runningProvidesCount"`
+	StartedAt            *string `json:"startedAt"`
 }
 
 // Peer defines model for Peer.

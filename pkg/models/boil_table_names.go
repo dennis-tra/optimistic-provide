@@ -10,6 +10,7 @@ var TableNames = struct {
 	Dials                       string
 	FindNodesRPCS               string
 	GetProvidersRPCS            string
+	Hosts                       string
 	IPAddresses                 string
 	MultiAddresses              string
 	MultiAddressesXIPAddresses  string
@@ -37,6 +38,7 @@ var TableNames = struct {
 	Dials:                       "dials",
 	FindNodesRPCS:               "find_nodes_rpcs",
 	GetProvidersRPCS:            "get_providers_rpcs",
+	Hosts:                       "hosts",
 	IPAddresses:                 "ip_addresses",
 	MultiAddresses:              "multi_addresses",
 	MultiAddressesXIPAddresses:  "multi_addresses_x_ip_addresses",

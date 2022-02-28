@@ -57,7 +57,7 @@ func (d *Dial) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host,
 		}
 
 		dbDial := &models.Dial{
-			LocalID:        h.DBPeer.ID,
+			LocalID:        h.DBHost.PeerID,
 			RemoteID:       remotePeer.ID,
 			Transport:      dial.Trpt,
 			MultiAddressID: maddr.ID,

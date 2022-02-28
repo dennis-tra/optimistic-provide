@@ -18,6 +18,8 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("GetProvidersRPCS", testGetProvidersRPCSUpsert)
 
+	t.Run("Hosts", testHostsUpsert)
+
 	t.Run("IPAddresses", testIPAddressesUpsert)
 
 	t.Run("MultiAddresses", testMultiAddressesUpsert)

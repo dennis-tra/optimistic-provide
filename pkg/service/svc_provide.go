@@ -80,7 +80,7 @@ func (ps *Provide) Provide(ctx context.Context, h *dht.Host, t types.ProvideType
 
 	provide := &models.Provide{
 		ProvideType:           string(t),
-		ProviderID:            h.DBPeer.ID,
+		ProviderID:            h.DBHost.PeerID,
 		ContentID:             content.CID.String(),
 		Distance:              ks.XORKeySpace.Key([]byte(h.ID())).Distance(ks.XORKeySpace.Key(content.CID.Hash())).Bytes(),
 		InitialRoutingTableID: rts.ID,

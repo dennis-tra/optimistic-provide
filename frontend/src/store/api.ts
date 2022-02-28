@@ -57,7 +57,18 @@ export const optprovApi = createApi({
       query: (body) => ({ url: `hosts`, method: "POST", body }),
       invalidatesTags: [{ type: "Host", id: "LIST" }],
     }),
-    deleteHost: builder.mutation<Host, string>({
+    startHost: builder.mutation<Host, string>({
+      query: (hostId) => ({ url: `hosts/${hostId}/start`, method: "POST" }),
+      invalidatesTags: (result, error, arg) => [{ type: "Host", id: arg }],
+    }),
+    stopHost: builder.mutation<Host, string>({
+      query: (hostId) => ({ url: `hosts/${hostId}/stop`, method: "POST" }),
+      invalidatesTags: (result, error, arg) => [
+        { type: "Host", id: arg },
+        { type: "RoutingTable", id: arg },
+      ],
+    }),
+    archiveHost: builder.mutation<Host, string>({
       query: (hostId) => ({ url: `hosts/${hostId}`, method: "DELETE" }),
       invalidatesTags: (result, error, arg) => [{ type: "Host", id: arg }],
     }),
@@ -134,7 +145,9 @@ export const {
   useStartProvideMutation,
   useStartRetrievalMutation,
   useCreateHostMutation,
-  useDeleteHostMutation,
+  useArchiveHostMutation,
+  useStartHostMutation,
+  useStopHostMutation,
   useBootstrapHostMutation,
   useListenRoutingTableQuery,
   useLazyGetCurrentRoutingTablePeersQuery,

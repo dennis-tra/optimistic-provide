@@ -50,23 +50,44 @@ func (hc *HostController) Create(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, &types.Host{
-		Name:           h.Name,
+		Name:           h.DBHost.Name,
 		HostId:         h.ID().String(),
 		BootstrappedAt: nil,
-		CreatedAt:      h.CreatedAt.Format(time.RFC3339),
+		StartedAt:      util.StrPtr(h.StartedAt.Format(time.RFC3339)),
+		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339),
 	})
 }
 
 // List lists returns all running libp2p hosts.
 func (hc *HostController) List(c *gin.Context) {
 	hosts := []*types.Host{}
-	for _, h := range hc.hs.Hosts() {
-		hosts = append(hosts, &types.Host{
-			Name:           h.Name,
-			HostId:         h.ID().String(),
-			BootstrappedAt: util.TimeToStr(h.Bootstrapped),
-			CreatedAt:      h.CreatedAt.Format(time.RFC3339),
+
+	runningHosts, dbHosts, err := hc.hs.Hosts(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
+			Code:    types.ErrorCodeINTERNAL,
+			Message: "Could not get running and DB hosts",
+			Details: types.ErrDetails(err),
 		})
+		return
+	}
+
+	for _, dbHost := range dbHosts {
+		respHost := &types.Host{
+			Name:      dbHost.Name,
+			HostId:    dbHost.R.Peer.MultiHash,
+			CreatedAt: dbHost.CreatedAt.Format(time.RFC3339),
+		}
+
+		for _, runningHost := range runningHosts {
+			if runningHost.ID().String() == dbHost.R.Peer.MultiHash {
+				respHost.StartedAt = util.StrPtr(runningHost.StartedAt.Format(time.RFC3339))
+				respHost.BootstrappedAt = util.TimeToStr(runningHost.Bootstrapped)
+				break
+			}
+		}
+
+		hosts = append(hosts, respHost)
 	}
 
 	sort.Slice(hosts, func(i, j int) bool {
@@ -81,15 +102,49 @@ func (hc *HostController) List(c *gin.Context) {
 func (hc *HostController) Get(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
 	c.JSON(http.StatusOK, &types.Host{
-		Name:           h.Name,
+		Name:           h.DBHost.Name,
+		HostId:         h.DBHost.R.Peer.MultiHash,
+		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
+		StartedAt:      util.TimeToStr(h.StartedAt),
+		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339),
+	})
+}
+
+func (hc *HostController) Start(c *gin.Context) {
+	h := c.MustGet("host").(*dht.Host)
+
+	h, err := hc.hs.Start(hc.ctx, h)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
+			Code:    types.ErrorCodeINTERNAL,
+			Message: "Could not stop libp2p host",
+			Details: types.ErrDetails(err),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, &types.Host{
+		Name:           h.DBHost.Name,
 		HostId:         h.ID().String(),
 		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
-		CreatedAt:      h.CreatedAt.Format(time.RFC3339),
+		StartedAt:      util.StrPtr(h.StartedAt.Format(time.RFC3339)),
+		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339),
 	})
 }
 
 func (hc *HostController) Stop(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
+
+	if h.Host == nil {
+		c.JSON(http.StatusOK, &types.Host{
+			Name:           h.DBHost.Name,
+			HostId:         h.DBHost.R.Peer.MultiHash,
+			BootstrappedAt: nil,
+			StartedAt:      nil,
+			CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339),
+		})
+		return
+	}
 
 	if err := hc.hs.Stop(h.ID()); err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
@@ -100,11 +155,25 @@ func (hc *HostController) Stop(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	c.JSON(http.StatusOK, &types.Host{
+		Name:           h.DBHost.Name,
+		HostId:         h.ID().String(),
+		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
+		StartedAt:      nil,
+		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339),
+	})
 }
 
 func (hc *HostController) Bootstrap(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
+
+	if h.Host == nil {
+		c.JSON(http.StatusPreconditionFailed, types.ErrorResponse{
+			Code:    types.ErrorCodeHOSTSTOPPED,
+			Message: "Host is stopped. Start it first to bootstrap",
+		})
+		return
+	}
 
 	if err := h.Bootstrap(hc.ctx); err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
@@ -116,9 +185,25 @@ func (hc *HostController) Bootstrap(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, &types.Host{
-		Name:           h.Name,
+		Name:           h.DBHost.Name,
 		HostId:         h.ID().String(),
 		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
-		CreatedAt:      h.CreatedAt.Format(time.RFC3339),
+		StartedAt:      util.StrPtr(h.StartedAt.Format(time.RFC3339)),
+		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339),
 	})
+}
+
+func (hc *HostController) Archive(c *gin.Context) {
+	h := c.MustGet("host").(*dht.Host)
+
+	if err := hc.hs.Archive(c.Request.Context(), h.DBHost); err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, types.ErrorResponse{
+			Code:    types.ErrorCodeINTERNAL,
+			Message: "Could not archive host",
+			Details: types.ErrDetails(err),
+		})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }

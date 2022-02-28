@@ -461,6 +461,7 @@ components:
         - ROUTING_TABLE_NOT_FOUND
         - MALFORMED_PEER_ID
         - SAVING_ROUTING_TABLE
+        - HOST_STOPPED
     AnyValue:
       nullable: true
       description: Can be any value - string, number, boolean, array or object.
@@ -611,6 +612,10 @@ components:
           type: string
         name:
           type: string
+        startedAt:
+          type: string
+          format: date-format
+          nullable: true
         createdAt:
           type: string
           format: date-format
@@ -623,6 +628,7 @@ components:
       required:
         - hostId
         - name
+        - startedAt
         - createdAt
         - bootstrappedAt
         - runningProvidesCount

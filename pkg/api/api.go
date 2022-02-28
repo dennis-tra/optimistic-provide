@@ -43,10 +43,11 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 	apRepo := repo.NewAddProvidersRepo(dbclient)
 	cpRepo := repo.NewCloserPeersRepo(dbclient)
 	psRepo := repo.NewPeerStateRepo(dbclient)
+	hostRepo := repo.NewHostRepo(dbclient)
 
 	peerService := service.NewPeerService(peerRepo)
 	rtService := service.NewRoutingTableService(peerService, rtRepo)
-	hostService := service.NewHostService(peerService, rtService)
+	hostService := service.NewHostService(peerService, rtService, hostRepo)
 	maService := service.NewMultiAddressService(maRepo, iaRepo)
 	dialService := service.NewDialService(peerService, maService, dialRepo)
 	connService := service.NewConnectionService(peerService, maService, connRepo)
@@ -72,7 +73,9 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 		{
 			hostID.Use(middlewares.HostID(hostService))
 			hostID.GET("", hostController.Get)
-			hostID.DELETE("", hostController.Stop)
+			hostID.DELETE("", hostController.Archive)
+			hostID.POST("/stop", hostController.Stop)
+			hostID.POST("/start", hostController.Start)
 			hostID.POST("/bootstrap", hostController.Bootstrap)
 			hostID.GET("/routing-table", routingTableController.Current)
 

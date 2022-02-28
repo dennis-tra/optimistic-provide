@@ -31,8 +31,10 @@ const HostDetailsOverviewCard: React.FC<HostDetailsOverviewCardProps> = ({ host 
         </Typography>
         <Typography variant="h6">Created At</Typography>
         <Typography color="text.secondary" noWrap>
-          <Tooltip title={<ReactTimeAgo date={new Date(host.createdAt)} />}>
-            <span>{new Date(host.createdAt).toLocaleString()}</span>
+          <Tooltip title={new Date(host.createdAt).toLocaleString()}>
+            <span>
+              <ReactTimeAgo date={new Date(host.createdAt)} />
+            </span>
           </Tooltip>
         </Typography>
       </CardContent>

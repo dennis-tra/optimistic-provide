@@ -60,7 +60,7 @@ const ProvidePage: React.FC = (props) => {
                   onClick={() => startProvide({ hostId: hostId!, body: { type: ProvideType.SingleQuery } })}
                   disabled={isStartingProvide}
                 >
-                  Start Singe Query
+                  Start Single Query
                 </Button>
                 <Button
                   variant="contained"

@@ -31,11 +31,10 @@ type RoutingTableListener interface {
 type Host struct {
 	host.Host
 
-	Name         string
-	DBPeer       *models.Peer
+	DBHost       *models.Host
 	DHT          *kaddht.IpfsDHT
 	Bootstrapped *time.Time
-	CreatedAt    time.Time
+	StartedAt    *time.Time
 	Transports   []*wrap.Notifier
 	MsgSender    *wrap.MessageSenderImpl
 
@@ -45,12 +44,7 @@ type Host struct {
 	rtListeners   map[RoutingTableListener]*sync.WaitGroup
 }
 
-func New(ctx context.Context, name string) (*Host, error) {
-	key, _, err := crypto.GenerateKeyPair(crypto.Secp256k1, 256)
-	if err != nil {
-		return nil, errors.Wrap(err, "generate key pair")
-	}
-
+func New(ctx context.Context, key crypto.PrivKey) (*Host, error) {
 	tcp, tcpTrpt := wrap.NewTCPTransport()
 	ws, wsTrpt := wrap.NewWSTransport()
 	quic, quicTrpt := wrap.NewQuicTransport()
@@ -64,6 +58,7 @@ func New(ctx context.Context, name string) (*Host, error) {
 		libp2p.Transport(wsTrpt),
 		libp2p.Transport(quicTrpt),
 		libp2p.Routing(func(h host.Host) (routing.PeerRouting, error) {
+			var err error
 			dht, err = kaddht.New(ctx, h,
 				kaddht.Mode(kaddht.ModeClient),
 				kaddht.MessageSenderImpl(msgSender.Init),
@@ -75,12 +70,12 @@ func New(ctx context.Context, name string) (*Host, error) {
 		return nil, errors.Wrap(err, "new libp2p host")
 	}
 
+	now := time.Now()
 	newHost := &Host{
-		Name:          name,
 		Host:          h,
 		DHT:           dht,
 		MsgSender:     msgSender,
-		CreatedAt:     time.Now(),
+		StartedAt:     &now,
 		Transports:    []*wrap.Notifier{tcp.Notifier, ws.Notifier, quic.Notifier},
 		rtListeners:   map[RoutingTableListener]*sync.WaitGroup{},
 		rtPeerAdded:   dht.RoutingTable().PeerAdded,

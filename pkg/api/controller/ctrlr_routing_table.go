@@ -124,12 +124,21 @@ func (rtc *RoutingTableController) List(c *gin.Context) {
 
 func (rtc *RoutingTableController) Current(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
+	if h.StartedAt == nil {
+		c.JSON(http.StatusOK, []types.RoutingTablePeer{})
+		return
+	}
 	rtl := service.NewRoutingTableListener(h)
 	c.JSON(http.StatusOK, rtl.BuildUpdate())
 }
 
 func (rtc *RoutingTableController) Listen(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
+
+	if h.StartedAt == nil {
+		c.Status(http.StatusPreconditionFailed)
+		return
+	}
 
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {

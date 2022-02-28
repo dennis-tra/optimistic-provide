@@ -78,7 +78,7 @@ func (rts *RoutingTable) Save(ctx context.Context, exec boil.ContextExecutor, h 
 	rt := h.DHT.RoutingTable()
 	swarm := h.Host.Network()
 
-	snapshot, err := rts.rtRepo.SaveSnapshot(ctx, exec, h.DBPeer.ID, util.DefaultBucketSize, len(rt.GetPeerInfos()))
+	snapshot, err := rts.rtRepo.SaveSnapshot(ctx, exec, h.DBHost.PeerID, util.DefaultBucketSize, len(rt.GetPeerInfos()))
 	if err != nil {
 		return nil, errors.Wrap(err, "insert routing table")
 	}

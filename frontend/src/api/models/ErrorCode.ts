@@ -24,7 +24,8 @@ export enum ErrorCode {
     PeerNotFound = 'PEER_NOT_FOUND',
     RoutingTableNotFound = 'ROUTING_TABLE_NOT_FOUND',
     MalformedPeerId = 'MALFORMED_PEER_ID',
-    SavingRoutingTable = 'SAVING_ROUTING_TABLE'
+    SavingRoutingTable = 'SAVING_ROUTING_TABLE',
+    HostStopped = 'HOST_STOPPED'
 }
 
 export function ErrorCodeFromJSON(json: any): ErrorCode {

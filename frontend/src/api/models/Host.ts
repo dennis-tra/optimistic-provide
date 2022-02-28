@@ -36,6 +36,12 @@ export interface Host {
      * @type {string}
      * @memberof Host
      */
+    startedAt: string | null;
+    /**
+     * 
+     * @type {string}
+     * @memberof Host
+     */
     createdAt: string;
     /**
      * 
@@ -63,6 +69,7 @@ export function HostFromJSONTyped(json: any, ignoreDiscriminator: boolean): Host
         
         'hostId': json['hostId'],
         'name': json['name'],
+        'startedAt': json['startedAt'],
         'createdAt': json['createdAt'],
         'bootstrappedAt': json['bootstrappedAt'],
         'runningProvidesCount': json['runningProvidesCount'],
@@ -80,6 +87,7 @@ export function HostToJSON(value?: Host | null): any {
         
         'hostId': value.hostId,
         'name': value.name,
+        'startedAt': value.startedAt,
         'createdAt': value.createdAt,
         'bootstrappedAt': value.bootstrappedAt,
         'runningProvidesCount': value.runningProvidesCount,

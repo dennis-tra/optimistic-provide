@@ -45,7 +45,7 @@ const NewHostCard: React.FC<NewHostCardProps> = ({}) => {
             value={hostName}
             onChange={(event) => setHostName(event.target.value)}
           />
-          <Box sx={{ flex: 1 }}></Box>
+          <Box sx={{ flex: 1 }} />
           <Button type="submit" variant="contained" onClick={handleSubmit} disabled={!hostName || isLoading}>
             Create
           </Button>

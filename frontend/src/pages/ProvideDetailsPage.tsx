@@ -1,43 +1,30 @@
-import { useParams, Link as RouterLink } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import HostDetailsLayout from "../layouts/HostDetailsLayout";
-import CircularProgress from "@mui/material/CircularProgress";
-import ReactTimeAgo from "react-time-ago";
-import {
-  Grid,
-  Paper,
-  List,
-  ListItemButton,
-  Breadcrumbs,
-  Link,
-  ListItemText,
-  Chip,
-  Typography,
-  Stack,
-  Button,
-  Tooltip,
-  LinearProgress,
-} from "@mui/material";
-import { useGetProvideQuery, useLazyGetProvidesQuery, useStartProvideMutation } from "../store/api";
+import LinearProgress from "@mui/material/LinearProgress";
+import { Grid } from "@mui/material";
+import { useGetHostQuery, useGetProvideQuery, useLazyGetProvidesQuery, useStartProvideMutation } from "../store/api";
+import ProvideOverviewCard from "../components/cards/ProvideOverviewCard";
 
 const ProvideDetailsPage: React.FC = (props) => {
   const { hostId, provideId } = useParams();
+  const { data: hostData, isLoading: isHostLoading } = useGetHostQuery(hostId!);
+  const { data: provideData, isLoading: isProvideLoading } = useGetProvideQuery({
+    hostId: hostId!,
+    provideId: provideId!,
+  });
 
-  const { data, isLoading } = useGetProvideQuery({ hostId: hostId!, provideId: provideId! });
-  if (isLoading) {
+  if (isHostLoading || isProvideLoading) {
     return (
       <HostDetailsLayout hostId={hostId!} title="Provide Operations">
-        <CircularProgress />
+        <LinearProgress />
       </HostDetailsLayout>
     );
   }
 
-  const provide = data!;
-
   return (
     <HostDetailsLayout hostId={hostId!} title="Provide Operations">
       <Grid item xs={12} md={12} lg={12}>
-        Data {hostId} {provideId}
-        <h2>CID: {provide.contentId}</h2>
+        <ProvideOverviewCard provide={provideData!} host={hostData!} />
       </Grid>
     </HostDetailsLayout>
   );

@@ -47,7 +47,7 @@ func (c *Connection) Save(ctx context.Context, exec boil.ContextExecutor, h *dht
 		}
 
 		dbConn := &models.Connection{
-			LocalID:        h.DBPeer.ID,
+			LocalID:        h.DBHost.PeerID,
 			RemoteID:       remotePeer.ID,
 			MultiAddressID: maddr.ID,
 			StartedAt:      conn.Start,

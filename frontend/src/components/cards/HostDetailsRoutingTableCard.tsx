@@ -1,7 +1,7 @@
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip } from "recharts";
-import { Host } from "../../api";
+import { Host } from "../../api/models/Host";
 import {
   useListenRoutingTableQuery,
   useSaveRoutingTableMutation,

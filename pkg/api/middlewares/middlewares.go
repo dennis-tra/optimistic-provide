@@ -32,11 +32,12 @@ func HostID(hs service.HostService) gin.HandlerFunc {
 			return
 		}
 
-		h, found := hs.Host(peerID)
-		if !found {
+		h, err := hs.Host(c.Request.Context(), peerID)
+		if err != nil {
 			c.AbortWithStatusJSON(http.StatusNotFound, types.ErrorResponse{
 				Code:    types.ErrorCodeHOSTNOTFOUND,
 				Message: "Host with ID " + peerID.String() + " was not found.",
+				Details: types.ErrDetails(err),
 			})
 			return
 		}
