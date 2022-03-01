@@ -18,7 +18,7 @@ func TimeToStr(t *time.Time) *string {
 	if t.IsZero() {
 		return nil
 	}
-	return StrPtr(t.Format(time.RFC3339))
+	return StrPtr(t.Format(time.RFC3339Nano))
 }
 
 func ErrorStr(err error) *string {

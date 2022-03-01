@@ -3,6 +3,8 @@ package controller
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
+	"math/big"
 	"net/http"
 	"time"
 
@@ -62,7 +64,7 @@ func (pc *ProvideController) Create(c *gin.Context) {
 		HostId:                h.ID().String(),
 		InitialRoutingTableId: provide.InitialRoutingTableID,
 		ProvideId:             provide.ID,
-		StartedAt:             provide.StartedAt.Format(time.RFC3339),
+		StartedAt:             provide.StartedAt.Format(time.RFC3339Nano),
 	})
 }
 
@@ -89,7 +91,7 @@ func (pc *ProvideController) List(c *gin.Context) {
 			HostId:                h.ID().String(),
 			InitialRoutingTableId: dbProvide.InitialRoutingTableID,
 			ProvideId:             dbProvide.ID,
-			StartedAt:             dbProvide.StartedAt.Format(time.RFC3339),
+			StartedAt:             dbProvide.StartedAt.Format(time.RFC3339Nano),
 		}
 	}
 
@@ -114,11 +116,11 @@ func (pc *ProvideController) Get(c *gin.Context) {
 	for i, dbConn := range dbProvide.R.Connections {
 		connections[i] = types.Connection{
 			DurationInS: float32(dbConn.EndedAt.Sub(dbConn.StartedAt).Seconds()),
-			EndedAt:     dbConn.EndedAt.Format(time.RFC3339),
+			EndedAt:     dbConn.EndedAt.Format(time.RFC3339Nano),
 			Id:          dbConn.ID,
 			// MultiAddress: dbConn.R.MultiAddress.Maddr,
 			// RemoteId:     dbConn.R.Remote.MultiHash,
-			StartedAt: dbConn.StartedAt.Format(time.RFC3339),
+			StartedAt: dbConn.StartedAt.Format(time.RFC3339Nano),
 		}
 	}
 
@@ -127,11 +129,11 @@ func (pc *ProvideController) Get(c *gin.Context) {
 		findNodes[i] = types.FindNode{
 			CloserPeersCount: dbFindNode.CloserPeersCount.Ptr(),
 			DurationInS:      float32(dbFindNode.EndedAt.Sub(dbFindNode.StartedAt).Seconds()),
-			EndedAt:          dbFindNode.EndedAt.Format(time.RFC3339),
+			EndedAt:          dbFindNode.EndedAt.Format(time.RFC3339Nano),
 			Error:            dbFindNode.Error.Ptr(),
 			Id:               dbFindNode.ID,
 			// RemoteId:         dbFindNode.R.Remote.MultiHash,
-			StartedAt: dbFindNode.StartedAt.Format(time.RFC3339),
+			StartedAt: dbFindNode.StartedAt.Format(time.RFC3339Nano),
 		}
 	}
 
@@ -139,12 +141,12 @@ func (pc *ProvideController) Get(c *gin.Context) {
 	for i, dbDial := range dbProvide.R.Dials {
 		dials[i] = types.Dial{
 			DurationInS: float32(dbDial.EndedAt.Sub(dbDial.StartedAt).Seconds()),
-			EndedAt:     dbDial.EndedAt.Format(time.RFC3339),
+			EndedAt:     dbDial.EndedAt.Format(time.RFC3339Nano),
 			Error:       dbDial.Error.Ptr(),
 			Id:          dbDial.ID,
 			// MultiAddress: dbDial.R.MultiAddress.Maddr,
 			// RemoteId:     dbDial.R.Remote.MultiHash,
-			StartedAt: dbDial.StartedAt.Format(time.RFC3339),
+			StartedAt: dbDial.StartedAt.Format(time.RFC3339Nano),
 			Transport: dbDial.Transport,
 		}
 	}
@@ -154,11 +156,11 @@ func (pc *ProvideController) Get(c *gin.Context) {
 		addProviders[i] = types.AddProvider{
 			Distance:    base64.RawStdEncoding.EncodeToString(dbAddProvider.Distance),
 			DurationInS: float32(dbAddProvider.EndedAt.Sub(dbAddProvider.StartedAt).Seconds()),
-			EndedAt:     dbAddProvider.EndedAt.Format(time.RFC3339),
+			EndedAt:     dbAddProvider.EndedAt.Format(time.RFC3339Nano),
 			Error:       dbAddProvider.Error.Ptr(),
 			Id:          dbAddProvider.ID,
 			// RemoteId:    dbAddProvider.R.Remote.MultiHash,
-			StartedAt: dbAddProvider.StartedAt.Format(time.RFC3339),
+			StartedAt: dbAddProvider.StartedAt.Format(time.RFC3339Nano),
 		}
 	}
 
@@ -168,11 +170,12 @@ func (pc *ProvideController) Get(c *gin.Context) {
 			EndedAt:               util.TimeToStr(dbProvide.EndedAt.Ptr()),
 			Error:                 dbProvide.Error.Ptr(),
 			FinalRoutingTableId:   dbProvide.FinalRoutingTableID.Ptr(),
-			HostId:                h.ID().String(),
+			HostId:                h.DBHost.R.Peer.MultiHash,
 			InitialRoutingTableId: dbProvide.InitialRoutingTableID,
 			ProvideId:             dbProvide.ID,
-			StartedAt:             dbProvide.StartedAt.Format(time.RFC3339),
+			StartedAt:             dbProvide.StartedAt.Format(time.RFC3339Nano),
 		},
+		Distance:     fmt.Sprintf("0x%x", new(big.Int).SetBytes(dbProvide.Distance)),
 		Connections:  connections,
 		FindNodes:    findNodes,
 		Dials:        dials,

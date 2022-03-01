@@ -75,7 +75,7 @@ func (rc *RetrievalController) Create(c *gin.Context) {
 		FinalRoutingTableId:   nil,
 		HostId:                h.ID().String(),
 		InitialRoutingTableId: retrieval.InitialRoutingTableID,
-		StartedAt:             retrieval.StartedAt.Format(time.RFC3339),
+		StartedAt:             retrieval.StartedAt.Format(time.RFC3339Nano),
 	})
 }
 
@@ -102,7 +102,7 @@ func (rc *RetrievalController) List(c *gin.Context) {
 			HostId:                h.ID().String(),
 			InitialRoutingTableId: dbRetrieval.InitialRoutingTableID,
 			RetrievalId:           dbRetrieval.ID,
-			StartedAt:             dbRetrieval.StartedAt.Format(time.RFC3339),
+			StartedAt:             dbRetrieval.StartedAt.Format(time.RFC3339Nano),
 		}
 	}
 

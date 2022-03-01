@@ -1,14 +1,24 @@
 import { useParams } from "react-router-dom";
 import HostDetailsLayout from "../layouts/HostDetailsLayout";
 import LinearProgress from "@mui/material/LinearProgress";
-import { Grid } from "@mui/material";
+import { Alert, Grid } from "@mui/material";
 import { useGetHostQuery, useGetProvideQuery, useLazyGetProvidesQuery, useStartProvideMutation } from "../store/api";
 import ProvideOverviewCard from "../components/cards/ProvideOverviewCard";
 
 const ProvideDetailsPage: React.FC = (props) => {
   const { hostId, provideId } = useParams();
-  const { data: hostData, isLoading: isHostLoading } = useGetHostQuery(hostId!);
-  const { data: provideData, isLoading: isProvideLoading } = useGetProvideQuery({
+  const {
+    data: hostData,
+    isLoading: isHostLoading,
+    isError: isGetHostError,
+    error: hostError,
+  } = useGetHostQuery(hostId!);
+  const {
+    data: provideData,
+    isLoading: isProvideLoading,
+    isError: isGetProvideError,
+    error: provideError,
+  } = useGetProvideQuery({
     hostId: hostId!,
     provideId: provideId!,
   });
@@ -21,9 +31,17 @@ const ProvideDetailsPage: React.FC = (props) => {
     );
   }
 
+  if (isGetHostError || isGetProvideError) {
+    return (
+      <HostDetailsLayout hostId={hostId!} title="Provide Operations">
+        <Alert severity="error">{JSON.stringify(hostError || provideError)}</Alert>
+      </HostDetailsLayout>
+    );
+  }
+
   return (
     <HostDetailsLayout hostId={hostId!} title="Provide Operations">
-      <Grid item xs={12} md={12} lg={12}>
+      <Grid item xs={12} md={8} lg={6}>
         <ProvideOverviewCard provide={provideData!} host={hostData!} />
       </Grid>
     </HostDetailsLayout>

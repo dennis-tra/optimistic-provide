@@ -7,11 +7,11 @@ import {
   useSaveRoutingTableMutation,
   useLazyGetCurrentRoutingTablePeersQuery,
 } from "../../store/api";
-import { Button, CircularProgress, Stack, Alert, Snackbar } from "@mui/material";
+import { Button, CircularProgress, Stack } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { useAppSelector } from "../../store/config";
+import { useAppDispatch, useAppSelector } from "../../store/config";
 import { selectHistogramData } from "../../store/bucketsSlice";
-import { useState } from "react";
+import { actions as snackbarActions } from "../../store/snackbarSlice";
 
 interface HostDetailsRoutingTableCardProps {
   host: Host;
@@ -19,26 +19,23 @@ interface HostDetailsRoutingTableCardProps {
 
 const HostDetailsRoutingTableCard: React.FC<HostDetailsRoutingTableCardProps> = ({ host }) => {
   const navigate = useNavigate();
-  const [snackbarOpen, setSnackbarOpen] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
   const [saveRoutingTable, { isLoading: isSavingRoutingTable }] = useSaveRoutingTableMutation();
   const [getCurrentRoutingTablePeers, { isLoading: isLoadingCurrentRoutingTablePeers }] =
     useLazyGetCurrentRoutingTablePeersQuery();
   const bucketData = useAppSelector(selectHistogramData(host.hostId));
-  const { isLoading } = useListenRoutingTableQuery(host.hostId);
+  const {
+    isLoading,
+    isError: isListenRoutingTableError,
+    refetch: listenRoutingTable,
+  } = useListenRoutingTableQuery(host.hostId);
 
   if (isLoading) {
     return <CircularProgress />;
   }
 
-  const handleClick = (data: any, index: number) => {
+  const handleClick = (data: any) => {
     navigate(`/hosts/${host.hostId}/routing-tables?bucket=${data.bucket}`);
-  };
-
-  const handleClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setSnackbarOpen(null);
   };
 
   return (
@@ -65,26 +62,37 @@ const HostDetailsRoutingTableCard: React.FC<HostDetailsRoutingTableCardProps> = 
       <Stack direction="row" spacing={2}>
         <Button
           variant="outlined"
-          onClick={() => saveRoutingTable(host.hostId).then(() => setSnackbarOpen("Saved routing table snapshot"))}
+          onClick={async () => {
+            await saveRoutingTable(host.hostId);
+            dispatch(
+              snackbarActions.addNotification({
+                message: "Saved routing table snapshot",
+                variant: "success",
+                key: new Date().getTime() + Math.random(),
+              })
+            );
+          }}
           disabled={isSavingRoutingTable}
         >
           Save Snapshot
         </Button>
         <Button
           variant="outlined"
-          onClick={() =>
-            getCurrentRoutingTablePeers(host.hostId).then(() => setSnackbarOpen("Refreshed routing table"))
-          }
+          onClick={async () => {
+            await getCurrentRoutingTablePeers(host.hostId);
+            dispatch(
+              snackbarActions.addNotification({
+                message: "Refreshed routing table",
+                variant: "success",
+                key: new Date().getTime() + Math.random(),
+              })
+            );
+          }}
           disabled={isLoadingCurrentRoutingTablePeers}
         >
           Refetch
         </Button>
       </Stack>
-      <Snackbar open={!!snackbarOpen} autoHideDuration={3000} onClose={handleClose}>
-        <Alert onClose={handleClose} severity="success" sx={{ width: "100%" }}>
-          {snackbarOpen}
-        </Alert>
-      </Snackbar>
     </Paper>
   );
 };

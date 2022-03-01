@@ -106,6 +106,12 @@ export interface ProvideDetails {
     error: string | null;
     /**
      * 
+     * @type {string}
+     * @memberof ProvideDetails
+     */
+    distance: string;
+    /**
+     * 
      * @type {Array<Connection>}
      * @memberof ProvideDetails
      */
@@ -148,6 +154,7 @@ export function ProvideDetailsFromJSONTyped(json: any, ignoreDiscriminator: bool
         'startedAt': json['startedAt'],
         'endedAt': json['endedAt'],
         'error': json['error'],
+        'distance': json['distance'],
         'connections': ((json['connections'] as Array<any>).map(ConnectionFromJSON)),
         'dials': ((json['dials'] as Array<any>).map(DialFromJSON)),
         'findNodes': ((json['findNodes'] as Array<any>).map(FindNodeFromJSON)),
@@ -172,6 +179,7 @@ export function ProvideDetailsToJSON(value?: ProvideDetails | null): any {
         'startedAt': value.startedAt,
         'endedAt': value.endedAt,
         'error': value.error,
+        'distance': value.distance,
         'connections': ((value.connections as Array<any>).map(ConnectionToJSON)),
         'dials': ((value.dials as Array<any>).map(DialToJSON)),
         'findNodes': ((value.findNodes as Array<any>).map(FindNodeToJSON)),

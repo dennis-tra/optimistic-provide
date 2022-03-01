@@ -46,6 +46,14 @@ func NewRoutingTableController(ctx context.Context, rts service.RoutingTableServ
 func (rtc *RoutingTableController) Create(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
 
+	if h.StartedAt == nil {
+		c.JSON(http.StatusPreconditionFailed, types.ErrorResponse{
+			Code:    types.ErrorCodeHOSTSTOPPED,
+			Message: "Host is stopped. Start it first to save a snapshot",
+		})
+		return
+	}
+
 	rts, err := rtc.rts.SaveTxn(rtc.ctx, h)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
@@ -60,7 +68,7 @@ func (rtc *RoutingTableController) Create(c *gin.Context) {
 		Id:         rts.ID,
 		HostId:     h.ID().String(),
 		BucketSize: rts.BucketSize,
-		CreatedAt:  rts.CreatedAt.Format(time.RFC3339),
+		CreatedAt:  rts.CreatedAt.Format(time.RFC3339Nano),
 		EntryCount: rts.EntryCount,
 	})
 }
@@ -90,7 +98,7 @@ func (rtc *RoutingTableController) Get(c *gin.Context) {
 		Id:         rts.ID,
 		HostId:     h.ID().String(),
 		BucketSize: rts.BucketSize,
-		CreatedAt:  rts.CreatedAt.Format(time.RFC3339),
+		CreatedAt:  rts.CreatedAt.Format(time.RFC3339Nano),
 		EntryCount: rts.EntryCount,
 	})
 }
@@ -112,7 +120,7 @@ func (rtc *RoutingTableController) List(c *gin.Context) {
 	for i, r := range rts {
 		snapshots[i] = types.RoutingTable{
 			BucketSize: r.BucketSize,
-			CreatedAt:  r.CreatedAt.Format(time.RFC3339),
+			CreatedAt:  r.CreatedAt.Format(time.RFC3339Nano),
 			EntryCount: r.EntryCount,
 			Id:         r.ID,
 			HostId:     r.R.Peer.MultiHash,

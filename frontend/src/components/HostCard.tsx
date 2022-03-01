@@ -18,24 +18,18 @@ import {
   useStopHostMutation,
 } from "../store/api";
 import { Host } from "../api/models/Host";
+import { actions as snackbarActions } from "../store/snackbarSlice";
+import { useAppDispatch } from "../store/config";
 
 interface HostCardProps {
   host: Host;
 }
 
 const HostCard: React.FC<HostCardProps> = ({ host }) => {
+  const dispatch = useAppDispatch();
   const [archiveHost] = useArchiveHostMutation();
   const [bootstrapHost, { isLoading: isBootstrappingHost }] = useBootstrapHostMutation();
   const [startHost, { isLoading: isStartingHost }] = useStartHostMutation();
-  const [stopHost, { isLoading: isStoppingHost }] = useStopHostMutation();
-
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const handleClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === "clickaway") {
-      return;
-    }
-    setSnackbarOpen(false);
-  };
 
   return (
     <Grid item xs={12} md={4} lg={4}>
@@ -52,9 +46,15 @@ const HostCard: React.FC<HostCardProps> = ({ host }) => {
             component="p"
             variant="h6"
             noWrap
-            onClick={() => {
-              navigator.clipboard.writeText(host.hostId);
-              setSnackbarOpen(true);
+            onClick={async () => {
+              await navigator.clipboard.writeText(host.hostId);
+              dispatch(
+                snackbarActions.addNotification({
+                  key: new Date().getTime() + Math.random(),
+                  variant: "success",
+                  message: "Peer ID copied to clipboard!",
+                })
+              );
             }}
             sx={{ cursor: "pointer" }}
             gutterBottom
@@ -118,11 +118,6 @@ const HostCard: React.FC<HostCardProps> = ({ host }) => {
           </Button>
         </Stack>
       </Paper>
-      <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={handleClose}>
-        <Alert onClose={handleClose} severity="success" sx={{ width: "100%" }}>
-          Peer ID copied to clipboard!
-        </Alert>
-      </Snackbar>
     </Grid>
   );
 };

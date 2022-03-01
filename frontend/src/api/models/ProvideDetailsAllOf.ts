@@ -46,6 +46,12 @@ import {
 export interface ProvideDetailsAllOf {
     /**
      * 
+     * @type {string}
+     * @memberof ProvideDetailsAllOf
+     */
+    distance: string;
+    /**
+     * 
      * @type {Array<Connection>}
      * @memberof ProvideDetailsAllOf
      */
@@ -80,6 +86,7 @@ export function ProvideDetailsAllOfFromJSONTyped(json: any, ignoreDiscriminator:
     }
     return {
         
+        'distance': json['distance'],
         'connections': ((json['connections'] as Array<any>).map(ConnectionFromJSON)),
         'dials': ((json['dials'] as Array<any>).map(DialFromJSON)),
         'findNodes': ((json['findNodes'] as Array<any>).map(FindNodeFromJSON)),
@@ -96,6 +103,7 @@ export function ProvideDetailsAllOfToJSON(value?: ProvideDetailsAllOf | null): a
     }
     return {
         
+        'distance': value.distance,
         'connections': ((value.connections as Array<any>).map(ConnectionToJSON)),
         'dials': ((value.dials as Array<any>).map(DialToJSON)),
         'findNodes': ((value.findNodes as Array<any>).map(FindNodeToJSON)),

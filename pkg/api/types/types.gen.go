@@ -141,6 +141,7 @@ type ProvideDetails struct {
 	AddProviders []AddProvider `json:"addProviders"`
 	Connections  []Connection  `json:"connections"`
 	Dials        []Dial        `json:"dials"`
+	Distance     string        `json:"distance"`
 	FindNodes    []FindNode    `json:"findNodes"`
 }
 

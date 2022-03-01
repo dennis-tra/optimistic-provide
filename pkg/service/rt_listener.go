@@ -95,8 +95,8 @@ func (r *RoutingTableListener) BuildUpdate() types.RoutingTablePeers {
 	}
 
 	sort.Slice(rtp, func(i, j int) bool {
-		ti, _ := time.Parse(time.RFC3339, rtp[i].AddedAt)
-		tj, _ := time.Parse(time.RFC3339, rtp[j].AddedAt)
+		ti, _ := time.Parse(time.RFC3339Nano, rtp[i].AddedAt)
+		tj, _ := time.Parse(time.RFC3339Nano, rtp[j].AddedAt)
 		return ti.After(tj)
 	})
 
@@ -119,11 +119,11 @@ func (r *RoutingTableListener) buildRoutingTablePeer(swarm network.Network, peer
 
 	return types.RoutingTablePeer{
 		PeerId:                        peerInfo.Id.String(),
-		AddedAt:                       peerInfo.AddedAt.Format(time.RFC3339),
+		AddedAt:                       peerInfo.AddedAt.Format(time.RFC3339Nano),
 		AgentVersion:                  null.NewString(av, av != "").Ptr(),
 		Bucket:                        int(util.BucketIdForPeer(r.h.ID(), peerInfo.Id)),
 		ConnectedSince:                util.TimeToStr(connectedAt),
-		LastSuccessfulOutboundQueryAt: peerInfo.LastSuccessfulOutboundQueryAt.Format(time.RFC3339),
+		LastSuccessfulOutboundQueryAt: peerInfo.LastSuccessfulOutboundQueryAt.Format(time.RFC3339Nano),
 		LastUsefulAt:                  util.TimeToStr(&peerInfo.LastUsefulAt),
 	}
 }

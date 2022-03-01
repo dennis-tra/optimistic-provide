@@ -4,12 +4,15 @@ import Typography from "@mui/material/Typography";
 import Tooltip from "@mui/material/Tooltip";
 import ReactTimeAgo from "react-time-ago";
 import { Host } from "../../api/models/Host";
+import { useAppDispatch } from "../../store/config";
+import { actions as snackbarActions } from "../../store/snackbarSlice";
 
 interface HostDetailsOverviewCardProps {
   host: Host;
 }
 
 const HostDetailsOverviewCard: React.FC<HostDetailsOverviewCardProps> = ({ host }) => {
+  const dispatch = useAppDispatch();
   return (
     <Card sx={{ minHeight: 275 }}>
       <CardContent>
@@ -24,7 +27,16 @@ const HostDetailsOverviewCard: React.FC<HostDetailsOverviewCardProps> = ({ host 
         <Typography
           color="text.secondary"
           noWrap
-          onClick={() => navigator.clipboard.writeText(host.hostId)}
+          onClick={async () => {
+            await navigator.clipboard.writeText(host.hostId);
+            dispatch(
+              snackbarActions.addNotification({
+                key: new Date().getTime() + Math.random(),
+                variant: "success",
+                message: "Peer ID copied to clipboard!",
+              })
+            );
+          }}
           sx={{ cursor: "pointer", mb: 1.5 }}
         >
           {host.hostId}

@@ -1,6 +1,6 @@
 // Need to use the React-specific entry point to import createApi
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { RoutingTablePeer } from "../api";
+import { RoutingTablePeer } from "../api/models/RoutingTablePeer";
 import { RootState } from "./config";
 
 interface BucketsState {
@@ -9,6 +9,7 @@ interface BucketsState {
     [bucket: number]: RoutingTablePeer[];
   };
 }
+
 interface BucketsStateByHost {
   [hostId: string]: BucketsState;
 }

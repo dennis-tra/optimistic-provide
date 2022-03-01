@@ -112,7 +112,7 @@ func (ps *Provide) List(ctx context.Context, h *dht.Host) ([]*models.Provide, er
 }
 
 func (ps *Provide) Get(ctx context.Context, h *dht.Host, provideID int) (*models.Provide, error) {
-	return ps.provideRepo.Get(ctx, h.ID().String(), provideID)
+	return ps.provideRepo.Get(ctx, h.DBHost.R.Peer.MultiHash, provideID)
 }
 
 func (ps *Provide) startProvidingMultiQuery(h *dht.Host, provide *models.Provide, content *util.Content) {

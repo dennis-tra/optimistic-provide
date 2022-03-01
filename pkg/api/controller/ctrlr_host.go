@@ -53,8 +53,8 @@ func (hc *HostController) Create(c *gin.Context) {
 		Name:           h.DBHost.Name,
 		HostId:         h.ID().String(),
 		BootstrappedAt: nil,
-		StartedAt:      util.StrPtr(h.StartedAt.Format(time.RFC3339)),
-		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339),
+		StartedAt:      util.StrPtr(h.StartedAt.Format(time.RFC3339Nano)),
+		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339Nano),
 	})
 }
 
@@ -76,12 +76,12 @@ func (hc *HostController) List(c *gin.Context) {
 		respHost := &types.Host{
 			Name:      dbHost.Name,
 			HostId:    dbHost.R.Peer.MultiHash,
-			CreatedAt: dbHost.CreatedAt.Format(time.RFC3339),
+			CreatedAt: dbHost.CreatedAt.Format(time.RFC3339Nano),
 		}
 
 		for _, runningHost := range runningHosts {
 			if runningHost.ID().String() == dbHost.R.Peer.MultiHash {
-				respHost.StartedAt = util.StrPtr(runningHost.StartedAt.Format(time.RFC3339))
+				respHost.StartedAt = util.StrPtr(runningHost.StartedAt.Format(time.RFC3339Nano))
 				respHost.BootstrappedAt = util.TimeToStr(runningHost.Bootstrapped)
 				break
 			}
@@ -91,8 +91,8 @@ func (hc *HostController) List(c *gin.Context) {
 	}
 
 	sort.Slice(hosts, func(i, j int) bool {
-		ti, _ := time.Parse(time.RFC3339, hosts[i].CreatedAt)
-		tj, _ := time.Parse(time.RFC3339, hosts[j].CreatedAt)
+		ti, _ := time.Parse(time.RFC3339Nano, hosts[i].CreatedAt)
+		tj, _ := time.Parse(time.RFC3339Nano, hosts[j].CreatedAt)
 		return ti.Before(tj)
 	})
 
@@ -106,7 +106,7 @@ func (hc *HostController) Get(c *gin.Context) {
 		HostId:         h.DBHost.R.Peer.MultiHash,
 		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
 		StartedAt:      util.TimeToStr(h.StartedAt),
-		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339),
+		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339Nano),
 	})
 }
 
@@ -127,8 +127,8 @@ func (hc *HostController) Start(c *gin.Context) {
 		Name:           h.DBHost.Name,
 		HostId:         h.ID().String(),
 		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
-		StartedAt:      util.StrPtr(h.StartedAt.Format(time.RFC3339)),
-		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339),
+		StartedAt:      util.StrPtr(h.StartedAt.Format(time.RFC3339Nano)),
+		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339Nano),
 	})
 }
 
@@ -141,7 +141,7 @@ func (hc *HostController) Stop(c *gin.Context) {
 			HostId:         h.DBHost.R.Peer.MultiHash,
 			BootstrappedAt: nil,
 			StartedAt:      nil,
-			CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339),
+			CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339Nano),
 		})
 		return
 	}
@@ -160,7 +160,7 @@ func (hc *HostController) Stop(c *gin.Context) {
 		HostId:         h.ID().String(),
 		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
 		StartedAt:      nil,
-		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339),
+		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339Nano),
 	})
 }
 
@@ -188,8 +188,8 @@ func (hc *HostController) Bootstrap(c *gin.Context) {
 		Name:           h.DBHost.Name,
 		HostId:         h.ID().String(),
 		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
-		StartedAt:      util.StrPtr(h.StartedAt.Format(time.RFC3339)),
-		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339),
+		StartedAt:      util.StrPtr(h.StartedAt.Format(time.RFC3339Nano)),
+		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339Nano),
 	})
 }
 

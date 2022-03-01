@@ -727,6 +727,9 @@ components:
         - $ref: '#/components/schemas/Provide'
         - type: object
           properties:
+            distance:
+              type: string
+              example: 0xdece0cc853fa62e5e653ae02f4d1f85931e38eba8326a707b4c62dfc6336dafa
             connections:
               type: array
               items:
@@ -745,6 +748,7 @@ components:
                 $ref: '#/components/schemas/AddProvider'
           required:
             - dials
+            - distance
             - connections
             - findNodes
             - addProviders

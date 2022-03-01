@@ -50,7 +50,7 @@ func (pc *PeerController) Get(c *gin.Context) {
 
 	c.JSON(http.StatusOK, types.Peer{
 		AgentVersion: dbPeer.AgentVersion.Ptr(),
-		CreatedAt:    dbPeer.CreatedAt.Format(time.RFC3339),
+		CreatedAt:    dbPeer.CreatedAt.Format(time.RFC3339Nano),
 		PeerId:       dbPeer.MultiHash,
 		Protocols:    dbPeer.Protocols,
 	})
