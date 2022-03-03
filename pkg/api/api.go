@@ -63,6 +63,8 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 	provideController := controller.NewProvideController(ctx, provideService, hostService)
 	retrievalController := controller.NewRetrievalController(ctx, retrievalService, hostService)
 	routingTableController := controller.NewRoutingTableController(ctx, rtService, hostService)
+	dialController := controller.NewDialController(ctx, dialService, provideService)
+	connController := controller.NewConnectionController(ctx, connService, provideService)
 
 	hosts := router.Group("/hosts")
 	{
@@ -88,6 +90,8 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 				{
 					provideID.Use(middlewares.ProvideID)
 					provideID.GET("", provideController.Get)
+					provideID.GET("/dials", dialController.List)
+					provideID.GET("/graph", provideController.Graph)
 				}
 			}
 
@@ -116,6 +120,16 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 					routingTableID.GET("", routingTableController.Get)
 				}
 			}
+		}
+	}
+
+	provides := router.Group("/provides")
+	{
+		provideID := provides.Group("/:provideID")
+		{
+			provideID.Use(middlewares.ProvideID)
+			provideID.GET("/dials", dialController.List)
+			provideID.GET("/connections", connController.List)
 		}
 	}
 

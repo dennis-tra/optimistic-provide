@@ -12,6 +12,7 @@ import (
 )
 
 type ConnectionService interface {
+	List(ctx context.Context, provide *models.Provide) (models.ConnectionSlice, error)
 	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, conns []*ConnectionSpan) (models.ConnectionSlice, error)
 }
 
@@ -21,6 +22,10 @@ type Connection struct {
 	peerService PeerService
 	maService   MultiAddressService
 	repo        repo.ConnectionRepo
+}
+
+func (c *Connection) List(ctx context.Context, provide *models.Provide) (models.ConnectionSlice, error) {
+	return c.repo.ListFromProvide(ctx, provide)
 }
 
 func NewConnectionService(peerService PeerService, maService MultiAddressService, repo repo.ConnectionRepo) ConnectionService {

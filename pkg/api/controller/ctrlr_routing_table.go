@@ -58,7 +58,7 @@ func (rtc *RoutingTableController) Create(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeSAVINGROUTINGTABLE,
-			Message: "Saving routing table for host " + h.ID().String() + "failed",
+			Message: "Saving routing table for host " + h.PeerID() + "failed",
 			Details: types.ErrDetails(err),
 		})
 		return
@@ -66,7 +66,7 @@ func (rtc *RoutingTableController) Create(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, types.RoutingTable{
 		Id:         rts.ID,
-		HostId:     h.ID().String(),
+		HostId:     h.PeerID(),
 		BucketSize: rts.BucketSize,
 		CreatedAt:  rts.CreatedAt.Format(time.RFC3339Nano),
 		EntryCount: rts.EntryCount,
@@ -96,7 +96,7 @@ func (rtc *RoutingTableController) Get(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, types.RoutingTable{
 		Id:         rts.ID,
-		HostId:     h.ID().String(),
+		HostId:     h.PeerID(),
 		BucketSize: rts.BucketSize,
 		CreatedAt:  rts.CreatedAt.Format(time.RFC3339Nano),
 		EntryCount: rts.EntryCount,

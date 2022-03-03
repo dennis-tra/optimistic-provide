@@ -1,6 +1,4 @@
 import Grid from "@mui/material/Grid";
-import Alert from "@mui/material/Alert";
-import CircularProgress from "@mui/material/CircularProgress";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import RootLayout from "../layouts/RootLayout";
@@ -8,24 +6,8 @@ import HostCard from "../components/HostCard";
 import NewHostCard from "../components/NewHostCard";
 import { useGetHostsQuery } from "../store/api";
 
-function HostsPage() {
+function DialsPage() {
   const { data: hosts, refetch, isError, error, isLoading, isFetching } = useGetHostsQuery();
-
-  if (isLoading) {
-    return (
-      <RootLayout>
-        <CircularProgress />
-      </RootLayout>
-    );
-  }
-
-  if (isError) {
-    return (
-      <RootLayout>
-        <Alert severity="error">Error: {JSON.stringify(error)}</Alert>
-      </RootLayout>
-    );
-  }
 
   return (
     <RootLayout>
@@ -46,4 +28,4 @@ function HostsPage() {
   );
 }
 
-export default HostsPage;
+export default DialsPage;

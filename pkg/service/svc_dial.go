@@ -14,14 +14,8 @@ import (
 	"github.com/volatiletech/null/v8"
 )
 
-type HostOperation string
-
-const (
-	HostOperationProvide   HostOperation = "PROVIDE"
-	HostOperationRetrieval HostOperation = "RETRIEVAL"
-)
-
 type DialService interface {
+	List(ctx context.Context, provide *models.Provide) (models.DialSlice, error)
 	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, dials []*DialSpan) (models.DialSlice, error)
 }
 
@@ -39,6 +33,10 @@ func NewDialService(peerService PeerService, maService MultiAddressService, dial
 		maService:   maService,
 		dialRepo:    dialRepo,
 	}
+}
+
+func (d *Dial) List(ctx context.Context, provide *models.Provide) (models.DialSlice, error) {
+	return d.dialRepo.ListFromProvide(ctx, provide)
 }
 
 func (d *Dial) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, dials []*DialSpan) (models.DialSlice, error) {

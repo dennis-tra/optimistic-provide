@@ -15,6 +15,7 @@ type ProvideRepo interface {
 	Update(ctx context.Context, provide *models.Provide) (*models.Provide, error)
 	List(ctx context.Context, hostID string) ([]*models.Provide, error)
 	Get(ctx context.Context, hostID string, provideID int) (*models.Provide, error)
+	GetByID(ctx context.Context, provideID int) (*models.Provide, error)
 }
 
 var _ ProvideRepo = &Provide{}
@@ -57,4 +58,8 @@ func (p Provide) Get(ctx context.Context, hostID string, provideID int) (*models
 		qm.Load(models.ProvideRels.AddProviderRPCS),
 		qm.Load(models.ProvideRels.PeerStates),
 	).One(ctx, p.dbc)
+}
+
+func (p Provide) GetByID(ctx context.Context, provideID int) (*models.Provide, error) {
+	return models.Provides(models.ProvideWhere.ID.EQ(provideID)).One(ctx, p.dbc)
 }

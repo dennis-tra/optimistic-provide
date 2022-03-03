@@ -185,7 +185,7 @@ func (hs *Host) Archive(ctx context.Context, dbHost *models.Host) error {
 				return errors.Wrap(err, "close host")
 			}
 
-			delete(hs.hosts, h.ID().String())
+			delete(hs.hosts, h.PeerID())
 		}
 	}
 

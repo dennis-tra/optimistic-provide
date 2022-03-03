@@ -5,7 +5,6 @@ import { ProvideDetails } from "../../api/models/ProvideDetails";
 import { Host } from "../../api/models/Host";
 import { actions as snackbarActions } from "../../store/snackbarSlice";
 import { useAppDispatch } from "../../store/config";
-import { Tooltip } from "@mui/material";
 
 interface ProvideOverviewCardProps {
   host: Host;
@@ -73,8 +72,8 @@ const ProvideOverviewCard: React.FC<ProvideOverviewCardProps> = ({ provide, host
         </Typography>
         <Typography variant="h6">Counts</Typography>
         <Typography color="text.secondary" noWrap sx={{ mb: 1.5 }}>
-          {provide.dials.length} Dials / {provide.connections.length} Connections / {provide.findNodes.length} FIND_NODE
-          / {provide.addProviders.length} ADD_PROVIDER
+          {provide.dialsCount} Dials / {provide.connectionsCount} Connections / {provide.findNodesCount} FIND_NODE /{" "}
+          {provide.addProvidersCount} ADD_PROVIDER
         </Typography>
       </CardContent>
     </Card>

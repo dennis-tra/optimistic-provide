@@ -14,30 +14,6 @@
 
 import { exists, mapValues } from '../runtime';
 import {
-    AddProvider,
-    AddProviderFromJSON,
-    AddProviderFromJSONTyped,
-    AddProviderToJSON,
-} from './AddProvider';
-import {
-    Connection,
-    ConnectionFromJSON,
-    ConnectionFromJSONTyped,
-    ConnectionToJSON,
-} from './Connection';
-import {
-    Dial,
-    DialFromJSON,
-    DialFromJSONTyped,
-    DialToJSON,
-} from './Dial';
-import {
-    FindNode,
-    FindNodeFromJSON,
-    FindNodeFromJSONTyped,
-    FindNodeToJSON,
-} from './FindNode';
-import {
     Provide,
     ProvideFromJSON,
     ProvideFromJSONTyped,
@@ -112,28 +88,28 @@ export interface ProvideDetails {
     distance: string;
     /**
      * 
-     * @type {Array<Connection>}
+     * @type {number}
      * @memberof ProvideDetails
      */
-    connections: Array<Connection>;
+    connectionsCount: number;
     /**
      * 
-     * @type {Array<Dial>}
+     * @type {number}
      * @memberof ProvideDetails
      */
-    dials: Array<Dial>;
+    dialsCount: number;
     /**
      * 
-     * @type {Array<FindNode>}
+     * @type {number}
      * @memberof ProvideDetails
      */
-    findNodes: Array<FindNode>;
+    findNodesCount: number;
     /**
      * 
-     * @type {Array<AddProvider>}
+     * @type {number}
      * @memberof ProvideDetails
      */
-    addProviders: Array<AddProvider>;
+    addProvidersCount: number;
 }
 
 export function ProvideDetailsFromJSON(json: any): ProvideDetails {
@@ -155,10 +131,10 @@ export function ProvideDetailsFromJSONTyped(json: any, ignoreDiscriminator: bool
         'endedAt': json['endedAt'],
         'error': json['error'],
         'distance': json['distance'],
-        'connections': ((json['connections'] as Array<any>).map(ConnectionFromJSON)),
-        'dials': ((json['dials'] as Array<any>).map(DialFromJSON)),
-        'findNodes': ((json['findNodes'] as Array<any>).map(FindNodeFromJSON)),
-        'addProviders': ((json['addProviders'] as Array<any>).map(AddProviderFromJSON)),
+        'connectionsCount': json['connectionsCount'],
+        'dialsCount': json['dialsCount'],
+        'findNodesCount': json['findNodesCount'],
+        'addProvidersCount': json['addProvidersCount'],
     };
 }
 
@@ -180,10 +156,10 @@ export function ProvideDetailsToJSON(value?: ProvideDetails | null): any {
         'endedAt': value.endedAt,
         'error': value.error,
         'distance': value.distance,
-        'connections': ((value.connections as Array<any>).map(ConnectionToJSON)),
-        'dials': ((value.dials as Array<any>).map(DialToJSON)),
-        'findNodes': ((value.findNodes as Array<any>).map(FindNodeToJSON)),
-        'addProviders': ((value.addProviders as Array<any>).map(AddProviderToJSON)),
+        'connectionsCount': value.connectionsCount,
+        'dialsCount': value.dialsCount,
+        'findNodesCount': value.findNodesCount,
+        'addProvidersCount': value.addProvidersCount,
     };
 }
 

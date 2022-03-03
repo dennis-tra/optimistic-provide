@@ -29,6 +29,17 @@ const (
 	ProvideTypeSINGLEQUERY ProvideType = "SINGLE_QUERY"
 )
 
+// Defines values for QueryPeerState.
+const (
+	QueryPeerStateHEARD QueryPeerState = "HEARD"
+
+	QueryPeerStateQUERIED QueryPeerState = "QUERIED"
+
+	QueryPeerStateUNREACHABLE QueryPeerState = "UNREACHABLE"
+
+	QueryPeerStateWAITING QueryPeerState = "WAITING"
+)
+
 // Defines values for RoutingTableUpdateType.
 const (
 	RoutingTableUpdateTypeFULL RoutingTableUpdateType = "FULL"
@@ -94,13 +105,24 @@ type ErrorResponse struct {
 
 // FindNode defines model for FindNode.
 type FindNode struct {
-	CloserPeersCount *int    `json:"closerPeersCount"`
-	DurationInS      float32 `json:"durationInS"`
-	EndedAt          string  `json:"endedAt"`
-	Error            *string `json:"error"`
-	Id               int     `json:"id"`
-	RemoteId         string  `json:"remoteId"`
-	StartedAt        string  `json:"startedAt"`
+	CloserPeers []FindNodeCloserPeer `json:"closerPeers"`
+	DurationInS float32              `json:"durationInS"`
+	EndedAt     string               `json:"endedAt"`
+	Error       *string              `json:"error"`
+	Id          int                  `json:"id"`
+	QueryId     string               `json:"queryId"`
+	RemoteId    string               `json:"remoteId"`
+	StartedAt   string               `json:"startedAt"`
+}
+
+// FindNodeCloserPeer defines model for FindNodeCloserPeer.
+type FindNodeCloserPeer struct {
+	// In which bucket was this peer of the remote peers routing table
+	Bucket int `json:"bucket"`
+
+	// How far away is this peer from the desired hash.
+	Distance string `json:"distance"`
+	PeerId   string `json:"peerId"`
 }
 
 // Host defines model for Host.
@@ -138,11 +160,36 @@ type ProvideDetails struct {
 	// Embedded struct due to allOf(#/components/schemas/Provide)
 	Provide `yaml:",inline"`
 	// Embedded fields due to inline allOf schema
+	AddProvidersCount int    `json:"addProvidersCount"`
+	ConnectionsCount  int    `json:"connectionsCount"`
+	DialsCount        int    `json:"dialsCount"`
+	Distance          string `json:"distance"`
+	FindNodesCount    int    `json:"findNodesCount"`
+}
+
+// ProvideGraph defines model for ProvideGraph.
+type ProvideGraph struct {
+	// Embedded struct due to allOf(#/components/schemas/Provide)
+	Provide `yaml:",inline"`
+	// Embedded fields due to inline allOf schema
 	AddProviders []AddProvider `json:"addProviders"`
 	Connections  []Connection  `json:"connections"`
 	Dials        []Dial        `json:"dials"`
-	Distance     string        `json:"distance"`
 	FindNodes    []FindNode    `json:"findNodes"`
+
+	// All peers + information in the order they should be plotted.
+	Peers []ProvidePeerInfo `json:"peers"`
+}
+
+// ProvidePeerInfo defines model for ProvidePeerInfo.
+type ProvidePeerInfo struct {
+	AgentVersion      *string        `json:"agentVersion"`
+	Distance          string         `json:"distance"`
+	FirstInteractedAt *string        `json:"firstInteractedAt"`
+	PeerId            string         `json:"peerId"`
+	Protocols         []string       `json:"protocols"`
+	ReferredBy        string         `json:"referredBy"`
+	State             QueryPeerState `json:"state"`
 }
 
 // ProvideRequest defines model for ProvideRequest.
@@ -152,6 +199,9 @@ type ProvideRequest struct {
 
 // ProvideType defines model for ProvideType.
 type ProvideType string
+
+// QueryPeerState defines model for QueryPeerState.
+type QueryPeerState string
 
 // Retrieval defines model for Retrieval.
 type Retrieval struct {

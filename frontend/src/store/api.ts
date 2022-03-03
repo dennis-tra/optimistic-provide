@@ -10,12 +10,13 @@ import { ProvideDetails } from "../api/models/ProvideDetails";
 import { actions as bucketsActions } from "./bucketsSlice";
 import { Retrieval } from "../api/models/Retrieval";
 import { RetrievalRequest } from "../api/models/RetrievalRequest";
+import { Dial } from "../api/models/Dial";
 
 // Define a service using a base URL and expected endpoints
 export const optprovApi = createApi({
   reducerPath: "optprovApi",
   baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:7000" }),
-  tagTypes: ["Host", "RoutingTable", "Provide", "Retrieval"],
+  tagTypes: ["Host", "RoutingTable", "Provide", "Retrieval", "Dial", "Connection"],
   endpoints: (builder) => ({
     startProvide: builder.mutation<Host, { hostId: string; body: ProvideRequest }>({
       query: ({ hostId, body }) => ({ url: `hosts/${hostId}/provides`, method: "POST", body }),
@@ -34,6 +35,9 @@ export const optprovApi = createApi({
     getProvide: builder.query<ProvideDetails, { hostId: string; provideId: string }>({
       query: ({ hostId, provideId }) => `hosts/${hostId}/provides/${provideId}`,
       providesTags: (result, error, { provideId }) => [{ type: "Provide", id: provideId }],
+    }),
+    getProvideGraph: builder.query<Dial[], { hostId: string; provideId: string }>({
+      query: ({ hostId, provideId }) => `hosts/${hostId}/provides/${provideId}/graph`,
     }),
     startRetrieval: builder.mutation<Host, { hostId: string; body: RetrievalRequest }>({
       query: ({ hostId, body }) => ({ url: `hosts/${hostId}/retrievals`, method: "POST", body }),
@@ -82,6 +86,26 @@ export const optprovApi = createApi({
         result
           ? [...result.map(({ hostId }) => ({ type: "Host", id: hostId } as const)), { type: "Host", id: "LIST" }]
           : [{ type: "Host", id: "LIST" }],
+    }),
+    getDials: builder.query<Dial[], string>({
+      query: (provideId) => `provides/${provideId}/dials`,
+      providesTags: (result) =>
+        result
+          ? [...result.map(({ id }) => ({ type: "Dial", id: id } as const)), { type: "Dial", id: "LIST" }]
+          : [{ type: "Dial", id: "LIST" }],
+    }),
+    getConnections: builder.query<Dial[], string>({
+      query: (provideId) => `provides/${provideId}/connections`,
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(({ id }) => ({ type: "Connection", id: id } as const)),
+              {
+                type: "Connection",
+                id: "LIST",
+              },
+            ]
+          : [{ type: "Connection", id: "LIST" }],
     }),
     getHost: builder.query<Host, string>({
       query: (hostId) => `hosts/${hostId}`,
@@ -139,6 +163,7 @@ export const {
   useGetHostsQuery,
   useGetProvideQuery,
   useGetProvidesQuery,
+  useGetProvideGraphQuery,
   useLazyGetProvidesQuery,
   useGetRetrievalsQuery,
   useLazyGetRetrievalsQuery,

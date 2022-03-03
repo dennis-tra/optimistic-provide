@@ -379,6 +379,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}//provides/{provideId}/graph:
+    get:
+      operationId: graphProvide
+      tags:
+        - Provides
+      summary: Returns graph data.
+      description: Returns data to graph this provide operation
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+        - name: provideId
+          in: path
+          description: The provide operation identifier.
+          required: true
+          example: 1
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The graph data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvideGraph'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /peers/{peerId}:
     get:
       operationId: getPeer
@@ -730,28 +765,20 @@ components:
             distance:
               type: string
               example: 0xdece0cc853fa62e5e653ae02f4d1f85931e38eba8326a707b4c62dfc6336dafa
-            connections:
-              type: array
-              items:
-                $ref: '#/components/schemas/Connection'
-            dials:
-              type: array
-              items:
-                $ref: '#/components/schemas/Dial'
-            findNodes:
-              type: array
-              items:
-                $ref: '#/components/schemas/FindNode'
-            addProviders:
-              type: array
-              items:
-                $ref: '#/components/schemas/AddProvider'
+            connectionsCount:
+              type: integer
+            dialsCount:
+              type: integer
+            findNodesCount:
+              type: integer
+            addProvidersCount:
+              type: integer
           required:
-            - dials
             - distance
-            - connections
-            - findNodes
-            - addProviders
+            - connectionsCount
+            - dialsCount
+            - findNodesCount
+            - addProvidersCount
     AddProvider:
       type: object
       properties:
@@ -781,11 +808,28 @@ components:
         - durationInS
         - closerPeersCount
         - error
+    FindNodeCloserPeer:
+      type: object
+      properties:
+        peerId:
+          type: string
+        distance:
+          type: string
+          description: How far away is this peer from the desired hash.
+        bucket:
+          type: integer
+          description: In which bucket was this peer of the remote peers routing table
+      required:
+        - peerId
+        - distance
+        - bucket
     FindNode:
       type: object
       properties:
         id:
           type: integer
+        queryId:
+          type: string
         remoteId:
           type: string
         startedAt:
@@ -796,19 +840,21 @@ components:
           format: date-format
         durationInS:
           type: number
-        closerPeersCount:
-          type: integer
-          nullable: true
+        closerPeers:
+          type: array
+          items:
+            $ref: "#/components/schemas/FindNodeCloserPeer"
         error:
           type: string
           nullable: true
       required:
         - id
+        - queryId
         - remoteId
         - startedAt
         - endedAt
         - durationInS
-        - closerPeersCount
+        - closerPeers
         - error
     Connection:
       type: object
@@ -865,6 +911,76 @@ components:
         - endedAt
         - durationInS
         - error
+    QueryPeerState:
+      type: string
+      enum:
+        - HEARD
+        - WAITING
+        - QUERIED
+        - UNREACHABLE
+    ProvidePeerInfo:
+      type: object
+      properties:
+        peerId:
+          type: string
+        agentVersion:
+          type: string
+          nullable: true
+        protocols:
+          type: array
+          items:
+            type: string
+        distance:
+          type: string
+          example: 0xdece0cc853fa62e5e653ae02f4d1f85931e38eba8326a707b4c62dfc6336dafa
+        state:
+          $ref: "#/components/schemas/QueryPeerState"
+        firstInteractedAt:
+          type: string
+          format: date-format
+          nullable: true
+        referredBy:
+          type: string
+      required:
+        - peerId
+        - agentVersion
+        - protocols
+        - distance
+        - firstInteractedAt
+        - referredBy
+        - state
+    ProvideGraph:
+      allOf:
+        - $ref: "#/components/schemas/Provide"
+        - type: object
+          properties:
+            peers:
+              type: array
+              description: All peers + information in the order they should be plotted.
+              items:
+                $ref: "#/components/schemas/ProvidePeerInfo"
+            dials:
+              type: array
+              items:
+                $ref: "#/components/schemas/Dial"
+            connections:
+              type: array
+              items:
+                $ref: "#/components/schemas/Connection"
+            findNodes:
+              type: array
+              items:
+                $ref: "#/components/schemas/FindNode"
+            addProviders:
+              type: array
+              items:
+                $ref: "#/components/schemas/AddProvider"
+          required:
+            - peers
+            - dials
+            - connections
+            - findNodes
+            - addProviders
     ErrorResponse:
       type: object
       properties:

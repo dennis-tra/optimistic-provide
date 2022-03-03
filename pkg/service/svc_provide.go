@@ -29,6 +29,7 @@ type ProvideService interface {
 	Provide(ctx context.Context, h *dht.Host, t types.ProvideType) (*models.Provide, error)
 	List(ctx context.Context, h *dht.Host) ([]*models.Provide, error)
 	Get(ctx context.Context, h *dht.Host, id int) (*models.Provide, error)
+	GetByID(ctx context.Context, id int) (*models.Provide, error)
 }
 
 var _ ProvideService = &Provide{}
@@ -108,11 +109,15 @@ func (ps *Provide) Provide(ctx context.Context, h *dht.Host, t types.ProvideType
 }
 
 func (ps *Provide) List(ctx context.Context, h *dht.Host) ([]*models.Provide, error) {
-	return ps.provideRepo.List(ctx, h.ID().Pretty())
+	return ps.provideRepo.List(ctx, h.PeerID())
+}
+
+func (ps *Provide) GetByID(ctx context.Context, provideID int) (*models.Provide, error) {
+	return ps.provideRepo.GetByID(ctx, provideID)
 }
 
 func (ps *Provide) Get(ctx context.Context, h *dht.Host, provideID int) (*models.Provide, error) {
-	return ps.provideRepo.Get(ctx, h.DBHost.R.Peer.MultiHash, provideID)
+	return ps.provideRepo.Get(ctx, h.PeerID(), provideID)
 }
 
 func (ps *Provide) startProvidingMultiQuery(h *dht.Host, provide *models.Provide, content *util.Content) {

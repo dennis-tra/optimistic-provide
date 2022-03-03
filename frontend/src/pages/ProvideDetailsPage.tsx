@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import HostDetailsLayout from "../layouts/HostDetailsLayout";
 import LinearProgress from "@mui/material/LinearProgress";
 import { Alert, Grid } from "@mui/material";
-import { useGetHostQuery, useGetProvideQuery, useLazyGetProvidesQuery, useStartProvideMutation } from "../store/api";
+import { useGetHostQuery, useGetProvideQuery } from "../store/api";
 import ProvideOverviewCard from "../components/cards/ProvideOverviewCard";
 
 const ProvideDetailsPage: React.FC = (props) => {

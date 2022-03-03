@@ -13,6 +13,13 @@
  */
 
 import { exists, mapValues } from '../runtime';
+import {
+    FindNodeCloserPeer,
+    FindNodeCloserPeerFromJSON,
+    FindNodeCloserPeerFromJSONTyped,
+    FindNodeCloserPeerToJSON,
+} from './FindNodeCloserPeer';
+
 /**
  * 
  * @export
@@ -25,6 +32,12 @@ export interface FindNode {
      * @memberof FindNode
      */
     id: number;
+    /**
+     * 
+     * @type {string}
+     * @memberof FindNode
+     */
+    queryId: string;
     /**
      * 
      * @type {string}
@@ -51,10 +64,10 @@ export interface FindNode {
     durationInS: number;
     /**
      * 
-     * @type {number}
+     * @type {Array<FindNodeCloserPeer>}
      * @memberof FindNode
      */
-    closerPeersCount: number | null;
+    closerPeers: Array<FindNodeCloserPeer>;
     /**
      * 
      * @type {string}
@@ -74,11 +87,12 @@ export function FindNodeFromJSONTyped(json: any, ignoreDiscriminator: boolean): 
     return {
         
         'id': json['id'],
+        'queryId': json['queryId'],
         'remoteId': json['remoteId'],
         'startedAt': json['startedAt'],
         'endedAt': json['endedAt'],
         'durationInS': json['durationInS'],
-        'closerPeersCount': json['closerPeersCount'],
+        'closerPeers': ((json['closerPeers'] as Array<any>).map(FindNodeCloserPeerFromJSON)),
         'error': json['error'],
     };
 }
@@ -93,11 +107,12 @@ export function FindNodeToJSON(value?: FindNode | null): any {
     return {
         
         'id': value.id,
+        'queryId': value.queryId,
         'remoteId': value.remoteId,
         'startedAt': value.startedAt,
         'endedAt': value.endedAt,
         'durationInS': value.durationInS,
-        'closerPeersCount': value.closerPeersCount,
+        'closerPeers': ((value.closerPeers as Array<any>).map(FindNodeCloserPeerToJSON)),
         'error': value.error,
     };
 }

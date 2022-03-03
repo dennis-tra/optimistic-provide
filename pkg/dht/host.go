@@ -89,6 +89,10 @@ func New(ctx context.Context, key crypto.PrivKey) (*Host, error) {
 	return newHost, nil
 }
 
+func (h *Host) PeerID() string {
+	return h.DBHost.R.Peer.MultiHash
+}
+
 func (h *Host) Close() error {
 	h.rtListenerslk.Lock()
 	for listener := range h.rtListeners {

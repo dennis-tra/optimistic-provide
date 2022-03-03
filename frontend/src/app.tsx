@@ -8,6 +8,7 @@ import ProvideDetailsPage from "./pages/ProvideDetailsPage";
 import RetrievalsPage from "./pages/RetrievalsPage";
 import NotFoundPage from "./pages/404";
 import useNotifier from "./store/snackbarHook";
+import DialsPage from "./pages/DialsPage";
 
 function App() {
   useNotifier();
@@ -20,6 +21,7 @@ function App() {
         <Route path="/hosts/:hostId/routing-tables" element={<RoutingTablePage />} />
         <Route path="/hosts/:hostId/provides" element={<ProvidePage />} />
         <Route path="/hosts/:hostId/provides/:provideId" element={<ProvideDetailsPage />} />
+        <Route path="/hosts/:hostId/provides/:provideId/dials" element={<DialsPage />} />
         <Route path="/hosts/:hostId/retrievals" element={<RetrievalsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

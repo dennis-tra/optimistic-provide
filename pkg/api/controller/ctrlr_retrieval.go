@@ -5,17 +5,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/util"
-
+	"github.com/gin-gonic/gin"
 	"github.com/ipfs/go-cid"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/api/types"
-
-	"github.com/gin-gonic/gin"
-
 	"github.com/dennis-tra/optimistic-provide/pkg/db"
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 	"github.com/dennis-tra/optimistic-provide/pkg/service"
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
 )
 
 type RetrievalController struct {
@@ -73,7 +70,7 @@ func (rc *RetrievalController) Create(c *gin.Context) {
 		EndedAt:               nil,
 		Error:                 nil,
 		FinalRoutingTableId:   nil,
-		HostId:                h.ID().String(),
+		HostId:                h.PeerID(),
 		InitialRoutingTableId: retrieval.InitialRoutingTableID,
 		StartedAt:             retrieval.StartedAt.Format(time.RFC3339Nano),
 	})
@@ -99,7 +96,7 @@ func (rc *RetrievalController) List(c *gin.Context) {
 			EndedAt:               util.TimeToStr(dbRetrieval.EndedAt.Ptr()),
 			Error:                 dbRetrieval.Error.Ptr(),
 			FinalRoutingTableId:   dbRetrieval.FinalRoutingTableID.Ptr(),
-			HostId:                h.ID().String(),
+			HostId:                h.PeerID(),
 			InitialRoutingTableId: dbRetrieval.InitialRoutingTableID,
 			RetrievalId:           dbRetrieval.ID,
 			StartedAt:             dbRetrieval.StartedAt.Format(time.RFC3339Nano),
