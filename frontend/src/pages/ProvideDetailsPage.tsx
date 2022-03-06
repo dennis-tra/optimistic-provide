@@ -4,6 +4,7 @@ import LinearProgress from "@mui/material/LinearProgress";
 import { Alert, Grid } from "@mui/material";
 import { useGetHostQuery, useGetProvideQuery } from "../store/api";
 import ProvideOverviewCard from "../components/cards/ProvideOverviewCard";
+import ProvideChartCard from "../components/cards/ProvideChartCard";
 
 const ProvideDetailsPage: React.FC = (props) => {
   const { hostId, provideId } = useParams();
@@ -43,6 +44,9 @@ const ProvideDetailsPage: React.FC = (props) => {
     <HostDetailsLayout hostId={hostId!} title="Provide Operations">
       <Grid item xs={12} md={8} lg={6}>
         <ProvideOverviewCard provide={provideData!} host={hostData!} />
+      </Grid>
+      <Grid item xs={12}>
+        <ProvideChartCard provide={provideData!} host={hostData!} />
       </Grid>
     </HostDetailsLayout>
   );

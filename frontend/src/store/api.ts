@@ -11,6 +11,7 @@ import { actions as bucketsActions } from "./bucketsSlice";
 import { Retrieval } from "../api/models/Retrieval";
 import { RetrievalRequest } from "../api/models/RetrievalRequest";
 import { Dial } from "../api/models/Dial";
+import { ProvideGraph } from "../api/models/ProvideGraph";
 
 // Define a service using a base URL and expected endpoints
 export const optprovApi = createApi({
@@ -36,7 +37,7 @@ export const optprovApi = createApi({
       query: ({ hostId, provideId }) => `hosts/${hostId}/provides/${provideId}`,
       providesTags: (result, error, { provideId }) => [{ type: "Provide", id: provideId }],
     }),
-    getProvideGraph: builder.query<Dial[], { hostId: string; provideId: string }>({
+    getProvideGraph: builder.query<ProvideGraph, { hostId: string; provideId: number }>({
       query: ({ hostId, provideId }) => `hosts/${hostId}/provides/${provideId}/graph`,
     }),
     startRetrieval: builder.mutation<Host, { hostId: string; body: RetrievalRequest }>({
