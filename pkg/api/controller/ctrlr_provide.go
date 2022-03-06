@@ -46,6 +46,14 @@ func NewProvideController(ctx context.Context, ps service.ProvideService, hs ser
 func (pc *ProvideController) Create(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
 
+	if h.Host == nil {
+		c.JSON(http.StatusPreconditionFailed, types.ErrorResponse{
+			Code:    types.ErrorCodeHOSTSTOPPED,
+			Message: "Host is stopped. Start it first to bootstrap",
+		})
+		return
+	}
+
 	pr := &types.ProvideRequest{}
 	if err := c.BindJSON(pr); err != nil {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse{
