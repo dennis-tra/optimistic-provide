@@ -494,6 +494,83 @@ func testGetProvidersRPCSInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testGetProvidersRPCToManyCloserPeers(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a GetProvidersRPC
+	var b, c CloserPeer
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, getProvidersRPCDBTypes, true, getProvidersRPCColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize GetProvidersRPC struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, closerPeerDBTypes, false, closerPeerColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, closerPeerDBTypes, false, closerPeerColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&b.GetProvidersRPCID, a.ID)
+	queries.Assign(&c.GetProvidersRPCID, a.ID)
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.CloserPeers().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if queries.Equal(v.GetProvidersRPCID, b.GetProvidersRPCID) {
+			bFound = true
+		}
+		if queries.Equal(v.GetProvidersRPCID, c.GetProvidersRPCID) {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := GetProvidersRPCSlice{&a}
+	if err = a.L.LoadCloserPeers(ctx, tx, false, (*[]*GetProvidersRPC)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.CloserPeers); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.CloserPeers = nil
+	if err = a.L.LoadCloserPeers(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.CloserPeers); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testGetProvidersRPCToManyProviderPeers(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -653,6 +730,257 @@ func testGetProvidersRPCToManyRetrievals(t *testing.T) {
 
 	if t.Failed() {
 		t.Logf("%#v", check)
+	}
+}
+
+func testGetProvidersRPCToManyAddOpCloserPeers(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a GetProvidersRPC
+	var b, c, d, e CloserPeer
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, getProvidersRPCDBTypes, false, strmangle.SetComplement(getProvidersRPCPrimaryKeyColumns, getProvidersRPCColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*CloserPeer{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, closerPeerDBTypes, false, strmangle.SetComplement(closerPeerPrimaryKeyColumns, closerPeerColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*CloserPeer{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddCloserPeers(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if !queries.Equal(a.ID, first.GetProvidersRPCID) {
+			t.Error("foreign key was wrong value", a.ID, first.GetProvidersRPCID)
+		}
+		if !queries.Equal(a.ID, second.GetProvidersRPCID) {
+			t.Error("foreign key was wrong value", a.ID, second.GetProvidersRPCID)
+		}
+
+		if first.R.GetProvidersRPC != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.GetProvidersRPC != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.CloserPeers[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.CloserPeers[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.CloserPeers().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+
+func testGetProvidersRPCToManySetOpCloserPeers(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a GetProvidersRPC
+	var b, c, d, e CloserPeer
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, getProvidersRPCDBTypes, false, strmangle.SetComplement(getProvidersRPCPrimaryKeyColumns, getProvidersRPCColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*CloserPeer{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, closerPeerDBTypes, false, strmangle.SetComplement(closerPeerPrimaryKeyColumns, closerPeerColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetCloserPeers(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.CloserPeers().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetCloserPeers(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.CloserPeers().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.GetProvidersRPCID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.GetProvidersRPCID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.GetProvidersRPCID) {
+		t.Error("foreign key was wrong value", a.ID, d.GetProvidersRPCID)
+	}
+	if !queries.Equal(a.ID, e.GetProvidersRPCID) {
+		t.Error("foreign key was wrong value", a.ID, e.GetProvidersRPCID)
+	}
+
+	if b.R.GetProvidersRPC != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.GetProvidersRPC != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.GetProvidersRPC != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.GetProvidersRPC != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.CloserPeers[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.CloserPeers[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testGetProvidersRPCToManyRemoveOpCloserPeers(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a GetProvidersRPC
+	var b, c, d, e CloserPeer
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, getProvidersRPCDBTypes, false, strmangle.SetComplement(getProvidersRPCPrimaryKeyColumns, getProvidersRPCColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*CloserPeer{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, closerPeerDBTypes, false, strmangle.SetComplement(closerPeerPrimaryKeyColumns, closerPeerColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddCloserPeers(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.CloserPeers().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveCloserPeers(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.CloserPeers().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.GetProvidersRPCID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.GetProvidersRPCID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.GetProvidersRPC != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.GetProvidersRPC != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.GetProvidersRPC != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.GetProvidersRPC != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.CloserPeers) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.CloserPeers[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.CloserPeers[0] != &e {
+		t.Error("relationship to e should have been preserved")
 	}
 }
 

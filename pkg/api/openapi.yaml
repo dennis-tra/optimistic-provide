@@ -379,7 +379,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /hosts/{hostId}//provides/{provideId}/graph:
+  /hosts/{hostId}/provides/{provideId}/graph:
     get:
       operationId: graphProvide
       tags:
@@ -476,8 +476,80 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /hosts/{hostId}/rpcs/getProviders:
+    post:
+      operationId: rpcGetProviders
+      tags:
+        - RPCs
+      summary: Returns the result of the GetProviders RPCs against the given peer.
+      description: Returns the GetProviders content.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetProvidersRequest'
+      responses:
+        '200':
+          description: The graph data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetProvidersResponse'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
+    AddrInfo:
+      type: object
+      properties:
+        peerID:
+          type: string
+        multiAddresses:
+          type: array
+          items:
+            type: string
+      required:
+        - peerID
+        - multiAddresses
+    GetProvidersRequest:
+      type: object
+      properties:
+        remoteId:
+          description: Peer ID of the remote peer.
+          type: string
+        contentId:
+          description: The CID that should be asked for.
+          type: string
+      required:
+        - remoteId
+        - contentId
+    GetProvidersResponse:
+      type: object
+      properties:
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddrInfo'
+        closerPeers:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddrInfo'
+      required:
+        - providers
+        - closerPeers
     CreateHostRequest:
       type: object
       properties:

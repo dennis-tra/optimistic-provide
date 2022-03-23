@@ -2974,7 +2974,7 @@ func (o *Peer) AddCloserPeers(ctx context.Context, exec boil.ContextExecutor, in
 				strmangle.SetParamNames("\"", "\"", 1, []string{"peer_id"}),
 				strmangle.WhereClause("\"", "\"", 2, closerPeerPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.FindNodeRPCID, rel.PeerID}
+			values := []interface{}{o.ID, rel.ID}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)

@@ -25,7 +25,7 @@ import (
 // GetProvidersRPC is an object representing the database table.
 type GetProvidersRPC struct {
 	ID                 int         `boil:"id" json:"id" toml:"id" yaml:"id"`
-	QueryID            string      `boil:"query_id" json:"query_id" toml:"query_id" yaml:"query_id"`
+	QueryID            null.String `boil:"query_id" json:"query_id,omitempty" toml:"query_id" yaml:"query_id,omitempty"`
 	LocalID            int         `boil:"local_id" json:"local_id" toml:"local_id" yaml:"local_id"`
 	RemoteID           int         `boil:"remote_id" json:"remote_id" toml:"remote_id" yaml:"remote_id"`
 	StartedAt          time.Time   `boil:"started_at" json:"started_at" toml:"started_at" yaml:"started_at"`
@@ -81,7 +81,7 @@ var GetProvidersRPCTableColumns = struct {
 
 var GetProvidersRPCWhere = struct {
 	ID                 whereHelperint
-	QueryID            whereHelperstring
+	QueryID            whereHelpernull_String
 	LocalID            whereHelperint
 	RemoteID           whereHelperint
 	StartedAt          whereHelpertime_Time
@@ -90,7 +90,7 @@ var GetProvidersRPCWhere = struct {
 	Error              whereHelpernull_String
 }{
 	ID:                 whereHelperint{field: "\"get_providers_rpcs\".\"id\""},
-	QueryID:            whereHelperstring{field: "\"get_providers_rpcs\".\"query_id\""},
+	QueryID:            whereHelpernull_String{field: "\"get_providers_rpcs\".\"query_id\""},
 	LocalID:            whereHelperint{field: "\"get_providers_rpcs\".\"local_id\""},
 	RemoteID:           whereHelperint{field: "\"get_providers_rpcs\".\"remote_id\""},
 	StartedAt:          whereHelpertime_Time{field: "\"get_providers_rpcs\".\"started_at\""},
@@ -103,11 +103,13 @@ var GetProvidersRPCWhere = struct {
 var GetProvidersRPCRels = struct {
 	Local         string
 	Remote        string
+	CloserPeers   string
 	ProviderPeers string
 	Retrievals    string
 }{
 	Local:         "Local",
 	Remote:        "Remote",
+	CloserPeers:   "CloserPeers",
 	ProviderPeers: "ProviderPeers",
 	Retrievals:    "Retrievals",
 }
@@ -116,6 +118,7 @@ var GetProvidersRPCRels = struct {
 type getProvidersRPCR struct {
 	Local         *Peer             `boil:"Local" json:"Local" toml:"Local" yaml:"Local"`
 	Remote        *Peer             `boil:"Remote" json:"Remote" toml:"Remote" yaml:"Remote"`
+	CloserPeers   CloserPeerSlice   `boil:"CloserPeers" json:"CloserPeers" toml:"CloserPeers" yaml:"CloserPeers"`
 	ProviderPeers ProviderPeerSlice `boil:"ProviderPeers" json:"ProviderPeers" toml:"ProviderPeers" yaml:"ProviderPeers"`
 	Retrievals    RetrievalSlice    `boil:"Retrievals" json:"Retrievals" toml:"Retrievals" yaml:"Retrievals"`
 }
@@ -438,6 +441,27 @@ func (o *GetProvidersRPC) Remote(mods ...qm.QueryMod) peerQuery {
 	return query
 }
 
+// CloserPeers retrieves all the closer_peer's CloserPeers with an executor.
+func (o *GetProvidersRPC) CloserPeers(mods ...qm.QueryMod) closerPeerQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"closer_peers\".\"get_providers_rpc_id\"=?", o.ID),
+	)
+
+	query := CloserPeers(queryMods...)
+	queries.SetFrom(query.Query, "\"closer_peers\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"closer_peers\".*"})
+	}
+
+	return query
+}
+
 // ProviderPeers retrieves all the provider_peer's ProviderPeers with an executor.
 func (o *GetProvidersRPC) ProviderPeers(mods ...qm.QueryMod) providerPeerQuery {
 	var queryMods []qm.QueryMod
@@ -681,6 +705,104 @@ func (getProvidersRPCL) LoadRemote(ctx context.Context, e boil.ContextExecutor, 
 					foreign.R = &peerR{}
 				}
 				foreign.R.RemoteGetProvidersRPCS = append(foreign.R.RemoteGetProvidersRPCS, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadCloserPeers allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (getProvidersRPCL) LoadCloserPeers(ctx context.Context, e boil.ContextExecutor, singular bool, maybeGetProvidersRPC interface{}, mods queries.Applicator) error {
+	var slice []*GetProvidersRPC
+	var object *GetProvidersRPC
+
+	if singular {
+		object = maybeGetProvidersRPC.(*GetProvidersRPC)
+	} else {
+		slice = *maybeGetProvidersRPC.(*[]*GetProvidersRPC)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &getProvidersRPCR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &getProvidersRPCR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.ID) {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`closer_peers`),
+		qm.WhereIn(`closer_peers.get_providers_rpc_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load closer_peers")
+	}
+
+	var resultSlice []*CloserPeer
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice closer_peers")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on closer_peers")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for closer_peers")
+	}
+
+	if len(closerPeerAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.CloserPeers = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &closerPeerR{}
+			}
+			foreign.R.GetProvidersRPC = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if queries.Equal(local.ID, foreign.GetProvidersRPCID) {
+				local.R.CloserPeers = append(local.R.CloserPeers, foreign)
+				if foreign.R == nil {
+					foreign.R = &closerPeerR{}
+				}
+				foreign.R.GetProvidersRPC = local
 				break
 			}
 		}
@@ -991,6 +1113,133 @@ func (o *GetProvidersRPC) SetRemote(ctx context.Context, exec boil.ContextExecut
 		}
 	} else {
 		related.R.RemoteGetProvidersRPCS = append(related.R.RemoteGetProvidersRPCS, o)
+	}
+
+	return nil
+}
+
+// AddCloserPeers adds the given related objects to the existing relationships
+// of the get_providers_rpc, optionally inserting them as new records.
+// Appends related to o.R.CloserPeers.
+// Sets related.R.GetProvidersRPC appropriately.
+func (o *GetProvidersRPC) AddCloserPeers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*CloserPeer) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			queries.Assign(&rel.GetProvidersRPCID, o.ID)
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"closer_peers\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"get_providers_rpc_id"}),
+				strmangle.WhereClause("\"", "\"", 2, closerPeerPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			queries.Assign(&rel.GetProvidersRPCID, o.ID)
+		}
+	}
+
+	if o.R == nil {
+		o.R = &getProvidersRPCR{
+			CloserPeers: related,
+		}
+	} else {
+		o.R.CloserPeers = append(o.R.CloserPeers, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &closerPeerR{
+				GetProvidersRPC: o,
+			}
+		} else {
+			rel.R.GetProvidersRPC = o
+		}
+	}
+	return nil
+}
+
+// SetCloserPeers removes all previously related items of the
+// get_providers_rpc replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.GetProvidersRPC's CloserPeers accordingly.
+// Replaces o.R.CloserPeers with related.
+// Sets related.R.GetProvidersRPC's CloserPeers accordingly.
+func (o *GetProvidersRPC) SetCloserPeers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*CloserPeer) error {
+	query := "update \"closer_peers\" set \"get_providers_rpc_id\" = null where \"get_providers_rpc_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.CloserPeers {
+			queries.SetScanner(&rel.GetProvidersRPCID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.GetProvidersRPC = nil
+		}
+
+		o.R.CloserPeers = nil
+	}
+	return o.AddCloserPeers(ctx, exec, insert, related...)
+}
+
+// RemoveCloserPeers relationships from objects passed in.
+// Removes related items from R.CloserPeers (uses pointer comparison, removal does not keep order)
+// Sets related.R.GetProvidersRPC.
+func (o *GetProvidersRPC) RemoveCloserPeers(ctx context.Context, exec boil.ContextExecutor, related ...*CloserPeer) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.GetProvidersRPCID, nil)
+		if rel.R != nil {
+			rel.R.GetProvidersRPC = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("get_providers_rpc_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.CloserPeers {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.CloserPeers)
+			if ln > 1 && i < ln-1 {
+				o.R.CloserPeers[i] = o.R.CloserPeers[ln-1]
+			}
+			o.R.CloserPeers = o.R.CloserPeers[:ln-1]
+			break
+		}
 	}
 
 	return nil

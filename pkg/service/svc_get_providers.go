@@ -43,8 +43,13 @@ func (gp *GetProviders) Save(ctx context.Context, exec boil.ContextExecutor, h *
 			return nil, err
 		}
 
+		queryID := null.NewString("", false)
+		if gpReq.QueryID != nil {
+			queryID = null.StringFrom(gpReq.QueryID.String())
+		}
+
 		dbgp := &models.GetProvidersRPC{
-			QueryID:            gpReq.QueryID.String(),
+			QueryID:            queryID,
 			LocalID:            h.DBHost.PeerID,
 			RemoteID:           remotePeer.ID,
 			StartedAt:          gpReq.Start,
@@ -78,6 +83,30 @@ func (gp *GetProviders) Save(ctx context.Context, exec boil.ContextExecutor, h *
 		}
 
 		if err = dbgp.AddProviderPeers(ctx, exec, true, dbProviders...); err != nil {
+			return nil, err
+		}
+
+		dbCloserPeers := make([]*models.CloserPeer, len(gpReq.CloserPeers))
+		for j, closerPeer := range gpReq.CloserPeers {
+			dbPeer, err := gp.peerService.UpsertPeer(ctx, exec, h, closerPeer.ID)
+			if err != nil {
+				return nil, err
+			}
+
+			maids, err := gp.maService.UpsertMultiAddresses(ctx, exec, closerPeer.Addrs)
+			if err != nil {
+				return nil, err
+			}
+
+			dbCloserPeer := &models.CloserPeer{
+				PeerID:          dbPeer.ID,
+				MultiAddressIds: maids,
+			}
+
+			dbCloserPeers[j] = dbCloserPeer
+		}
+
+		if err = dbgp.AddCloserPeers(ctx, exec, true, dbCloserPeers...); err != nil {
 			return nil, err
 		}
 

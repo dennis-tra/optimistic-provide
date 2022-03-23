@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -24,66 +25,99 @@ import (
 
 // CloserPeer is an object representing the database table.
 type CloserPeer struct {
-	ID              int              `boil:"id" json:"id" toml:"id" yaml:"id"`
-	FindNodeRPCID   int              `boil:"find_node_rpc_id" json:"find_node_rpc_id" toml:"find_node_rpc_id" yaml:"find_node_rpc_id"`
-	PeerID          int              `boil:"peer_id" json:"peer_id" toml:"peer_id" yaml:"peer_id"`
-	MultiAddressIds types.Int64Array `boil:"multi_address_ids" json:"multi_address_ids" toml:"multi_address_ids" yaml:"multi_address_ids"`
+	ID                int              `boil:"id" json:"id" toml:"id" yaml:"id"`
+	FindNodeRPCID     null.Int         `boil:"find_node_rpc_id" json:"find_node_rpc_id,omitempty" toml:"find_node_rpc_id" yaml:"find_node_rpc_id,omitempty"`
+	GetProvidersRPCID null.Int         `boil:"get_providers_rpc_id" json:"get_providers_rpc_id,omitempty" toml:"get_providers_rpc_id" yaml:"get_providers_rpc_id,omitempty"`
+	PeerID            int              `boil:"peer_id" json:"peer_id" toml:"peer_id" yaml:"peer_id"`
+	MultiAddressIds   types.Int64Array `boil:"multi_address_ids" json:"multi_address_ids" toml:"multi_address_ids" yaml:"multi_address_ids"`
 
 	R *closerPeerR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L closerPeerL  `boil:"-" json:"-" toml:"-" yaml:"-"`
 }
 
 var CloserPeerColumns = struct {
-	ID              string
-	FindNodeRPCID   string
-	PeerID          string
-	MultiAddressIds string
+	ID                string
+	FindNodeRPCID     string
+	GetProvidersRPCID string
+	PeerID            string
+	MultiAddressIds   string
 }{
-	ID:              "id",
-	FindNodeRPCID:   "find_node_rpc_id",
-	PeerID:          "peer_id",
-	MultiAddressIds: "multi_address_ids",
+	ID:                "id",
+	FindNodeRPCID:     "find_node_rpc_id",
+	GetProvidersRPCID: "get_providers_rpc_id",
+	PeerID:            "peer_id",
+	MultiAddressIds:   "multi_address_ids",
 }
 
 var CloserPeerTableColumns = struct {
-	ID              string
-	FindNodeRPCID   string
-	PeerID          string
-	MultiAddressIds string
+	ID                string
+	FindNodeRPCID     string
+	GetProvidersRPCID string
+	PeerID            string
+	MultiAddressIds   string
 }{
-	ID:              "closer_peers.id",
-	FindNodeRPCID:   "closer_peers.find_node_rpc_id",
-	PeerID:          "closer_peers.peer_id",
-	MultiAddressIds: "closer_peers.multi_address_ids",
+	ID:                "closer_peers.id",
+	FindNodeRPCID:     "closer_peers.find_node_rpc_id",
+	GetProvidersRPCID: "closer_peers.get_providers_rpc_id",
+	PeerID:            "closer_peers.peer_id",
+	MultiAddressIds:   "closer_peers.multi_address_ids",
 }
 
 // Generated where
 
+type whereHelpernull_Int struct{ field string }
+
+func (w whereHelpernull_Int) EQ(x null.Int) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, false, x)
+}
+func (w whereHelpernull_Int) NEQ(x null.Int) qm.QueryMod {
+	return qmhelper.WhereNullEQ(w.field, true, x)
+}
+func (w whereHelpernull_Int) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
+func (w whereHelpernull_Int) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
+func (w whereHelpernull_Int) LT(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpernull_Int) LTE(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpernull_Int) GT(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpernull_Int) GTE(x null.Int) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var CloserPeerWhere = struct {
-	ID              whereHelperint
-	FindNodeRPCID   whereHelperint
-	PeerID          whereHelperint
-	MultiAddressIds whereHelpertypes_Int64Array
+	ID                whereHelperint
+	FindNodeRPCID     whereHelpernull_Int
+	GetProvidersRPCID whereHelpernull_Int
+	PeerID            whereHelperint
+	MultiAddressIds   whereHelpertypes_Int64Array
 }{
-	ID:              whereHelperint{field: "\"closer_peers\".\"id\""},
-	FindNodeRPCID:   whereHelperint{field: "\"closer_peers\".\"find_node_rpc_id\""},
-	PeerID:          whereHelperint{field: "\"closer_peers\".\"peer_id\""},
-	MultiAddressIds: whereHelpertypes_Int64Array{field: "\"closer_peers\".\"multi_address_ids\""},
+	ID:                whereHelperint{field: "\"closer_peers\".\"id\""},
+	FindNodeRPCID:     whereHelpernull_Int{field: "\"closer_peers\".\"find_node_rpc_id\""},
+	GetProvidersRPCID: whereHelpernull_Int{field: "\"closer_peers\".\"get_providers_rpc_id\""},
+	PeerID:            whereHelperint{field: "\"closer_peers\".\"peer_id\""},
+	MultiAddressIds:   whereHelpertypes_Int64Array{field: "\"closer_peers\".\"multi_address_ids\""},
 }
 
 // CloserPeerRels is where relationship names are stored.
 var CloserPeerRels = struct {
-	FindNodeRPC string
-	Peer        string
+	FindNodeRPC     string
+	GetProvidersRPC string
+	Peer            string
 }{
-	FindNodeRPC: "FindNodeRPC",
-	Peer:        "Peer",
+	FindNodeRPC:     "FindNodeRPC",
+	GetProvidersRPC: "GetProvidersRPC",
+	Peer:            "Peer",
 }
 
 // closerPeerR is where relationships are stored.
 type closerPeerR struct {
-	FindNodeRPC *FindNodesRPC `boil:"FindNodeRPC" json:"FindNodeRPC" toml:"FindNodeRPC" yaml:"FindNodeRPC"`
-	Peer        *Peer         `boil:"Peer" json:"Peer" toml:"Peer" yaml:"Peer"`
+	FindNodeRPC     *FindNodesRPC    `boil:"FindNodeRPC" json:"FindNodeRPC" toml:"FindNodeRPC" yaml:"FindNodeRPC"`
+	GetProvidersRPC *GetProvidersRPC `boil:"GetProvidersRPC" json:"GetProvidersRPC" toml:"GetProvidersRPC" yaml:"GetProvidersRPC"`
+	Peer            *Peer            `boil:"Peer" json:"Peer" toml:"Peer" yaml:"Peer"`
 }
 
 // NewStruct creates a new relationship struct
@@ -95,10 +129,10 @@ func (*closerPeerR) NewStruct() *closerPeerR {
 type closerPeerL struct{}
 
 var (
-	closerPeerAllColumns            = []string{"id", "find_node_rpc_id", "peer_id", "multi_address_ids"}
-	closerPeerColumnsWithoutDefault = []string{"find_node_rpc_id", "peer_id", "multi_address_ids"}
+	closerPeerAllColumns            = []string{"id", "find_node_rpc_id", "get_providers_rpc_id", "peer_id", "multi_address_ids"}
+	closerPeerColumnsWithoutDefault = []string{"find_node_rpc_id", "get_providers_rpc_id", "peer_id", "multi_address_ids"}
 	closerPeerColumnsWithDefault    = []string{"id"}
-	closerPeerPrimaryKeyColumns     = []string{"find_node_rpc_id", "peer_id"}
+	closerPeerPrimaryKeyColumns     = []string{"id"}
 )
 
 type (
@@ -390,6 +424,20 @@ func (o *CloserPeer) FindNodeRPC(mods ...qm.QueryMod) findNodesRPCQuery {
 	return query
 }
 
+// GetProvidersRPC pointed to by the foreign key.
+func (o *CloserPeer) GetProvidersRPC(mods ...qm.QueryMod) getProvidersRPCQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.GetProvidersRPCID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	query := GetProvidersRPCS(queryMods...)
+	queries.SetFrom(query.Query, "\"get_providers_rpcs\"")
+
+	return query
+}
+
 // Peer pointed to by the foreign key.
 func (o *CloserPeer) Peer(mods ...qm.QueryMod) peerQuery {
 	queryMods := []qm.QueryMod{
@@ -421,7 +469,9 @@ func (closerPeerL) LoadFindNodeRPC(ctx context.Context, e boil.ContextExecutor, 
 		if object.R == nil {
 			object.R = &closerPeerR{}
 		}
-		args = append(args, object.FindNodeRPCID)
+		if !queries.IsNil(object.FindNodeRPCID) {
+			args = append(args, object.FindNodeRPCID)
+		}
 
 	} else {
 	Outer:
@@ -431,12 +481,14 @@ func (closerPeerL) LoadFindNodeRPC(ctx context.Context, e boil.ContextExecutor, 
 			}
 
 			for _, a := range args {
-				if a == obj.FindNodeRPCID {
+				if queries.Equal(a, obj.FindNodeRPCID) {
 					continue Outer
 				}
 			}
 
-			args = append(args, obj.FindNodeRPCID)
+			if !queries.IsNil(obj.FindNodeRPCID) {
+				args = append(args, obj.FindNodeRPCID)
+			}
 
 		}
 	}
@@ -494,12 +546,120 @@ func (closerPeerL) LoadFindNodeRPC(ctx context.Context, e boil.ContextExecutor, 
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.FindNodeRPCID == foreign.ID {
+			if queries.Equal(local.FindNodeRPCID, foreign.ID) {
 				local.R.FindNodeRPC = foreign
 				if foreign.R == nil {
 					foreign.R = &findNodesRPCR{}
 				}
 				foreign.R.FindNodeRPCCloserPeers = append(foreign.R.FindNodeRPCCloserPeers, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadGetProvidersRPC allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (closerPeerL) LoadGetProvidersRPC(ctx context.Context, e boil.ContextExecutor, singular bool, maybeCloserPeer interface{}, mods queries.Applicator) error {
+	var slice []*CloserPeer
+	var object *CloserPeer
+
+	if singular {
+		object = maybeCloserPeer.(*CloserPeer)
+	} else {
+		slice = *maybeCloserPeer.(*[]*CloserPeer)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &closerPeerR{}
+		}
+		if !queries.IsNil(object.GetProvidersRPCID) {
+			args = append(args, object.GetProvidersRPCID)
+		}
+
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &closerPeerR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.GetProvidersRPCID) {
+					continue Outer
+				}
+			}
+
+			if !queries.IsNil(obj.GetProvidersRPCID) {
+				args = append(args, obj.GetProvidersRPCID)
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`get_providers_rpcs`),
+		qm.WhereIn(`get_providers_rpcs.id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load GetProvidersRPC")
+	}
+
+	var resultSlice []*GetProvidersRPC
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice GetProvidersRPC")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for get_providers_rpcs")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for get_providers_rpcs")
+	}
+
+	if len(closerPeerAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.GetProvidersRPC = foreign
+		if foreign.R == nil {
+			foreign.R = &getProvidersRPCR{}
+		}
+		foreign.R.CloserPeers = append(foreign.R.CloserPeers, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.GetProvidersRPCID, foreign.ID) {
+				local.R.GetProvidersRPC = foreign
+				if foreign.R == nil {
+					foreign.R = &getProvidersRPCR{}
+				}
+				foreign.R.CloserPeers = append(foreign.R.CloserPeers, local)
 				break
 			}
 		}
@@ -628,7 +788,7 @@ func (o *CloserPeer) SetFindNodeRPC(ctx context.Context, exec boil.ContextExecut
 		strmangle.SetParamNames("\"", "\"", 1, []string{"find_node_rpc_id"}),
 		strmangle.WhereClause("\"", "\"", 2, closerPeerPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.FindNodeRPCID, o.PeerID}
+	values := []interface{}{related.ID, o.ID}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -639,7 +799,7 @@ func (o *CloserPeer) SetFindNodeRPC(ctx context.Context, exec boil.ContextExecut
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.FindNodeRPCID = related.ID
+	queries.Assign(&o.FindNodeRPCID, related.ID)
 	if o.R == nil {
 		o.R = &closerPeerR{
 			FindNodeRPC: related,
@@ -659,6 +819,119 @@ func (o *CloserPeer) SetFindNodeRPC(ctx context.Context, exec boil.ContextExecut
 	return nil
 }
 
+// RemoveFindNodeRPC relationship.
+// Sets o.R.FindNodeRPC to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *CloserPeer) RemoveFindNodeRPC(ctx context.Context, exec boil.ContextExecutor, related *FindNodesRPC) error {
+	var err error
+
+	queries.SetScanner(&o.FindNodeRPCID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("find_node_rpc_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.FindNodeRPC = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.FindNodeRPCCloserPeers {
+		if queries.Equal(o.FindNodeRPCID, ri.FindNodeRPCID) {
+			continue
+		}
+
+		ln := len(related.R.FindNodeRPCCloserPeers)
+		if ln > 1 && i < ln-1 {
+			related.R.FindNodeRPCCloserPeers[i] = related.R.FindNodeRPCCloserPeers[ln-1]
+		}
+		related.R.FindNodeRPCCloserPeers = related.R.FindNodeRPCCloserPeers[:ln-1]
+		break
+	}
+	return nil
+}
+
+// SetGetProvidersRPC of the closerPeer to the related item.
+// Sets o.R.GetProvidersRPC to related.
+// Adds o to related.R.CloserPeers.
+func (o *CloserPeer) SetGetProvidersRPC(ctx context.Context, exec boil.ContextExecutor, insert bool, related *GetProvidersRPC) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"closer_peers\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"get_providers_rpc_id"}),
+		strmangle.WhereClause("\"", "\"", 2, closerPeerPrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.GetProvidersRPCID, related.ID)
+	if o.R == nil {
+		o.R = &closerPeerR{
+			GetProvidersRPC: related,
+		}
+	} else {
+		o.R.GetProvidersRPC = related
+	}
+
+	if related.R == nil {
+		related.R = &getProvidersRPCR{
+			CloserPeers: CloserPeerSlice{o},
+		}
+	} else {
+		related.R.CloserPeers = append(related.R.CloserPeers, o)
+	}
+
+	return nil
+}
+
+// RemoveGetProvidersRPC relationship.
+// Sets o.R.GetProvidersRPC to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *CloserPeer) RemoveGetProvidersRPC(ctx context.Context, exec boil.ContextExecutor, related *GetProvidersRPC) error {
+	var err error
+
+	queries.SetScanner(&o.GetProvidersRPCID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("get_providers_rpc_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.GetProvidersRPC = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.CloserPeers {
+		if queries.Equal(o.GetProvidersRPCID, ri.GetProvidersRPCID) {
+			continue
+		}
+
+		ln := len(related.R.CloserPeers)
+		if ln > 1 && i < ln-1 {
+			related.R.CloserPeers[i] = related.R.CloserPeers[ln-1]
+		}
+		related.R.CloserPeers = related.R.CloserPeers[:ln-1]
+		break
+	}
+	return nil
+}
+
 // SetPeer of the closerPeer to the related item.
 // Sets o.R.Peer to related.
 // Adds o to related.R.CloserPeers.
@@ -675,7 +948,7 @@ func (o *CloserPeer) SetPeer(ctx context.Context, exec boil.ContextExecutor, ins
 		strmangle.SetParamNames("\"", "\"", 1, []string{"peer_id"}),
 		strmangle.WhereClause("\"", "\"", 2, closerPeerPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.FindNodeRPCID, o.PeerID}
+	values := []interface{}{related.ID, o.ID}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -714,7 +987,7 @@ func CloserPeers(mods ...qm.QueryMod) closerPeerQuery {
 
 // FindCloserPeer retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindCloserPeer(ctx context.Context, exec boil.ContextExecutor, findNodeRPCID int, peerID int, selectCols ...string) (*CloserPeer, error) {
+func FindCloserPeer(ctx context.Context, exec boil.ContextExecutor, iD int, selectCols ...string) (*CloserPeer, error) {
 	closerPeerObj := &CloserPeer{}
 
 	sel := "*"
@@ -722,10 +995,10 @@ func FindCloserPeer(ctx context.Context, exec boil.ContextExecutor, findNodeRPCI
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"closer_peers\" where \"find_node_rpc_id\"=$1 AND \"peer_id\"=$2", sel,
+		"select %s from \"closer_peers\" where \"id\"=$1", sel,
 	)
 
-	q := queries.Raw(query, findNodeRPCID, peerID)
+	q := queries.Raw(query, iD)
 
 	err := q.Bind(ctx, exec, closerPeerObj)
 	if err != nil {
@@ -1076,7 +1349,7 @@ func (o *CloserPeer) Delete(ctx context.Context, exec boil.ContextExecutor) (int
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), closerPeerPrimaryKeyMapping)
-	sql := "DELETE FROM \"closer_peers\" WHERE \"find_node_rpc_id\"=$1 AND \"peer_id\"=$2"
+	sql := "DELETE FROM \"closer_peers\" WHERE \"id\"=$1"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -1173,7 +1446,7 @@ func (o CloserPeerSlice) DeleteAll(ctx context.Context, exec boil.ContextExecuto
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *CloserPeer) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindCloserPeer(ctx, exec, o.FindNodeRPCID, o.PeerID)
+	ret, err := FindCloserPeer(ctx, exec, o.ID)
 	if err != nil {
 		return err
 	}
@@ -1212,16 +1485,16 @@ func (o *CloserPeerSlice) ReloadAll(ctx context.Context, exec boil.ContextExecut
 }
 
 // CloserPeerExists checks if the CloserPeer row exists.
-func CloserPeerExists(ctx context.Context, exec boil.ContextExecutor, findNodeRPCID int, peerID int) (bool, error) {
+func CloserPeerExists(ctx context.Context, exec boil.ContextExecutor, iD int) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"closer_peers\" where \"find_node_rpc_id\"=$1 AND \"peer_id\"=$2 limit 1)"
+	sql := "select exists(select 1 from \"closer_peers\" where \"id\"=$1 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, findNodeRPCID, peerID)
+		fmt.Fprintln(writer, iD)
 	}
-	row := exec.QueryRowContext(ctx, sql, findNodeRPCID, peerID)
+	row := exec.QueryRowContext(ctx, sql, iD)
 
 	err := row.Scan(&exists)
 	if err != nil {

@@ -519,9 +519,8 @@ func testFindNodesRPCToManyFindNodeRPCCloserPeers(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	b.FindNodeRPCID = a.ID
-	c.FindNodeRPCID = a.ID
-
+	queries.Assign(&b.FindNodeRPCID, a.ID)
+	queries.Assign(&c.FindNodeRPCID, a.ID)
 	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
@@ -536,10 +535,10 @@ func testFindNodesRPCToManyFindNodeRPCCloserPeers(t *testing.T) {
 
 	bFound, cFound := false, false
 	for _, v := range check {
-		if v.FindNodeRPCID == b.FindNodeRPCID {
+		if queries.Equal(v.FindNodeRPCID, b.FindNodeRPCID) {
 			bFound = true
 		}
-		if v.FindNodeRPCID == c.FindNodeRPCID {
+		if queries.Equal(v.FindNodeRPCID, c.FindNodeRPCID) {
 			cFound = true
 		}
 	}
@@ -701,10 +700,10 @@ func testFindNodesRPCToManyAddOpFindNodeRPCCloserPeers(t *testing.T) {
 		first := x[0]
 		second := x[1]
 
-		if a.ID != first.FindNodeRPCID {
+		if !queries.Equal(a.ID, first.FindNodeRPCID) {
 			t.Error("foreign key was wrong value", a.ID, first.FindNodeRPCID)
 		}
-		if a.ID != second.FindNodeRPCID {
+		if !queries.Equal(a.ID, second.FindNodeRPCID) {
 			t.Error("foreign key was wrong value", a.ID, second.FindNodeRPCID)
 		}
 
@@ -731,6 +730,182 @@ func testFindNodesRPCToManyAddOpFindNodeRPCCloserPeers(t *testing.T) {
 		}
 	}
 }
+
+func testFindNodesRPCToManySetOpFindNodeRPCCloserPeers(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a FindNodesRPC
+	var b, c, d, e CloserPeer
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, findNodesRPCDBTypes, false, strmangle.SetComplement(findNodesRPCPrimaryKeyColumns, findNodesRPCColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*CloserPeer{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, closerPeerDBTypes, false, strmangle.SetComplement(closerPeerPrimaryKeyColumns, closerPeerColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.SetFindNodeRPCCloserPeers(ctx, tx, false, &b, &c)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.FindNodeRPCCloserPeers().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.SetFindNodeRPCCloserPeers(ctx, tx, true, &d, &e)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.FindNodeRPCCloserPeers().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.FindNodeRPCID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.FindNodeRPCID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+	if !queries.Equal(a.ID, d.FindNodeRPCID) {
+		t.Error("foreign key was wrong value", a.ID, d.FindNodeRPCID)
+	}
+	if !queries.Equal(a.ID, e.FindNodeRPCID) {
+		t.Error("foreign key was wrong value", a.ID, e.FindNodeRPCID)
+	}
+
+	if b.R.FindNodeRPC != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.FindNodeRPC != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.FindNodeRPC != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+	if e.R.FindNodeRPC != &a {
+		t.Error("relationship was not added properly to the foreign struct")
+	}
+
+	if a.R.FindNodeRPCCloserPeers[0] != &d {
+		t.Error("relationship struct slice not set to correct value")
+	}
+	if a.R.FindNodeRPCCloserPeers[1] != &e {
+		t.Error("relationship struct slice not set to correct value")
+	}
+}
+
+func testFindNodesRPCToManyRemoveOpFindNodeRPCCloserPeers(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a FindNodesRPC
+	var b, c, d, e CloserPeer
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, findNodesRPCDBTypes, false, strmangle.SetComplement(findNodesRPCPrimaryKeyColumns, findNodesRPCColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*CloserPeer{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, closerPeerDBTypes, false, strmangle.SetComplement(closerPeerPrimaryKeyColumns, closerPeerColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	err = a.AddFindNodeRPCCloserPeers(ctx, tx, true, foreigners...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err := a.FindNodeRPCCloserPeers().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 4 {
+		t.Error("count was wrong:", count)
+	}
+
+	err = a.RemoveFindNodeRPCCloserPeers(ctx, tx, foreigners[:2]...)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	count, err = a.FindNodeRPCCloserPeers().Count(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if count != 2 {
+		t.Error("count was wrong:", count)
+	}
+
+	if !queries.IsValuerNil(b.FindNodeRPCID) {
+		t.Error("want b's foreign key value to be nil")
+	}
+	if !queries.IsValuerNil(c.FindNodeRPCID) {
+		t.Error("want c's foreign key value to be nil")
+	}
+
+	if b.R.FindNodeRPC != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if c.R.FindNodeRPC != nil {
+		t.Error("relationship was not removed properly from the foreign struct")
+	}
+	if d.R.FindNodeRPC != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+	if e.R.FindNodeRPC != &a {
+		t.Error("relationship to a should have been preserved")
+	}
+
+	if len(a.R.FindNodeRPCCloserPeers) != 2 {
+		t.Error("should have preserved two relationships")
+	}
+
+	// Removal doesn't do a stable deletion for performance so we have to flip the order
+	if a.R.FindNodeRPCCloserPeers[1] != &d {
+		t.Error("relationship to d should have been preserved")
+	}
+	if a.R.FindNodeRPCCloserPeers[0] != &e {
+		t.Error("relationship to e should have been preserved")
+	}
+}
+
 func testFindNodesRPCToManyAddOpProvides(t *testing.T) {
 	var err error
 

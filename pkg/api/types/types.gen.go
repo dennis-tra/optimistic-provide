@@ -60,6 +60,12 @@ type AddProvider struct {
 	StartedAt   string  `json:"startedAt"`
 }
 
+// AddrInfo defines model for AddrInfo.
+type AddrInfo struct {
+	MultiAddresses []string `json:"multiAddresses"`
+	PeerID         string   `json:"peerID"`
+}
+
 // Can be any value - string, number, boolean, array or object.
 type AnyValue interface{}
 
@@ -123,6 +129,21 @@ type FindNodeCloserPeer struct {
 	// How far away is this peer from the desired hash.
 	Distance string `json:"distance"`
 	PeerId   string `json:"peerId"`
+}
+
+// GetProvidersRequest defines model for GetProvidersRequest.
+type GetProvidersRequest struct {
+	// The CID that should be asked for.
+	ContentId string `json:"contentId"`
+
+	// Peer ID of the remote peer.
+	RemoteId string `json:"remoteId"`
+}
+
+// GetProvidersResponse defines model for GetProvidersResponse.
+type GetProvidersResponse struct {
+	CloserPeers []AddrInfo `json:"closerPeers"`
+	Providers   []AddrInfo `json:"providers"`
 }
 
 // Host defines model for Host.
@@ -283,6 +304,9 @@ type StartProvideJSONBody ProvideRequest
 // StartRetrievalJSONBody defines parameters for StartRetrieval.
 type StartRetrievalJSONBody RetrievalRequest
 
+// RpcGetProvidersJSONBody defines parameters for RpcGetProviders.
+type RpcGetProvidersJSONBody GetProvidersRequest
+
 // CreateHostJSONRequestBody defines body for CreateHost for application/json ContentType.
 type CreateHostJSONRequestBody CreateHostJSONBody
 
@@ -291,4 +315,7 @@ type StartProvideJSONRequestBody StartProvideJSONBody
 
 // StartRetrievalJSONRequestBody defines body for StartRetrieval for application/json ContentType.
 type StartRetrievalJSONRequestBody StartRetrievalJSONBody
+
+// RpcGetProvidersJSONRequestBody defines body for RpcGetProviders for application/json ContentType.
+type RpcGetProvidersJSONRequestBody RpcGetProvidersJSONBody
 

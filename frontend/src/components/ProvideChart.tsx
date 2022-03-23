@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import * as d3 from "d3";
 import { ProvideGraph } from "../api/models/ProvideGraph";
+import { FindNode } from "../api/models/FindNode";
 
 interface ProvideChartProps {
   data: ProvideGraph;
@@ -8,8 +9,8 @@ interface ProvideChartProps {
 
 function renderChartFn(graphData: ProvideGraph) {
   const margin = { top: 30, right: 30, bottom: 30, left: 120 };
-  const width = 800 - margin.left - margin.right;
-  const height = 500 - margin.top - margin.bottom;
+  const width = 1000 - margin.left - margin.right;
+  const height = graphData.peers.length * 6 - margin.top - margin.bottom;
 
   const conns = graphData.connections;
   const findNodes = graphData.findNodes;
@@ -29,7 +30,7 @@ function renderChartFn(graphData: ProvideGraph) {
 
   const xScale = d3
     .scaleLinear()
-    .domain([0, (new Date(graphData.endedAt).getTime() - new Date(graphData.startedAt).getTime()) / 1000])
+    .domain([0, (new Date(graphData.endedAt!).getTime() - new Date(graphData.startedAt).getTime()) / 1000])
     .range([0, width]);
   const xAxisTop = canvas.append("g").attr("class", "xAxis").call(d3.axisTop(xScale));
   const xAxisBottom = canvas
@@ -169,7 +170,7 @@ function renderChartFn(graphData: ProvideGraph) {
     addCrossHair(coords[0], coords[1]);
   });
 
-  function addCrossHair(xCoord, yCoord) {
+  function addCrossHair(xCoord: number, yCoord: number) {
     // Update horizontal cross hair
     d3.select("#h_crosshair")
       .attr("x1", 0)
@@ -190,7 +191,7 @@ function renderChartFn(graphData: ProvideGraph) {
       .text(xScale.invert(xCoord).toFixed(3) + "s");
   }
   // A function that set idleTimeOut to null
-  let idleTimeout;
+  let idleTimeout: number | null;
   function idled() {
     idleTimeout = null;
   }
@@ -201,7 +202,7 @@ function renderChartFn(graphData: ProvideGraph) {
     // If no selection, back to initial coordinate. Otherwise, update X axis domain
     if (!extent) {
       if (!idleTimeout) return (idleTimeout = setTimeout(idled, 350)); // This allows to wait a little bit
-      xScale.domain([0, (new Date(graphData.endedAt).getTime() - new Date(graphData.startedAt).getTime()) / 1000]);
+      xScale.domain([0, (new Date(graphData.endedAt!).getTime() - new Date(graphData.startedAt).getTime()) / 1000]);
     } else {
       xScale.domain([xScale.invert(extent[0]), xScale.invert(extent[1])]);
       canvas.select(".brush").call(brush.move, null); // This remove the grey brush area as soon as the selection has been done

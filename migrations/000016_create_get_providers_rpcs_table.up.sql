@@ -3,7 +3,7 @@ BEGIN;
 CREATE TABLE get_providers_rpcs
 (
     id                   INT GENERATED ALWAYS AS IDENTITY,
-    query_id             VARCHAR(36) NOT NULL,
+    query_id             VARCHAR(36),
     local_id             INT         NOT NULL,
     remote_id            INT         NOT NULL,
     started_at           TIMESTAMPTZ NOT NULL,

@@ -36,11 +36,12 @@ type FindNodesSpan struct {
 }
 
 type GetProvidersSpan struct {
-	QueryID      uuid.UUID
+	QueryID      *uuid.UUID
 	RemotePeerID peer.ID
 	Start        time.Time
 	End          time.Time
 	Providers    []*peer.AddrInfo
+	CloserPeers  []*peer.AddrInfo
 	Error        error
 }
 

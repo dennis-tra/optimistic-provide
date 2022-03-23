@@ -79,29 +79,6 @@ var FindNodesRPCTableColumns = struct {
 
 // Generated where
 
-type whereHelpernull_Int struct{ field string }
-
-func (w whereHelpernull_Int) EQ(x null.Int) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, false, x)
-}
-func (w whereHelpernull_Int) NEQ(x null.Int) qm.QueryMod {
-	return qmhelper.WhereNullEQ(w.field, true, x)
-}
-func (w whereHelpernull_Int) IsNull() qm.QueryMod    { return qmhelper.WhereIsNull(w.field) }
-func (w whereHelpernull_Int) IsNotNull() qm.QueryMod { return qmhelper.WhereIsNotNull(w.field) }
-func (w whereHelpernull_Int) LT(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LT, x)
-}
-func (w whereHelpernull_Int) LTE(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.LTE, x)
-}
-func (w whereHelpernull_Int) GT(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GT, x)
-}
-func (w whereHelpernull_Int) GTE(x null.Int) qm.QueryMod {
-	return qmhelper.Where(w.field, qmhelper.GTE, x)
-}
-
 var FindNodesRPCWhere = struct {
 	ID               whereHelperint
 	QueryID          whereHelperstring
@@ -738,7 +715,7 @@ func (findNodesRPCL) LoadFindNodeRPCCloserPeers(ctx context.Context, e boil.Cont
 			}
 
 			for _, a := range args {
-				if a == obj.ID {
+				if queries.Equal(a, obj.ID) {
 					continue Outer
 				}
 			}
@@ -796,7 +773,7 @@ func (findNodesRPCL) LoadFindNodeRPCCloserPeers(ctx context.Context, e boil.Cont
 
 	for _, foreign := range resultSlice {
 		for _, local := range slice {
-			if local.ID == foreign.FindNodeRPCID {
+			if queries.Equal(local.ID, foreign.FindNodeRPCID) {
 				local.R.FindNodeRPCCloserPeers = append(local.R.FindNodeRPCCloserPeers, foreign)
 				if foreign.R == nil {
 					foreign.R = &closerPeerR{}
@@ -1027,7 +1004,7 @@ func (o *FindNodesRPC) AddFindNodeRPCCloserPeers(ctx context.Context, exec boil.
 	var err error
 	for _, rel := range related {
 		if insert {
-			rel.FindNodeRPCID = o.ID
+			queries.Assign(&rel.FindNodeRPCID, o.ID)
 			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
 				return errors.Wrap(err, "failed to insert into foreign table")
 			}
@@ -1037,7 +1014,7 @@ func (o *FindNodesRPC) AddFindNodeRPCCloserPeers(ctx context.Context, exec boil.
 				strmangle.SetParamNames("\"", "\"", 1, []string{"find_node_rpc_id"}),
 				strmangle.WhereClause("\"", "\"", 2, closerPeerPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.FindNodeRPCID, rel.PeerID}
+			values := []interface{}{o.ID, rel.ID}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)
@@ -1048,7 +1025,7 @@ func (o *FindNodesRPC) AddFindNodeRPCCloserPeers(ctx context.Context, exec boil.
 				return errors.Wrap(err, "failed to update foreign table")
 			}
 
-			rel.FindNodeRPCID = o.ID
+			queries.Assign(&rel.FindNodeRPCID, o.ID)
 		}
 	}
 
@@ -1069,6 +1046,80 @@ func (o *FindNodesRPC) AddFindNodeRPCCloserPeers(ctx context.Context, exec boil.
 			rel.R.FindNodeRPC = o
 		}
 	}
+	return nil
+}
+
+// SetFindNodeRPCCloserPeers removes all previously related items of the
+// find_nodes_rpc replacing them completely with the passed
+// in related items, optionally inserting them as new records.
+// Sets o.R.FindNodeRPC's FindNodeRPCCloserPeers accordingly.
+// Replaces o.R.FindNodeRPCCloserPeers with related.
+// Sets related.R.FindNodeRPC's FindNodeRPCCloserPeers accordingly.
+func (o *FindNodesRPC) SetFindNodeRPCCloserPeers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*CloserPeer) error {
+	query := "update \"closer_peers\" set \"find_node_rpc_id\" = null where \"find_node_rpc_id\" = $1"
+	values := []interface{}{o.ID}
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, query)
+		fmt.Fprintln(writer, values)
+	}
+	_, err := exec.ExecContext(ctx, query, values...)
+	if err != nil {
+		return errors.Wrap(err, "failed to remove relationships before set")
+	}
+
+	if o.R != nil {
+		for _, rel := range o.R.FindNodeRPCCloserPeers {
+			queries.SetScanner(&rel.FindNodeRPCID, nil)
+			if rel.R == nil {
+				continue
+			}
+
+			rel.R.FindNodeRPC = nil
+		}
+
+		o.R.FindNodeRPCCloserPeers = nil
+	}
+	return o.AddFindNodeRPCCloserPeers(ctx, exec, insert, related...)
+}
+
+// RemoveFindNodeRPCCloserPeers relationships from objects passed in.
+// Removes related items from R.FindNodeRPCCloserPeers (uses pointer comparison, removal does not keep order)
+// Sets related.R.FindNodeRPC.
+func (o *FindNodesRPC) RemoveFindNodeRPCCloserPeers(ctx context.Context, exec boil.ContextExecutor, related ...*CloserPeer) error {
+	if len(related) == 0 {
+		return nil
+	}
+
+	var err error
+	for _, rel := range related {
+		queries.SetScanner(&rel.FindNodeRPCID, nil)
+		if rel.R != nil {
+			rel.R.FindNodeRPC = nil
+		}
+		if _, err = rel.Update(ctx, exec, boil.Whitelist("find_node_rpc_id")); err != nil {
+			return err
+		}
+	}
+	if o.R == nil {
+		return nil
+	}
+
+	for _, rel := range related {
+		for i, ri := range o.R.FindNodeRPCCloserPeers {
+			if rel != ri {
+				continue
+			}
+
+			ln := len(o.R.FindNodeRPCCloserPeers)
+			if ln > 1 && i < ln-1 {
+				o.R.FindNodeRPCCloserPeers[i] = o.R.FindNodeRPCCloserPeers[ln-1]
+			}
+			o.R.FindNodeRPCCloserPeers = o.R.FindNodeRPCCloserPeers[:ln-1]
+			break
+		}
+	}
+
 	return nil
 }
 
