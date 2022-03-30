@@ -1430,6 +1430,84 @@ func testPeerToManyHosts(t *testing.T) {
 	}
 }
 
+func testPeerToManyHostMeasurements(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Peer
+	var b, c Measurement
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerDBTypes, true, peerColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Peer struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, measurementDBTypes, false, measurementColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, measurementDBTypes, false, measurementColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.HostID = a.ID
+	c.HostID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.HostMeasurements().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.HostID == b.HostID {
+			bFound = true
+		}
+		if v.HostID == c.HostID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := PeerSlice{&a}
+	if err = a.L.LoadHostMeasurements(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.HostMeasurements); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.HostMeasurements = nil
+	if err = a.L.LoadHostMeasurements(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.HostMeasurements); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testPeerToManyPeerLogs(t *testing.T) {
 	var err error
 	ctx := context.Background()
@@ -1656,84 +1734,6 @@ func testPeerToManyReferrerPeerStates(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got := len(a.R.ReferrerPeerStates); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	if t.Failed() {
-		t.Logf("%#v", check)
-	}
-}
-
-func testPeerToManyHostProvideMeasurements(t *testing.T) {
-	var err error
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Peer
-	var b, c ProvideMeasurement
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, peerDBTypes, true, peerColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Peer struct: %s", err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	if err = randomize.Struct(seed, &b, provideMeasurementDBTypes, false, provideMeasurementColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, provideMeasurementDBTypes, false, provideMeasurementColumnsWithDefault...); err != nil {
-		t.Fatal(err)
-	}
-
-	b.HostID = a.ID
-	c.HostID = a.ID
-
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := a.HostProvideMeasurements().All(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	bFound, cFound := false, false
-	for _, v := range check {
-		if v.HostID == b.HostID {
-			bFound = true
-		}
-		if v.HostID == c.HostID {
-			cFound = true
-		}
-	}
-
-	if !bFound {
-		t.Error("expected to find b")
-	}
-	if !cFound {
-		t.Error("expected to find c")
-	}
-
-	slice := PeerSlice{&a}
-	if err = a.L.LoadHostProvideMeasurements(ctx, tx, false, (*[]*Peer)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.HostProvideMeasurements); got != 2 {
-		t.Error("number of eager loaded records wrong, got:", got)
-	}
-
-	a.R.HostProvideMeasurements = nil
-	if err = a.L.LoadHostProvideMeasurements(ctx, tx, true, &a, nil); err != nil {
-		t.Fatal(err)
-	}
-	if got := len(a.R.HostProvideMeasurements); got != 2 {
 		t.Error("number of eager loaded records wrong, got:", got)
 	}
 
@@ -3032,6 +3032,81 @@ func testPeerToManyAddOpHosts(t *testing.T) {
 		}
 	}
 }
+func testPeerToManyAddOpHostMeasurements(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Peer
+	var b, c, d, e Measurement
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*Measurement{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, measurementDBTypes, false, strmangle.SetComplement(measurementPrimaryKeyColumns, measurementColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*Measurement{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddHostMeasurements(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.HostID {
+			t.Error("foreign key was wrong value", a.ID, first.HostID)
+		}
+		if a.ID != second.HostID {
+			t.Error("foreign key was wrong value", a.ID, second.HostID)
+		}
+
+		if first.R.Host != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Host != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.HostMeasurements[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.HostMeasurements[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.HostMeasurements().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testPeerToManyAddOpPeerLogs(t *testing.T) {
 	var err error
 
@@ -3249,81 +3324,6 @@ func testPeerToManyAddOpReferrerPeerStates(t *testing.T) {
 		}
 
 		count, err := a.ReferrerPeerStates().Count(ctx, tx)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := int64((i + 1) * 2); count != want {
-			t.Error("want", want, "got", count)
-		}
-	}
-}
-func testPeerToManyAddOpHostProvideMeasurements(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a Peer
-	var b, c, d, e ProvideMeasurement
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	foreigners := []*ProvideMeasurement{&b, &c, &d, &e}
-	for _, x := range foreigners {
-		if err = randomize.Struct(seed, x, provideMeasurementDBTypes, false, strmangle.SetComplement(provideMeasurementPrimaryKeyColumns, provideMeasurementColumnsWithoutDefault)...); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	foreignersSplitByInsertion := [][]*ProvideMeasurement{
-		{&b, &c},
-		{&d, &e},
-	}
-
-	for i, x := range foreignersSplitByInsertion {
-		err = a.AddHostProvideMeasurements(ctx, tx, i != 0, x...)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		first := x[0]
-		second := x[1]
-
-		if a.ID != first.HostID {
-			t.Error("foreign key was wrong value", a.ID, first.HostID)
-		}
-		if a.ID != second.HostID {
-			t.Error("foreign key was wrong value", a.ID, second.HostID)
-		}
-
-		if first.R.Host != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-		if second.R.Host != &a {
-			t.Error("relationship was not added properly to the foreign slice")
-		}
-
-		if a.R.HostProvideMeasurements[i*2] != first {
-			t.Error("relationship struct slice not set to correct value")
-		}
-		if a.R.HostProvideMeasurements[i*2+1] != second {
-			t.Error("relationship struct slice not set to correct value")
-		}
-
-		count, err := a.HostProvideMeasurements().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}

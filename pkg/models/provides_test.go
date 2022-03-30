@@ -2156,6 +2156,57 @@ func testProvideToOneRoutingTableSnapshotUsingInitialRoutingTable(t *testing.T) 
 	}
 }
 
+func testProvideToOneMeasurementUsingMeasurement(t *testing.T) {
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var local Provide
+	var foreign Measurement
+
+	seed := randomize.NewSeed()
+	if err := randomize.Struct(seed, &local, provideDBTypes, true, provideColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Provide struct: %s", err)
+	}
+	if err := randomize.Struct(seed, &foreign, measurementDBTypes, false, measurementColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Measurement struct: %s", err)
+	}
+
+	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	queries.Assign(&local.MeasurementID, foreign.ID)
+	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := local.Measurement().One(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !queries.Equal(check.ID, foreign.ID) {
+		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
+	}
+
+	slice := ProvideSlice{&local}
+	if err = local.L.LoadMeasurement(ctx, tx, false, (*[]*Provide)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Measurement == nil {
+		t.Error("struct should have been eager loaded")
+	}
+
+	local.R.Measurement = nil
+	if err = local.L.LoadMeasurement(ctx, tx, true, &local, nil); err != nil {
+		t.Fatal(err)
+	}
+	if local.R.Measurement == nil {
+		t.Error("struct should have been eager loaded")
+	}
+}
+
 func testProvideToOnePeerUsingProvider(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -2373,6 +2424,115 @@ func testProvideToOneSetOpRoutingTableSnapshotUsingInitialRoutingTable(t *testin
 		}
 	}
 }
+func testProvideToOneSetOpMeasurementUsingMeasurement(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b, c Measurement
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, measurementDBTypes, false, strmangle.SetComplement(measurementPrimaryKeyColumns, measurementColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, measurementDBTypes, false, strmangle.SetComplement(measurementPrimaryKeyColumns, measurementColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	for i, x := range []*Measurement{&b, &c} {
+		err = a.SetMeasurement(ctx, tx, i != 0, x)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if a.R.Measurement != x {
+			t.Error("relationship struct not set to correct value")
+		}
+
+		if x.R.Provides[0] != &a {
+			t.Error("failed to append to foreign relationship struct")
+		}
+		if !queries.Equal(a.MeasurementID, x.ID) {
+			t.Error("foreign key was wrong value", a.MeasurementID)
+		}
+
+		zero := reflect.Zero(reflect.TypeOf(a.MeasurementID))
+		reflect.Indirect(reflect.ValueOf(&a.MeasurementID)).Set(zero)
+
+		if err = a.Reload(ctx, tx); err != nil {
+			t.Fatal("failed to reload", err)
+		}
+
+		if !queries.Equal(a.MeasurementID, x.ID) {
+			t.Error("foreign key was wrong value", a.MeasurementID, x.ID)
+		}
+	}
+}
+
+func testProvideToOneRemoveOpMeasurementUsingMeasurement(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Provide
+	var b Measurement
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, provideDBTypes, false, strmangle.SetComplement(providePrimaryKeyColumns, provideColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &b, measurementDBTypes, false, strmangle.SetComplement(measurementPrimaryKeyColumns, measurementColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.SetMeasurement(ctx, tx, true, &b); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = a.RemoveMeasurement(ctx, tx, &b); err != nil {
+		t.Error("failed to remove relationship")
+	}
+
+	count, err := a.Measurement().Count(ctx, tx)
+	if err != nil {
+		t.Error(err)
+	}
+	if count != 0 {
+		t.Error("want no relationships remaining")
+	}
+
+	if a.R.Measurement != nil {
+		t.Error("R struct entry should be nil")
+	}
+
+	if !queries.IsValuerNil(a.MeasurementID) {
+		t.Error("foreign key value should be nil")
+	}
+
+	if len(b.R.Provides) != 0 {
+		t.Error("failed to remove a from b's relationships")
+	}
+}
+
 func testProvideToOneSetOpPeerUsingProvider(t *testing.T) {
 	var err error
 
@@ -2505,7 +2665,7 @@ func testProvidesSelect(t *testing.T) {
 }
 
 var (
-	provideDBTypes = map[string]string{`ID`: `integer`, `ProvideType`: `enum.provide_type('SINGLE_QUERY','MULTI_QUERY')`, `ProviderID`: `integer`, `ContentID`: `text`, `Distance`: `bytea`, `InitialRoutingTableID`: `integer`, `FinalRoutingTableID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `Error`: `text`, `DoneAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `CreatedAt`: `timestamp with time zone`}
+	provideDBTypes = map[string]string{`ID`: `integer`, `MeasurementID`: `integer`, `ProvideType`: `enum.provide_type('SINGLE_QUERY','MULTI_QUERY')`, `ProviderID`: `integer`, `ContentID`: `text`, `Distance`: `bytea`, `InitialRoutingTableID`: `integer`, `FinalRoutingTableID`: `integer`, `StartedAt`: `timestamp with time zone`, `EndedAt`: `timestamp with time zone`, `Error`: `text`, `DoneAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `CreatedAt`: `timestamp with time zone`}
 	_              = bytes.MinRead
 )
 

@@ -1,4 +1,5 @@
 BEGIN;
+
 CREATE TYPE provide_type AS ENUM (
     'SINGLE_QUERY',
     'MULTI_QUERY'
@@ -9,6 +10,8 @@ CREATE TABLE provides
 (
     -- A unique identifier for this provide operation
     id                       INT GENERATED ALWAYS AS IDENTITY,
+    -- If this provide operation is part of a measurement this points to it.
+    measurement_id           INT,
     -- The nature of the provide operation
     provide_type             provide_type NOT NULL,
     -- The peer ID of the provide-initiating peer
@@ -34,6 +37,7 @@ CREATE TABLE provides
     updated_at               TIMESTAMPTZ  NOT NULL,
     created_at               TIMESTAMPTZ  NOT NULL,
 
+    CONSTRAINT fk_provides_measurement_id FOREIGN KEY (measurement_id) REFERENCES measurements (id),
     CONSTRAINT fk_provides_provider_id FOREIGN KEY (provider_id) REFERENCES peers (id),
     CONSTRAINT fk_provides_initial_routing_table_id FOREIGN KEY (initial_routing_table_id) REFERENCES routing_table_snapshots (id),
     CONSTRAINT fk_provides_final_routing_table_id FOREIGN KEY (final_routing_table_id) REFERENCES routing_table_snapshots (id),

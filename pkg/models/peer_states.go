@@ -715,7 +715,7 @@ func (peerStateL) LoadProvides(ctx context.Context, e boil.ContextExecutor, sing
 	}
 
 	query := NewQuery(
-		qm.Select("\"provides\".id, \"provides\".provide_type, \"provides\".provider_id, \"provides\".content_id, \"provides\".distance, \"provides\".initial_routing_table_id, \"provides\".final_routing_table_id, \"provides\".started_at, \"provides\".ended_at, \"provides\".error, \"provides\".done_at, \"provides\".updated_at, \"provides\".created_at, \"a\".\"peer_state_id\""),
+		qm.Select("\"provides\".id, \"provides\".measurement_id, \"provides\".provide_type, \"provides\".provider_id, \"provides\".content_id, \"provides\".distance, \"provides\".initial_routing_table_id, \"provides\".final_routing_table_id, \"provides\".started_at, \"provides\".ended_at, \"provides\".error, \"provides\".done_at, \"provides\".updated_at, \"provides\".created_at, \"a\".\"peer_state_id\""),
 		qm.From("\"provides\""),
 		qm.InnerJoin("\"provides_x_peer_states\" as \"a\" on \"provides\".\"id\" = \"a\".\"provide_id\""),
 		qm.WhereIn("\"a\".\"peer_state_id\" in ?", args...),
@@ -736,7 +736,7 @@ func (peerStateL) LoadProvides(ctx context.Context, e boil.ContextExecutor, sing
 		one := new(Provide)
 		var localJoinCol int
 
-		err = results.Scan(&one.ID, &one.ProvideType, &one.ProviderID, &one.ContentID, &one.Distance, &one.InitialRoutingTableID, &one.FinalRoutingTableID, &one.StartedAt, &one.EndedAt, &one.Error, &one.DoneAt, &one.UpdatedAt, &one.CreatedAt, &localJoinCol)
+		err = results.Scan(&one.ID, &one.MeasurementID, &one.ProvideType, &one.ProviderID, &one.ContentID, &one.Distance, &one.InitialRoutingTableID, &one.FinalRoutingTableID, &one.StartedAt, &one.EndedAt, &one.Error, &one.DoneAt, &one.UpdatedAt, &one.CreatedAt, &localJoinCol)
 		if err != nil {
 			return errors.Wrap(err, "failed to scan eager loaded results for provides")
 		}

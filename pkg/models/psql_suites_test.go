@@ -22,6 +22,8 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("IPAddresses", testIPAddressesUpsert)
 
+	t.Run("Measurements", testMeasurementsUpsert)
+
 	t.Run("MultiAddresses", testMultiAddressesUpsert)
 
 	t.Run("PeerLogs", testPeerLogsUpsert)
@@ -29,8 +31,6 @@ func TestUpsert(t *testing.T) {
 	t.Run("PeerStates", testPeerStatesUpsert)
 
 	t.Run("Peers", testPeersUpsert)
-
-	t.Run("ProvideMeasurements", testProvideMeasurementsUpsert)
 
 	t.Run("ProviderPeers", testProviderPeersUpsert)
 

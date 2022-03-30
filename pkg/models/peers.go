@@ -113,74 +113,74 @@ var PeerWhere = struct {
 
 // PeerRels is where relationship names are stored.
 var PeerRels = struct {
-	LocalAddProviderRPCS    string
-	RemoteAddProviderRPCS   string
-	CloserPeers             string
-	LocalConnections        string
-	RemoteConnections       string
-	LocalDials              string
-	RemoteDials             string
-	LocalFindNodesRPCS      string
-	RemoteFindNodesRPCS     string
-	LocalGetProvidersRPCS   string
-	RemoteGetProvidersRPCS  string
-	Hosts                   string
-	PeerLogs                string
-	PeerStates              string
-	ReferrerPeerStates      string
-	HostProvideMeasurements string
-	ProviderProviderPeers   string
-	ProviderProvides        string
-	RetrieverRetrievals     string
-	RoutingTableEntries     string
-	RoutingTableSnapshots   string
+	LocalAddProviderRPCS   string
+	RemoteAddProviderRPCS  string
+	CloserPeers            string
+	LocalConnections       string
+	RemoteConnections      string
+	LocalDials             string
+	RemoteDials            string
+	LocalFindNodesRPCS     string
+	RemoteFindNodesRPCS    string
+	LocalGetProvidersRPCS  string
+	RemoteGetProvidersRPCS string
+	Hosts                  string
+	HostMeasurements       string
+	PeerLogs               string
+	PeerStates             string
+	ReferrerPeerStates     string
+	ProviderProviderPeers  string
+	ProviderProvides       string
+	RetrieverRetrievals    string
+	RoutingTableEntries    string
+	RoutingTableSnapshots  string
 }{
-	LocalAddProviderRPCS:    "LocalAddProviderRPCS",
-	RemoteAddProviderRPCS:   "RemoteAddProviderRPCS",
-	CloserPeers:             "CloserPeers",
-	LocalConnections:        "LocalConnections",
-	RemoteConnections:       "RemoteConnections",
-	LocalDials:              "LocalDials",
-	RemoteDials:             "RemoteDials",
-	LocalFindNodesRPCS:      "LocalFindNodesRPCS",
-	RemoteFindNodesRPCS:     "RemoteFindNodesRPCS",
-	LocalGetProvidersRPCS:   "LocalGetProvidersRPCS",
-	RemoteGetProvidersRPCS:  "RemoteGetProvidersRPCS",
-	Hosts:                   "Hosts",
-	PeerLogs:                "PeerLogs",
-	PeerStates:              "PeerStates",
-	ReferrerPeerStates:      "ReferrerPeerStates",
-	HostProvideMeasurements: "HostProvideMeasurements",
-	ProviderProviderPeers:   "ProviderProviderPeers",
-	ProviderProvides:        "ProviderProvides",
-	RetrieverRetrievals:     "RetrieverRetrievals",
-	RoutingTableEntries:     "RoutingTableEntries",
-	RoutingTableSnapshots:   "RoutingTableSnapshots",
+	LocalAddProviderRPCS:   "LocalAddProviderRPCS",
+	RemoteAddProviderRPCS:  "RemoteAddProviderRPCS",
+	CloserPeers:            "CloserPeers",
+	LocalConnections:       "LocalConnections",
+	RemoteConnections:      "RemoteConnections",
+	LocalDials:             "LocalDials",
+	RemoteDials:            "RemoteDials",
+	LocalFindNodesRPCS:     "LocalFindNodesRPCS",
+	RemoteFindNodesRPCS:    "RemoteFindNodesRPCS",
+	LocalGetProvidersRPCS:  "LocalGetProvidersRPCS",
+	RemoteGetProvidersRPCS: "RemoteGetProvidersRPCS",
+	Hosts:                  "Hosts",
+	HostMeasurements:       "HostMeasurements",
+	PeerLogs:               "PeerLogs",
+	PeerStates:             "PeerStates",
+	ReferrerPeerStates:     "ReferrerPeerStates",
+	ProviderProviderPeers:  "ProviderProviderPeers",
+	ProviderProvides:       "ProviderProvides",
+	RetrieverRetrievals:    "RetrieverRetrievals",
+	RoutingTableEntries:    "RoutingTableEntries",
+	RoutingTableSnapshots:  "RoutingTableSnapshots",
 }
 
 // peerR is where relationships are stored.
 type peerR struct {
-	LocalAddProviderRPCS    AddProviderRPCSlice       `boil:"LocalAddProviderRPCS" json:"LocalAddProviderRPCS" toml:"LocalAddProviderRPCS" yaml:"LocalAddProviderRPCS"`
-	RemoteAddProviderRPCS   AddProviderRPCSlice       `boil:"RemoteAddProviderRPCS" json:"RemoteAddProviderRPCS" toml:"RemoteAddProviderRPCS" yaml:"RemoteAddProviderRPCS"`
-	CloserPeers             CloserPeerSlice           `boil:"CloserPeers" json:"CloserPeers" toml:"CloserPeers" yaml:"CloserPeers"`
-	LocalConnections        ConnectionSlice           `boil:"LocalConnections" json:"LocalConnections" toml:"LocalConnections" yaml:"LocalConnections"`
-	RemoteConnections       ConnectionSlice           `boil:"RemoteConnections" json:"RemoteConnections" toml:"RemoteConnections" yaml:"RemoteConnections"`
-	LocalDials              DialSlice                 `boil:"LocalDials" json:"LocalDials" toml:"LocalDials" yaml:"LocalDials"`
-	RemoteDials             DialSlice                 `boil:"RemoteDials" json:"RemoteDials" toml:"RemoteDials" yaml:"RemoteDials"`
-	LocalFindNodesRPCS      FindNodesRPCSlice         `boil:"LocalFindNodesRPCS" json:"LocalFindNodesRPCS" toml:"LocalFindNodesRPCS" yaml:"LocalFindNodesRPCS"`
-	RemoteFindNodesRPCS     FindNodesRPCSlice         `boil:"RemoteFindNodesRPCS" json:"RemoteFindNodesRPCS" toml:"RemoteFindNodesRPCS" yaml:"RemoteFindNodesRPCS"`
-	LocalGetProvidersRPCS   GetProvidersRPCSlice      `boil:"LocalGetProvidersRPCS" json:"LocalGetProvidersRPCS" toml:"LocalGetProvidersRPCS" yaml:"LocalGetProvidersRPCS"`
-	RemoteGetProvidersRPCS  GetProvidersRPCSlice      `boil:"RemoteGetProvidersRPCS" json:"RemoteGetProvidersRPCS" toml:"RemoteGetProvidersRPCS" yaml:"RemoteGetProvidersRPCS"`
-	Hosts                   HostSlice                 `boil:"Hosts" json:"Hosts" toml:"Hosts" yaml:"Hosts"`
-	PeerLogs                PeerLogSlice              `boil:"PeerLogs" json:"PeerLogs" toml:"PeerLogs" yaml:"PeerLogs"`
-	PeerStates              PeerStateSlice            `boil:"PeerStates" json:"PeerStates" toml:"PeerStates" yaml:"PeerStates"`
-	ReferrerPeerStates      PeerStateSlice            `boil:"ReferrerPeerStates" json:"ReferrerPeerStates" toml:"ReferrerPeerStates" yaml:"ReferrerPeerStates"`
-	HostProvideMeasurements ProvideMeasurementSlice   `boil:"HostProvideMeasurements" json:"HostProvideMeasurements" toml:"HostProvideMeasurements" yaml:"HostProvideMeasurements"`
-	ProviderProviderPeers   ProviderPeerSlice         `boil:"ProviderProviderPeers" json:"ProviderProviderPeers" toml:"ProviderProviderPeers" yaml:"ProviderProviderPeers"`
-	ProviderProvides        ProvideSlice              `boil:"ProviderProvides" json:"ProviderProvides" toml:"ProviderProvides" yaml:"ProviderProvides"`
-	RetrieverRetrievals     RetrievalSlice            `boil:"RetrieverRetrievals" json:"RetrieverRetrievals" toml:"RetrieverRetrievals" yaml:"RetrieverRetrievals"`
-	RoutingTableEntries     RoutingTableEntrySlice    `boil:"RoutingTableEntries" json:"RoutingTableEntries" toml:"RoutingTableEntries" yaml:"RoutingTableEntries"`
-	RoutingTableSnapshots   RoutingTableSnapshotSlice `boil:"RoutingTableSnapshots" json:"RoutingTableSnapshots" toml:"RoutingTableSnapshots" yaml:"RoutingTableSnapshots"`
+	LocalAddProviderRPCS   AddProviderRPCSlice       `boil:"LocalAddProviderRPCS" json:"LocalAddProviderRPCS" toml:"LocalAddProviderRPCS" yaml:"LocalAddProviderRPCS"`
+	RemoteAddProviderRPCS  AddProviderRPCSlice       `boil:"RemoteAddProviderRPCS" json:"RemoteAddProviderRPCS" toml:"RemoteAddProviderRPCS" yaml:"RemoteAddProviderRPCS"`
+	CloserPeers            CloserPeerSlice           `boil:"CloserPeers" json:"CloserPeers" toml:"CloserPeers" yaml:"CloserPeers"`
+	LocalConnections       ConnectionSlice           `boil:"LocalConnections" json:"LocalConnections" toml:"LocalConnections" yaml:"LocalConnections"`
+	RemoteConnections      ConnectionSlice           `boil:"RemoteConnections" json:"RemoteConnections" toml:"RemoteConnections" yaml:"RemoteConnections"`
+	LocalDials             DialSlice                 `boil:"LocalDials" json:"LocalDials" toml:"LocalDials" yaml:"LocalDials"`
+	RemoteDials            DialSlice                 `boil:"RemoteDials" json:"RemoteDials" toml:"RemoteDials" yaml:"RemoteDials"`
+	LocalFindNodesRPCS     FindNodesRPCSlice         `boil:"LocalFindNodesRPCS" json:"LocalFindNodesRPCS" toml:"LocalFindNodesRPCS" yaml:"LocalFindNodesRPCS"`
+	RemoteFindNodesRPCS    FindNodesRPCSlice         `boil:"RemoteFindNodesRPCS" json:"RemoteFindNodesRPCS" toml:"RemoteFindNodesRPCS" yaml:"RemoteFindNodesRPCS"`
+	LocalGetProvidersRPCS  GetProvidersRPCSlice      `boil:"LocalGetProvidersRPCS" json:"LocalGetProvidersRPCS" toml:"LocalGetProvidersRPCS" yaml:"LocalGetProvidersRPCS"`
+	RemoteGetProvidersRPCS GetProvidersRPCSlice      `boil:"RemoteGetProvidersRPCS" json:"RemoteGetProvidersRPCS" toml:"RemoteGetProvidersRPCS" yaml:"RemoteGetProvidersRPCS"`
+	Hosts                  HostSlice                 `boil:"Hosts" json:"Hosts" toml:"Hosts" yaml:"Hosts"`
+	HostMeasurements       MeasurementSlice          `boil:"HostMeasurements" json:"HostMeasurements" toml:"HostMeasurements" yaml:"HostMeasurements"`
+	PeerLogs               PeerLogSlice              `boil:"PeerLogs" json:"PeerLogs" toml:"PeerLogs" yaml:"PeerLogs"`
+	PeerStates             PeerStateSlice            `boil:"PeerStates" json:"PeerStates" toml:"PeerStates" yaml:"PeerStates"`
+	ReferrerPeerStates     PeerStateSlice            `boil:"ReferrerPeerStates" json:"ReferrerPeerStates" toml:"ReferrerPeerStates" yaml:"ReferrerPeerStates"`
+	ProviderProviderPeers  ProviderPeerSlice         `boil:"ProviderProviderPeers" json:"ProviderProviderPeers" toml:"ProviderProviderPeers" yaml:"ProviderProviderPeers"`
+	ProviderProvides       ProvideSlice              `boil:"ProviderProvides" json:"ProviderProvides" toml:"ProviderProvides" yaml:"ProviderProvides"`
+	RetrieverRetrievals    RetrievalSlice            `boil:"RetrieverRetrievals" json:"RetrieverRetrievals" toml:"RetrieverRetrievals" yaml:"RetrieverRetrievals"`
+	RoutingTableEntries    RoutingTableEntrySlice    `boil:"RoutingTableEntries" json:"RoutingTableEntries" toml:"RoutingTableEntries" yaml:"RoutingTableEntries"`
+	RoutingTableSnapshots  RoutingTableSnapshotSlice `boil:"RoutingTableSnapshots" json:"RoutingTableSnapshots" toml:"RoutingTableSnapshots" yaml:"RoutingTableSnapshots"`
 }
 
 // NewStruct creates a new relationship struct
@@ -725,6 +725,27 @@ func (o *Peer) Hosts(mods ...qm.QueryMod) hostQuery {
 	return query
 }
 
+// HostMeasurements retrieves all the measurement's Measurements with an executor via host_id column.
+func (o *Peer) HostMeasurements(mods ...qm.QueryMod) measurementQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"measurements\".\"host_id\"=?", o.ID),
+	)
+
+	query := Measurements(queryMods...)
+	queries.SetFrom(query.Query, "\"measurements\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"measurements\".*"})
+	}
+
+	return query
+}
+
 // PeerLogs retrieves all the peer_log's PeerLogs with an executor.
 func (o *Peer) PeerLogs(mods ...qm.QueryMod) peerLogQuery {
 	var queryMods []qm.QueryMod
@@ -783,27 +804,6 @@ func (o *Peer) ReferrerPeerStates(mods ...qm.QueryMod) peerStateQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"peer_states\".*"})
-	}
-
-	return query
-}
-
-// HostProvideMeasurements retrieves all the provide_measurement's ProvideMeasurements with an executor via host_id column.
-func (o *Peer) HostProvideMeasurements(mods ...qm.QueryMod) provideMeasurementQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"provide_measurements\".\"host_id\"=?", o.ID),
-	)
-
-	query := ProvideMeasurements(queryMods...)
-	queries.SetFrom(query.Query, "\"provide_measurements\"")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"provide_measurements\".*"})
 	}
 
 	return query
@@ -2090,6 +2090,104 @@ func (peerL) LoadHosts(ctx context.Context, e boil.ContextExecutor, singular boo
 	return nil
 }
 
+// LoadHostMeasurements allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (peerL) LoadHostMeasurements(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
+	var slice []*Peer
+	var object *Peer
+
+	if singular {
+		object = maybePeer.(*Peer)
+	} else {
+		slice = *maybePeer.(*[]*Peer)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &peerR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &peerR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`measurements`),
+		qm.WhereIn(`measurements.host_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load measurements")
+	}
+
+	var resultSlice []*Measurement
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice measurements")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on measurements")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for measurements")
+	}
+
+	if len(measurementAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.HostMeasurements = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &measurementR{}
+			}
+			foreign.R.Host = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.HostID {
+				local.R.HostMeasurements = append(local.R.HostMeasurements, foreign)
+				if foreign.R == nil {
+					foreign.R = &measurementR{}
+				}
+				foreign.R.Host = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // LoadPeerLogs allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (peerL) LoadPeerLogs(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
@@ -2376,104 +2474,6 @@ func (peerL) LoadReferrerPeerStates(ctx context.Context, e boil.ContextExecutor,
 					foreign.R = &peerStateR{}
 				}
 				foreign.R.Referrer = local
-				break
-			}
-		}
-	}
-
-	return nil
-}
-
-// LoadHostProvideMeasurements allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (peerL) LoadHostProvideMeasurements(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
-	var slice []*Peer
-	var object *Peer
-
-	if singular {
-		object = maybePeer.(*Peer)
-	} else {
-		slice = *maybePeer.(*[]*Peer)
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &peerR{}
-		}
-		args = append(args, object.ID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &peerR{}
-			}
-
-			for _, a := range args {
-				if a == obj.ID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`provide_measurements`),
-		qm.WhereIn(`provide_measurements.host_id in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load provide_measurements")
-	}
-
-	var resultSlice []*ProvideMeasurement
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice provide_measurements")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on provide_measurements")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for provide_measurements")
-	}
-
-	if len(provideMeasurementAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.HostProvideMeasurements = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &provideMeasurementR{}
-			}
-			foreign.R.Host = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ID == foreign.HostID {
-				local.R.HostProvideMeasurements = append(local.R.HostProvideMeasurements, foreign)
-				if foreign.R == nil {
-					foreign.R = &provideMeasurementR{}
-				}
-				foreign.R.Host = local
 				break
 			}
 		}
@@ -3608,6 +3608,59 @@ func (o *Peer) AddHosts(ctx context.Context, exec boil.ContextExecutor, insert b
 	return nil
 }
 
+// AddHostMeasurements adds the given related objects to the existing relationships
+// of the peer, optionally inserting them as new records.
+// Appends related to o.R.HostMeasurements.
+// Sets related.R.Host appropriately.
+func (o *Peer) AddHostMeasurements(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Measurement) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.HostID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"measurements\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"host_id"}),
+				strmangle.WhereClause("\"", "\"", 2, measurementPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.HostID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &peerR{
+			HostMeasurements: related,
+		}
+	} else {
+		o.R.HostMeasurements = append(o.R.HostMeasurements, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &measurementR{
+				Host: o,
+			}
+		} else {
+			rel.R.Host = o
+		}
+	}
+	return nil
+}
+
 // AddPeerLogs adds the given related objects to the existing relationships
 // of the peer, optionally inserting them as new records.
 // Appends related to o.R.PeerLogs.
@@ -3762,59 +3815,6 @@ func (o *Peer) AddReferrerPeerStates(ctx context.Context, exec boil.ContextExecu
 			}
 		} else {
 			rel.R.Referrer = o
-		}
-	}
-	return nil
-}
-
-// AddHostProvideMeasurements adds the given related objects to the existing relationships
-// of the peer, optionally inserting them as new records.
-// Appends related to o.R.HostProvideMeasurements.
-// Sets related.R.Host appropriately.
-func (o *Peer) AddHostProvideMeasurements(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*ProvideMeasurement) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.HostID = o.ID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"provide_measurements\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"host_id"}),
-				strmangle.WhereClause("\"", "\"", 2, provideMeasurementPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ID, rel.ID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.HostID = o.ID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &peerR{
-			HostProvideMeasurements: related,
-		}
-	} else {
-		o.R.HostProvideMeasurements = append(o.R.HostProvideMeasurements, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &provideMeasurementR{
-				Host: o,
-			}
-		} else {
-			rel.R.Host = o
 		}
 	}
 	return nil

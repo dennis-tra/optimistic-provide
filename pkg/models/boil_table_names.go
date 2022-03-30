@@ -12,12 +12,12 @@ var TableNames = struct {
 	GetProvidersRPCS            string
 	Hosts                       string
 	IPAddresses                 string
+	Measurements                string
 	MultiAddresses              string
 	MultiAddressesXIPAddresses  string
 	PeerLogs                    string
 	PeerStates                  string
 	Peers                       string
-	ProvideMeasurements         string
 	ProviderPeers               string
 	Provides                    string
 	ProvidesXAddProviderRPCS    string
@@ -41,12 +41,12 @@ var TableNames = struct {
 	GetProvidersRPCS:            "get_providers_rpcs",
 	Hosts:                       "hosts",
 	IPAddresses:                 "ip_addresses",
+	Measurements:                "measurements",
 	MultiAddresses:              "multi_addresses",
 	MultiAddressesXIPAddresses:  "multi_addresses_x_ip_addresses",
 	PeerLogs:                    "peer_logs",
 	PeerStates:                  "peer_states",
 	Peers:                       "peers",
-	ProvideMeasurements:         "provide_measurements",
 	ProviderPeers:               "provider_peers",
 	Provides:                    "provides",
 	ProvidesXAddProviderRPCS:    "provides_x_add_provider_rpcs",

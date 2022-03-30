@@ -25,6 +25,7 @@ import (
 // Provide is an object representing the database table.
 type Provide struct {
 	ID                    int         `boil:"id" json:"id" toml:"id" yaml:"id"`
+	MeasurementID         null.Int    `boil:"measurement_id" json:"measurement_id,omitempty" toml:"measurement_id" yaml:"measurement_id,omitempty"`
 	ProvideType           string      `boil:"provide_type" json:"provide_type" toml:"provide_type" yaml:"provide_type"`
 	ProviderID            int         `boil:"provider_id" json:"provider_id" toml:"provider_id" yaml:"provider_id"`
 	ContentID             string      `boil:"content_id" json:"content_id" toml:"content_id" yaml:"content_id"`
@@ -44,6 +45,7 @@ type Provide struct {
 
 var ProvideColumns = struct {
 	ID                    string
+	MeasurementID         string
 	ProvideType           string
 	ProviderID            string
 	ContentID             string
@@ -58,6 +60,7 @@ var ProvideColumns = struct {
 	CreatedAt             string
 }{
 	ID:                    "id",
+	MeasurementID:         "measurement_id",
 	ProvideType:           "provide_type",
 	ProviderID:            "provider_id",
 	ContentID:             "content_id",
@@ -74,6 +77,7 @@ var ProvideColumns = struct {
 
 var ProvideTableColumns = struct {
 	ID                    string
+	MeasurementID         string
 	ProvideType           string
 	ProviderID            string
 	ContentID             string
@@ -88,6 +92,7 @@ var ProvideTableColumns = struct {
 	CreatedAt             string
 }{
 	ID:                    "provides.id",
+	MeasurementID:         "provides.measurement_id",
 	ProvideType:           "provides.provide_type",
 	ProviderID:            "provides.provider_id",
 	ContentID:             "provides.content_id",
@@ -106,6 +111,7 @@ var ProvideTableColumns = struct {
 
 var ProvideWhere = struct {
 	ID                    whereHelperint
+	MeasurementID         whereHelpernull_Int
 	ProvideType           whereHelperstring
 	ProviderID            whereHelperint
 	ContentID             whereHelperstring
@@ -120,6 +126,7 @@ var ProvideWhere = struct {
 	CreatedAt             whereHelpertime_Time
 }{
 	ID:                    whereHelperint{field: "\"provides\".\"id\""},
+	MeasurementID:         whereHelpernull_Int{field: "\"provides\".\"measurement_id\""},
 	ProvideType:           whereHelperstring{field: "\"provides\".\"provide_type\""},
 	ProviderID:            whereHelperint{field: "\"provides\".\"provider_id\""},
 	ContentID:             whereHelperstring{field: "\"provides\".\"content_id\""},
@@ -138,6 +145,7 @@ var ProvideWhere = struct {
 var ProvideRels = struct {
 	FinalRoutingTable   string
 	InitialRoutingTable string
+	Measurement         string
 	Provider            string
 	AddProviderRPCS     string
 	Connections         string
@@ -147,6 +155,7 @@ var ProvideRels = struct {
 }{
 	FinalRoutingTable:   "FinalRoutingTable",
 	InitialRoutingTable: "InitialRoutingTable",
+	Measurement:         "Measurement",
 	Provider:            "Provider",
 	AddProviderRPCS:     "AddProviderRPCS",
 	Connections:         "Connections",
@@ -159,6 +168,7 @@ var ProvideRels = struct {
 type provideR struct {
 	FinalRoutingTable   *RoutingTableSnapshot `boil:"FinalRoutingTable" json:"FinalRoutingTable" toml:"FinalRoutingTable" yaml:"FinalRoutingTable"`
 	InitialRoutingTable *RoutingTableSnapshot `boil:"InitialRoutingTable" json:"InitialRoutingTable" toml:"InitialRoutingTable" yaml:"InitialRoutingTable"`
+	Measurement         *Measurement          `boil:"Measurement" json:"Measurement" toml:"Measurement" yaml:"Measurement"`
 	Provider            *Peer                 `boil:"Provider" json:"Provider" toml:"Provider" yaml:"Provider"`
 	AddProviderRPCS     AddProviderRPCSlice   `boil:"AddProviderRPCS" json:"AddProviderRPCS" toml:"AddProviderRPCS" yaml:"AddProviderRPCS"`
 	Connections         ConnectionSlice       `boil:"Connections" json:"Connections" toml:"Connections" yaml:"Connections"`
@@ -176,8 +186,8 @@ func (*provideR) NewStruct() *provideR {
 type provideL struct{}
 
 var (
-	provideAllColumns            = []string{"id", "provide_type", "provider_id", "content_id", "distance", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
-	provideColumnsWithoutDefault = []string{"provide_type", "provider_id", "content_id", "distance", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
+	provideAllColumns            = []string{"id", "measurement_id", "provide_type", "provider_id", "content_id", "distance", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
+	provideColumnsWithoutDefault = []string{"measurement_id", "provide_type", "provider_id", "content_id", "distance", "initial_routing_table_id", "final_routing_table_id", "started_at", "ended_at", "error", "done_at", "updated_at", "created_at"}
 	provideColumnsWithDefault    = []string{"id"}
 	providePrimaryKeyColumns     = []string{"id"}
 )
@@ -481,6 +491,20 @@ func (o *Provide) InitialRoutingTable(mods ...qm.QueryMod) routingTableSnapshotQ
 
 	query := RoutingTableSnapshots(queryMods...)
 	queries.SetFrom(query.Query, "\"routing_table_snapshots\"")
+
+	return query
+}
+
+// Measurement pointed to by the foreign key.
+func (o *Provide) Measurement(mods ...qm.QueryMod) measurementQuery {
+	queryMods := []qm.QueryMod{
+		qm.Where("\"id\" = ?", o.MeasurementID),
+	}
+
+	queryMods = append(queryMods, mods...)
+
+	query := Measurements(queryMods...)
+	queries.SetFrom(query.Query, "\"measurements\"")
 
 	return query
 }
@@ -813,6 +837,114 @@ func (provideL) LoadInitialRoutingTable(ctx context.Context, e boil.ContextExecu
 					foreign.R = &routingTableSnapshotR{}
 				}
 				foreign.R.InitialRoutingTableProvides = append(foreign.R.InitialRoutingTableProvides, local)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadMeasurement allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for an N-1 relationship.
+func (provideL) LoadMeasurement(ctx context.Context, e boil.ContextExecutor, singular bool, maybeProvide interface{}, mods queries.Applicator) error {
+	var slice []*Provide
+	var object *Provide
+
+	if singular {
+		object = maybeProvide.(*Provide)
+	} else {
+		slice = *maybeProvide.(*[]*Provide)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &provideR{}
+		}
+		if !queries.IsNil(object.MeasurementID) {
+			args = append(args, object.MeasurementID)
+		}
+
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &provideR{}
+			}
+
+			for _, a := range args {
+				if queries.Equal(a, obj.MeasurementID) {
+					continue Outer
+				}
+			}
+
+			if !queries.IsNil(obj.MeasurementID) {
+				args = append(args, obj.MeasurementID)
+			}
+
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`measurements`),
+		qm.WhereIn(`measurements.id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load Measurement")
+	}
+
+	var resultSlice []*Measurement
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice Measurement")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results of eager load for measurements")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for measurements")
+	}
+
+	if len(provideAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+
+	if len(resultSlice) == 0 {
+		return nil
+	}
+
+	if singular {
+		foreign := resultSlice[0]
+		object.R.Measurement = foreign
+		if foreign.R == nil {
+			foreign.R = &measurementR{}
+		}
+		foreign.R.Provides = append(foreign.R.Provides, object)
+		return nil
+	}
+
+	for _, local := range slice {
+		for _, foreign := range resultSlice {
+			if queries.Equal(local.MeasurementID, foreign.ID) {
+				local.R.Measurement = foreign
+				if foreign.R == nil {
+					foreign.R = &measurementR{}
+				}
+				foreign.R.Provides = append(foreign.R.Provides, local)
 				break
 			}
 		}
@@ -1624,6 +1756,86 @@ func (o *Provide) SetInitialRoutingTable(ctx context.Context, exec boil.ContextE
 		related.R.InitialRoutingTableProvides = append(related.R.InitialRoutingTableProvides, o)
 	}
 
+	return nil
+}
+
+// SetMeasurement of the provide to the related item.
+// Sets o.R.Measurement to related.
+// Adds o to related.R.Provides.
+func (o *Provide) SetMeasurement(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Measurement) error {
+	var err error
+	if insert {
+		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
+			return errors.Wrap(err, "failed to insert into foreign table")
+		}
+	}
+
+	updateQuery := fmt.Sprintf(
+		"UPDATE \"provides\" SET %s WHERE %s",
+		strmangle.SetParamNames("\"", "\"", 1, []string{"measurement_id"}),
+		strmangle.WhereClause("\"", "\"", 2, providePrimaryKeyColumns),
+	)
+	values := []interface{}{related.ID, o.ID}
+
+	if boil.IsDebug(ctx) {
+		writer := boil.DebugWriterFrom(ctx)
+		fmt.Fprintln(writer, updateQuery)
+		fmt.Fprintln(writer, values)
+	}
+	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	queries.Assign(&o.MeasurementID, related.ID)
+	if o.R == nil {
+		o.R = &provideR{
+			Measurement: related,
+		}
+	} else {
+		o.R.Measurement = related
+	}
+
+	if related.R == nil {
+		related.R = &measurementR{
+			Provides: ProvideSlice{o},
+		}
+	} else {
+		related.R.Provides = append(related.R.Provides, o)
+	}
+
+	return nil
+}
+
+// RemoveMeasurement relationship.
+// Sets o.R.Measurement to nil.
+// Removes o from all passed in related items' relationships struct (Optional).
+func (o *Provide) RemoveMeasurement(ctx context.Context, exec boil.ContextExecutor, related *Measurement) error {
+	var err error
+
+	queries.SetScanner(&o.MeasurementID, nil)
+	if _, err = o.Update(ctx, exec, boil.Whitelist("measurement_id")); err != nil {
+		return errors.Wrap(err, "failed to update local table")
+	}
+
+	if o.R != nil {
+		o.R.Measurement = nil
+	}
+	if related == nil || related.R == nil {
+		return nil
+	}
+
+	for i, ri := range related.R.Provides {
+		if queries.Equal(o.MeasurementID, ri.MeasurementID) {
+			continue
+		}
+
+		ln := len(related.R.Provides)
+		if ln > 1 && i < ln-1 {
+			related.R.Provides[i] = related.R.Provides[ln-1]
+		}
+		related.R.Provides = related.R.Provides[:ln-1]
+		break
+	}
 	return nil
 }
 

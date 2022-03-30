@@ -36,7 +36,7 @@ database:
 	docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_USER=optprov -e POSTGRES_DB=optprov_dev postgres:13
 
 migrate-up:
-	migrate -database 'postgres://optprov:password@localhost:5432/optprov?sslmode=disable' -path migrations up
+	migrate -database 'postgres://optprov:password@localhost:5432/optprov_dev?sslmode=disable' -path migrations up
 
 migrate-down:
-	migrate -database 'postgres://optprov:password@localhost:5432/optprov?sslmode=disable' -path migrations down
+	migrate -database 'postgres://optprov:password@localhost:5432/optprov_dev?sslmode=disable' -path migrations down

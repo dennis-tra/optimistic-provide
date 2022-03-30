@@ -1,4 +1,5 @@
 BEGIN;
+
 CREATE TABLE peer_logs
 (
     id         INT GENERATED ALWAYS AS IDENTITY,
