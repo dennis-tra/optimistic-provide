@@ -12,8 +12,8 @@ CREATE TABLE routing_table_entries
     last_successful_outbound_query_at TIMESTAMPTZ NOT NULL,
     -- AddedAt is the time this peer was added to the routing table.
     added_at                          TIMESTAMPTZ NOT NULL,
-    -- connected_at is the time a connection to this peer was established
-    connected_at                      TIMESTAMPTZ,
+    -- connected_since is the time a connection to this peer was established
+    connected_since                   TIMESTAMPTZ,
 
     CONSTRAINT fk_routing_table_entries_routing_table_snapshot_id FOREIGN KEY (routing_table_snapshot_id) REFERENCES routing_table_snapshots (id),
     CONSTRAINT fk_routing_table_entries_peer_id FOREIGN KEY (peer_id) REFERENCES peers (id),

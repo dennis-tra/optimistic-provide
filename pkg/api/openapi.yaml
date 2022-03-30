@@ -1,0 +1,1171 @@
+openapi: 3.0.0
+info:
+  title: OptProv API
+  description: |
+    This is the REST API to interact and control with libp2p hosts. All responses not in the HTTP status code range
+    [200,300) return the error object below.
+  version: "1.0"
+servers:
+  - url: http://localhost:7000
+paths:
+  /hosts:
+    get:
+      operationId: getHosts
+      tags:
+        - Hosts
+      summary: Lists all running libp2p hosts.
+      description: Returns a list of all running libp2p hosts ordered by their creation date ascending.
+      responses:
+        '200':
+          description: A list of all running libp2p hosts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Host'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      operationId: createHost
+      tags:
+        - Hosts
+      summary: Creates a new libp2p host.
+      description: Starts a new libp2p host with the provided parameters.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateHostRequest'
+      responses:
+        '201':
+          description: The newly created libp2p host.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Host'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}:
+    get:
+      operationId: getHost
+      tags:
+        - Hosts
+      summary: Returns information about a single running host.
+      description: Returns a single running host.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The requested host.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Host'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      operationId: deleteHost
+      tags:
+        - Hosts
+      summary: Stops a running host
+      description: Stops a running host and aborts all in-progress provide, refresh, etc. operations.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      responses:
+        '201':
+          description: The host was stopped.
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}/bootstrap:
+    post:
+      operationId: bootstrapHost
+      tags:
+        - Hosts
+      summary: Connect to bootstrap nodes.
+      description: Instructs the given host to connect to the canonical bootstrap peers.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The host was bootstrapped.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Host'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}/routing-tables:
+    get:
+      operationId: getRoutingTables
+      tags:
+        - Routing Table
+      summary: Lists all saved routing tables.
+      description: Lists all saved routing tables for a specific host.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The routing table.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoutingTable'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      operationId: routingTableCreate
+      tags:
+        - Routing Table
+      summary: Saves a current routing table snapshot of the given host.
+      description: Saves a current routing table snapshot of the given host.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The routing table.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingTable'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}/routing-table:
+    get:
+      operationId: getCurrentRoutingTable
+      tags:
+        - Routing Table
+      summary: Returns the current routing table.
+      description: Returns the current routing table with its entries for the given peer.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The routing table.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingTablePeers'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}/routing-tables/{routingTableId}:
+    get:
+      operationId: getRoutingTable
+      tags:
+        - Routing Table
+      summary: Returns a single routing table.
+      description: Returns a single routing table with its entries
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+        - name: routingTableId
+          in: path
+          description: The routing table identifier.
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The routing table.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RoutingTableDetails'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}/routing-tables/listen:
+    get:
+      operationId: listenRoutingTable
+      tags:
+        - Routing Table
+      summary: Subscribe to real time updates of the routing table.
+      description: Returns routing table updates as they occur for the given host. Prepend is a full update
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The routing table updates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoutingTableUpdate'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}/provides:
+    post:
+      operationId: startProvide
+      tags:
+        - Provides
+      summary: Starts providing random content.
+      description: Instructs the given host to generate random content and announce its CID to the network.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProvideRequest'
+      responses:
+        '200':
+          description: The provide instance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Provide'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      operationId: listProvides
+      tags:
+        - Provides
+      summary: Get a list of provide operations.
+      description: Get a list of provide operations for the given host
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The provide instance.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Provide'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}/provides/{provideId}:
+    get:
+      operationId: getProvide
+      tags:
+        - Provides
+      summary: Get details of a single provide operations.
+      description: Get details of a single provide operations.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+        - name: provideId
+          in: path
+          description: The provide operation identifier.
+          required: true
+          example: 2
+          schema:
+            type: number
+      responses:
+        '200':
+          description: The provide instance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvideDetails'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}/provides/{provideId}/graph:
+    get:
+      operationId: graphProvide
+      tags:
+        - Provides
+      summary: Returns graph data.
+      description: Returns data to graph this provide operation
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+        - name: provideId
+          in: path
+          description: The provide operation identifier.
+          required: true
+          example: 1
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: The graph data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvideGraph'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /peers/{peerId}:
+    get:
+      operationId: getPeer
+      tags:
+        - Peers
+      summary: Returns information about a single peer.
+      description: Returns information about a single peer.
+      parameters:
+        - name: peerId
+          in: path
+          description: The peer identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      responses:
+        '200':
+          description: The requested host.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Peer'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /hosts/{hostId}/retrievals:
+    post:
+      operationId: startRetrieval
+      tags:
+        - Retrievals
+      summary: Starts retrieving the given content ID.
+      description: Instructs the given host to generate random content and announce its CID to the network.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RetrievalRequest'
+      responses:
+        '200':
+          description: The retrieval instance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Retrieval'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /hosts/{hostId}/rpcs/getProviders:
+    post:
+      operationId: rpcGetProviders
+      tags:
+        - RPCs
+      summary: Returns the result of the GetProviders RPCs against the given peer.
+      description: Returns the GetProviders content.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetProvidersRequest'
+      responses:
+        '200':
+          description: The graph data.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetProvidersResponse'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /provide-measurements:
+    post:
+      operationId: createProvideMeasurement
+      tags:
+        - Provide Measurements
+      summary: Starts a new measurement with the provided configuration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProvideMeasurementRequest'
+      responses:
+        '200':
+          description: The measurement instance.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateProvideMeasurementResponse'
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /provide-measurements/{measurementId}/stop:
+    post:
+      operationId: stopProvideMeasurement
+      tags:
+        - Provide Measurements
+      summary: Stops the given measurement.
+      parameters:
+        - name: measurementId
+          in: path
+          description: The measurement DB identifier.
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: The measurement instance was stopped - no content.
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    CreateProvideMeasurementRequest:
+      type: object
+      properties:
+        hostId:
+          type: string
+          description: The host to use for this measurement
+        iterations:
+          type: integer
+          default: 1
+          minimum: 0
+        concurrency:
+          type: integer
+          default: 1
+          minimum: 0
+        provideType:
+          $ref: '#/components/schemas/ProvideType'
+      required:
+        - hostId
+        - iterations
+        - measurementType
+        - provideType
+        - concurrency
+    CreateProviderRecordMeasurementRequest:
+      type: object
+      properties:
+        hostId:
+          type: string
+          description: The host to monitor for this measurement
+        endAt:
+          type: string
+        measurementType:
+          type: string
+        provideType:
+          $ref: '#/components/schemas/ProvideType'
+      required:
+        - hostId
+        - iterations
+        - measurementType
+        - provideType
+    CreateProvideMeasurementResponse:
+      type: object
+      properties:
+        measurementId:
+          type: integer
+        startedAt:
+          type: string
+        endedAt:
+          type: string
+          nullable: true
+        iterations:
+          type: integer
+      required:
+        - measurementId
+        - startedAt
+        - endedAt
+        - iterations
+    AddrInfo:
+      type: object
+      properties:
+        peerID:
+          type: string
+        multiAddresses:
+          type: array
+          items:
+            type: string
+      required:
+        - peerID
+        - multiAddresses
+    GetProvidersRequest:
+      type: object
+      properties:
+        remoteId:
+          description: Peer ID of the remote peer.
+          type: string
+        contentId:
+          description: The CID that should be asked for.
+          type: string
+      required:
+        - remoteId
+        - contentId
+    GetProvidersResponse:
+      type: object
+      properties:
+        providers:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddrInfo'
+        closerPeers:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddrInfo'
+      required:
+        - providers
+        - closerPeers
+    CreateHostRequest:
+      type: object
+      properties:
+        name:
+          description: An arbitrary name for this host.
+          type: string
+      required:
+        - name
+    ErrorCode:
+      type: string
+      enum:
+        - INTERNAL
+        - HOST_NOT_FOUND
+        - MALFORMED_REQUEST
+        - PEER_NOT_FOUND
+        - ROUTING_TABLE_NOT_FOUND
+        - MALFORMED_PEER_ID
+        - SAVING_ROUTING_TABLE
+        - HOST_STOPPED
+    AnyValue:
+      nullable: true
+      description: Can be any value - string, number, boolean, array or object.
+    RoutingTable:
+      type: object
+      properties:
+        id:
+          type: integer
+        hostId:
+          type: string
+        bucketSize:
+          type: integer
+        entryCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-format
+      required:
+        - id
+        - hostId
+        - bucketSize
+        - entryCount
+        - createdAt
+    RoutingTableDetails:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/RoutingTable'
+        - type: object
+          properties:
+            entries:
+              type: array
+              items:
+                $ref: '#/components/schemas/RoutingTableEntry'
+          required:
+            - entries
+    RoutingTableEntry:
+      type: object
+      properties:
+        peerId:
+          type: string
+        bucket:
+          type: integer
+        addedAt:
+          type: string
+          format: date-format
+        connectedSince:
+          type: string
+          nullable: true
+          format: date-format
+        lastUsefulAt:
+          type: string
+          nullable: true
+          format: date-format
+        lastSuccessfulOutboundQueryAt:
+          type: string
+          format: date-format
+      required:
+        - peerId
+        - bucket
+        - addedAt
+        - connectedSince
+        - lastUsefulAt
+        - lastSuccessfulOutboundQueryAt
+    RoutingTableUpdate:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - FULL
+            - PEER_ADDED
+            - PEER_REMOVED
+        update:
+          oneOf:
+            - $ref: '#/components/schemas/RoutingTablePeer'
+            - $ref: '#/components/schemas/RoutingTablePeers'
+            - type: string
+              description: The Peer ID of the removed peer.
+      required:
+        - type
+        - update
+    RoutingTablePeers:
+      type: array
+      items:
+        $ref: '#/components/schemas/RoutingTablePeer'
+    RoutingTablePeer:
+      type: object
+      properties:
+        peerId:
+          type: string
+        agentVersion:
+          type: string
+          nullable: true
+        protocols:
+          type: array
+          items:
+            type: string
+        bucket:
+          type: integer
+        addedAt:
+          type: string
+          format: date-format
+        connectedSince:
+          type: string
+          nullable: true
+          format: date-format
+        lastUsefulAt:
+          type: string
+          nullable: true
+          format: date-format
+        lastSuccessfulOutboundQueryAt:
+          type: string
+          format: date-format
+      required:
+        - peerId
+        - agentVersion
+        - protocols
+        - bucket
+        - addedAt
+        - connectedSince
+        - lastUsefulAt
+        - lastSuccessfulOutboundQueryAt
+    Peer:
+      type: object
+      properties:
+        peerId:
+          type: string
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+        agentVersion:
+          type: string
+          nullable: true
+        protocols:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+          format: date-format
+      required:
+        - peerId
+        - agentVersion
+        - protocols
+        - createdAt
+    Host:
+      type: object
+      properties:
+        hostId:
+          type: string
+        name:
+          type: string
+        startedAt:
+          type: string
+          format: date-format
+          nullable: true
+        createdAt:
+          type: string
+          format: date-format
+        bootstrappedAt:
+          type: string
+          nullable: true
+          format: date-format
+        runningProvidesCount:
+          type: number
+      required:
+        - hostId
+        - name
+        - startedAt
+        - createdAt
+        - bootstrappedAt
+        - runningProvidesCount
+    RetrievalRequest:
+      type: object
+      properties:
+        contentId:
+          type: string
+        count:
+          type: integer
+          description: Number of providers to find until the query stops. 0 indicates that the query will run until it completes.
+      required:
+        - contentId
+        - count
+    Retrieval:
+      type: object
+      properties:
+        retrievalId:
+          type: integer
+        hostId:
+          type: string
+        contentId:
+          type: string
+        initialRoutingTableId:
+          type: integer
+        finalRoutingTableId:
+          type: integer
+          nullable: true
+        startedAt:
+          type: string
+          format: date-format
+        endedAt:
+          type: string
+          nullable: true
+          format: date-format
+        error:
+          type: string
+          nullable: true
+      required:
+        - retrievalId
+        - hostId
+        - contentId
+        - initialRoutingTableId
+        - finalRoutingTableId
+        - startedAt
+        - endedAt
+        - error
+    ProvideType:
+      type: string
+      enum:
+        - SINGLE_QUERY
+        - MULTI_QUERY
+    ProvideRequest:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ProvideType'
+      required:
+        - type
+    Provide:
+      type: object
+      properties:
+        provideId:
+          type: integer
+        hostId:
+          type: string
+        contentId:
+          type: string
+        initialRoutingTableId:
+          type: integer
+        finalRoutingTableId:
+          type: integer
+          nullable: true
+        startedAt:
+          type: string
+          format: date-format
+        endedAt:
+          type: string
+          nullable: true
+          format: date-format
+        error:
+          type: string
+          nullable: true
+      required:
+        - provideId
+        - hostId
+        - contentId
+        - initialRoutingTableId
+        - finalRoutingTableId
+        - startedAt
+        - endedAt
+        - error
+    ProvideDetails:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Provide'
+        - type: object
+          properties:
+            distance:
+              type: string
+              example: 0xdece0cc853fa62e5e653ae02f4d1f85931e38eba8326a707b4c62dfc6336dafa
+            connectionsCount:
+              type: integer
+            dialsCount:
+              type: integer
+            findNodesCount:
+              type: integer
+            addProvidersCount:
+              type: integer
+          required:
+            - distance
+            - connectionsCount
+            - dialsCount
+            - findNodesCount
+            - addProvidersCount
+    AddProvider:
+      type: object
+      properties:
+        id:
+          type: integer
+        remoteId:
+          type: string
+        startedAt:
+          type: string
+          format: date-format
+        endedAt:
+          type: string
+          format: date-format
+        durationInS:
+          type: number
+        distance:
+          type: string
+        error:
+          type: string
+          nullable: true
+      required:
+        - id
+        - remoteId
+        - distance
+        - startedAt
+        - endedAt
+        - durationInS
+        - closerPeersCount
+        - error
+    FindNodeCloserPeer:
+      type: object
+      properties:
+        peerId:
+          type: string
+        distance:
+          type: string
+          description: How far away is this peer from the desired hash.
+        bucket:
+          type: integer
+          description: In which bucket was this peer of the remote peers routing table
+      required:
+        - peerId
+        - distance
+        - bucket
+    FindNode:
+      type: object
+      properties:
+        id:
+          type: integer
+        queryId:
+          type: string
+        remoteId:
+          type: string
+        startedAt:
+          type: string
+          format: date-format
+        endedAt:
+          type: string
+          format: date-format
+        durationInS:
+          type: number
+        closerPeers:
+          type: array
+          items:
+            $ref: "#/components/schemas/FindNodeCloserPeer"
+        error:
+          type: string
+          nullable: true
+      required:
+        - id
+        - queryId
+        - remoteId
+        - startedAt
+        - endedAt
+        - durationInS
+        - closerPeers
+        - error
+    Connection:
+      type: object
+      properties:
+        id:
+          type: integer
+        remoteId:
+          type: string
+        multiAddress:
+          type: string
+        startedAt:
+          type: string
+          format: date-format
+        endedAt:
+          type: string
+          format: date-format
+        durationInS:
+          type: number
+      required:
+        - id
+        - remoteId
+        - multiAddress
+        - startedAt
+        - endedAt
+        - durationInS
+    Dial:
+      type: object
+      properties:
+        id:
+          type: integer
+        remoteId:
+          type: string
+        transport:
+          type: string
+        multiAddress:
+          type: string
+        startedAt:
+          type: string
+          format: date-format
+        endedAt:
+          type: string
+          format: date-format
+        durationInS:
+          type: number
+        error:
+          type: string
+          nullable: true
+      required:
+        - id
+        - remoteId
+        - transport
+        - multiAddress
+        - startedAt
+        - endedAt
+        - durationInS
+        - error
+    QueryPeerState:
+      type: string
+      enum:
+        - HEARD
+        - WAITING
+        - QUERIED
+        - UNREACHABLE
+    ProvidePeerInfo:
+      type: object
+      properties:
+        peerId:
+          type: string
+        agentVersion:
+          type: string
+          nullable: true
+        protocols:
+          type: array
+          items:
+            type: string
+        distance:
+          type: string
+          example: 0xdece0cc853fa62e5e653ae02f4d1f85931e38eba8326a707b4c62dfc6336dafa
+        state:
+          $ref: "#/components/schemas/QueryPeerState"
+        firstInteractedAt:
+          type: string
+          format: date-format
+          nullable: true
+        referredBy:
+          type: string
+      required:
+        - peerId
+        - agentVersion
+        - protocols
+        - distance
+        - firstInteractedAt
+        - referredBy
+        - state
+    ProvideGraph:
+      allOf:
+        - $ref: "#/components/schemas/Provide"
+        - type: object
+          properties:
+            peers:
+              type: array
+              description: All peers + information in the order they should be plotted.
+              items:
+                $ref: "#/components/schemas/ProvidePeerInfo"
+            dials:
+              type: array
+              items:
+                $ref: "#/components/schemas/Dial"
+            connections:
+              type: array
+              items:
+                $ref: "#/components/schemas/Connection"
+            findNodes:
+              type: array
+              items:
+                $ref: "#/components/schemas/FindNode"
+            addProviders:
+              type: array
+              items:
+                $ref: "#/components/schemas/AddProvider"
+          required:
+            - peers
+            - dials
+            - connections
+            - findNodes
+            - addProviders
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        details:
+          $ref: "#/components/schemas/AnyValue"
+      required:
+        - code
+        - message
+        - details

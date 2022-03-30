@@ -2,38 +2,46 @@ package wrap
 
 import (
 	"context"
+	"time"
+
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/libp2p/go-libp2p-core/transport"
 	"github.com/libp2p/go-tcp-transport"
 	ma "github.com/multiformats/go-multiaddr"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/models"
 )
 
 // TCPTransport is a thin wrapper around the actual *tcp.TcpTransport implementation.
 // It intercepts calls to Dial to track when which peer was dialed.
 type TCPTransport struct {
-	// The peer ID of the dial-initiating peer
-	local peer.ID
+	*Notifier
 
 	// The original TCP transport implementation
 	trpt *tcp.TcpTransport
 }
 
-func NewTCPTransport(local peer.ID) func(transport.Upgrader, network.ResourceManager, ...tcp.Option) (*TCPTransport, error) {
-	return func(upgrader transport.Upgrader, rcmgr network.ResourceManager, opts ...tcp.Option) (*TCPTransport, error) {
+func NewTCPTransport() (*TCPTransport, func(transport.Upgrader, network.ResourceManager, ...tcp.Option) (*TCPTransport, error)) {
+	t := &TCPTransport{
+		Notifier: newNotifier(models.DialTransportTCP),
+	}
+	return t, func(upgrader transport.Upgrader, rcmgr network.ResourceManager, opts ...tcp.Option) (*TCPTransport, error) {
 		trpt, err := tcp.NewTCPTransport(upgrader, rcmgr, opts...)
 		if err != nil {
 			return nil, err
 		}
-		return &TCPTransport{
-			local: local,
-			trpt:  trpt,
-		}, nil
+		t.trpt = trpt
+		return t, nil
 	}
 }
 
 func (t *TCPTransport) Dial(ctx context.Context, raddr ma.Multiaddr, p peer.ID) (transport.CapableConn, error) {
-	return t.trpt.Dial(ctx, raddr, p)
+	start := time.Now()
+	t.notifyDialStarted(raddr, p, start)
+	c, err := t.trpt.Dial(ctx, raddr, p)
+	t.notifyDialEnded(raddr, p, start, time.Now(), err)
+	return c, err
 }
 
 func (t *TCPTransport) CanDial(addr ma.Multiaddr) bool {

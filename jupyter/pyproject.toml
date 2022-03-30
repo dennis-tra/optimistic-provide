@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "optprov"
+version = "0.1.0"
+description = "Analysis Notebooks for the Optimistic Provide project"
+authors = ["Dennis Trautwein <git@dtrautwein.eu>"]
+license = "Apache 2.0"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+jupyter = "^1.0.0"
+matplotlib = "^3.5.1"
+numpy = "^1.22.3"
+pandas = "^1.4.1"
+psycopg2 = "^2.9.3"
+ipython-sql = "^0.4.0"
+SQLAlchemy = "^1.4.32"
+seaborn = "^0.11.2"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

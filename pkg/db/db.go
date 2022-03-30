@@ -3,33 +3,32 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"sort"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/db/models"
-	_ "github.com/lib/pq"
-	"github.com/libp2p/go-libp2p-core/peer"
-	kaddht "github.com/libp2p/go-libp2p-kad-dht"
-	"github.com/pkg/errors"
-	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"github.com/volatiletech/sqlboiler/v4/queries"
-	"github.com/volatiletech/sqlboiler/v4/types"
+
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
+	_ "github.com/lib/pq"
+	"github.com/pkg/errors"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/config"
 )
 
 type Client struct {
 	*sql.DB
 }
 
-func NewClient(host, port, dbname, user, password, sslMode string) (*Client, error) {
+func NewClient(cfg *config.Config) (*Client, error) {
 	// Open database handle
 	srcName := fmt.Sprintf(
 		"host=%s port=%s dbname=%s user=%s password=%s sslmode=%s",
-		host,
-		port,
-		dbname,
-		user,
-		password,
-		sslMode,
+		cfg.DB.Host,
+		cfg.DB.Port,
+		cfg.DB.Name,
+		cfg.DB.User,
+		cfg.DB.Password,
+		cfg.DB.SSLMode,
 	)
 	dbh, err := sql.Open("postgres", srcName)
 	if err != nil {
@@ -41,35 +40,22 @@ func NewClient(host, port, dbname, user, password, sslMode string) (*Client, err
 		return nil, errors.Wrap(err, "pinging database")
 	}
 
-	return &Client{dbh}, nil
-}
-
-func (c *Client) UpsertLocalPeer(pid peer.ID) (*models.Peer, error) {
-	protocols := []string{}
-	for _, prot := range kaddht.DefaultProtocols {
-		protocols = append(protocols, string(prot))
-	}
-	return c.UpsertPeer(c.DB, pid, "optprov", protocols)
-}
-
-func (c *Client) UpsertPeer(exec boil.ContextExecutor, pid peer.ID, av string, protocols []string) (*models.Peer, error) {
-	sort.Strings(protocols)
-
-	dbPeer := &models.Peer{
-		MultiHash:    pid.String(),
-		AgentVersion: null.NewString(av, av != ""),
-		Protocols:    types.StringArray(protocols),
-	}
-
-	rows, err := queries.Raw("SELECT upsert_peer($1, $2, $3)", dbPeer.MultiHash, dbPeer.AgentVersion.Ptr(), dbPeer.Protocols).Query(exec)
+	driver, err := postgres.WithInstance(dbh, &postgres.Config{})
 	if err != nil {
 		return nil, err
 	}
-	if !rows.Next() {
-		return nil, rows.Err()
-	}
-	if err = rows.Scan(&dbPeer.ID); err != nil {
+
+	m, err := migrate.NewWithDatabaseInstance("file://./migrations", "optprov", driver)
+	if err != nil {
 		return nil, err
 	}
-	return dbPeer, rows.Close()
+
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		return nil, err
+	}
+
+	boil.SetDB(dbh)
+
+	return &Client{DB: dbh}, nil
 }

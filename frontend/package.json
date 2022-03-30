@@ -1,0 +1,42 @@
+{
+  "name": "optprov",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "format": "prettier -w ./src/**/*.{ts,tsx}"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.7.1",
+    "@emotion/styled": "^11.6.0",
+    "@mui/icons-material": "^5.4.2",
+    "@mui/material": "^5.4.2",
+    "@reduxjs/toolkit": "^1.7.2",
+    "@types/d3": "^7.1.0",
+    "@types/react-redux": "^7.1.22",
+    "d3": "^7.3.0",
+    "javascript-time-ago": "^2.3.13",
+    "notistack": "^2.0.3",
+    "plotly.js": "^2.9.0",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
+    "react-redux": "^7.2.6",
+    "react-router-dom": "^6.2.1",
+    "react-time-ago": "^7.1.9",
+    "recharts": "^2.1.9"
+  },
+  "devDependencies": {
+    "@types/plotly.js": "^1.54.20",
+    "@types/react": "^17.0.33",
+    "@types/react-dom": "^17.0.10",
+    "@types/react-plotly.js": "^2.5.0",
+    "@types/recharts": "^1.8.23",
+    "@vitejs/plugin-react": "^1.0.7",
+    "prettier": "^2.5.1",
+    "quicktype": "^15.0.260",
+    "typescript": "^4.5.4",
+    "vite": "^2.8.0"
+  }
+}

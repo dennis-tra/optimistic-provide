@@ -26,6 +26,7 @@ This repo contains:
   - [Normed XOR Distance](#normed-xor-distance)
   - [Process visualization](#process-visualization)
 - [Maintainers](#maintainers)
+- [Development](#development)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -50,20 +51,20 @@ There are two termination conditions for this process:
 This can lead to huge delays if some of the 20 closest peers don't respond timely or are straight out not reachable.
 The following graph shows the latency distribution of the whole provide-process for 1,269 distinct provide operations.
 
-![Provide Latencies](./plots/provide_latencies.png)
+![Provide Latencies](./analysis/plots/provide_latencies.png)
 
 In other words, it shows the distribution of how long it takes for the [`kaddht.Provide(ctx, CID, true)`](https://github.com/libp2p/go-libp2p-kad-dht/blob/0b7ac010657443bc0675b3bd61133fe04d61d25b/fullrt/dht.go#L752) call to return.
 At the top of the graph you can find the percentiles and total sample size. There is a huge spike at around 10s which is probably related to an exceeded context deadline - not sure though.
 
 If we on the other hand look at how long it took to find the peers that we eventually **attempted** stored the provider records at, we see that it takes less than 1.6s in the vast majority of cases.
 
-![Discover Latencies](./plots/discover_latencies.png)
+![Discover Latencies](./analysis/plots/discover_latencies.png)
 
 Again, sample size and percentiles are given in the figure title. The sample size corresponds to `1269 * 20` as in every `Provide`-run we attempt to save the provider record at 20 peers.
 
 The same point can be made if we take a look at how many hops it took to find a peer that we eventually **attempted** to store the provider records at:
 
-![Hop Distribution](./plots/hop_distribution.png)
+![Hop Distribution](./analysis/plots/hop_distribution.png)
 
 Note the log scale of the `y`-axis.
 
@@ -71,11 +72,11 @@ Over 98 % of the times an appropriate peer to store the provider record at was f
 
 The following graph shows the above distribution depending on the [normed XOR distance](#normed-xor-distance) of the providing peer to the CID being provided.
 
-![Hop Distribution by Distance](./plots/hop_distribution_by_distance.png)
+![Hop Distribution by Distance](./analysis/plots/hop_distribution_by_distance.png)
 
 <details>
 <summary>View this graph as multiple plots</summary>
-<img src="./plots/hop_distribution_by_distance_multi_plot.png" alt="Hop distribution multi plot"/>
+<img src="./analysis/plots/hop_distribution_by_distance_multi_plot.png" alt="Hop distribution multi plot"/>
 </details>
 
 If the distance is small (0 - 10 %) most of the times it only takes one hop to discover an appropriate peer. As the distance increases the distribution shifts to more hops - though it's not as clear as I expected it to be.
@@ -130,7 +131,7 @@ This threshold could also consider standard deviation etc. and could generally b
 
 The following graph shows the distribution of [normed XOR distances](#normed-xor-distance) of the peers that were selected to store the provider record to the CID that was provided.
 
-![Peer Distances](./plots/distance.png)
+![Peer Distances](./analysis/plots/distance.png)
 
 The center of mass of this distribution is roughly at `0.1 %`.
 So If we find a peer that has a distance of `|| P - C || = 0.1 %` while the network has a size of `N = 7000` peers we would expect to find `7` peers that are closer than the one we just found.
@@ -182,7 +183,7 @@ In the graphs you will find XOR distance values in the range from 0 to 1 or thei
 
 This repository also contains code to visualize the provide process. Here is an example:
 
-![Provide Process](./plots/provide_process.png)
+![Provide Process](./analysis/plots/provide_process.png)
 
 This visualization is similar to [this Multi-Level DHT Report](https://drive.google.com/file/d/1OfFyi4VO3itNc3O-YoUqW1Q6D0Fp1Crz/view) page 17 (document) or page 21 (PDF).
 The left-hand side shows the agent version, the [normed XOR distance](#normed-xor-distance) in percent of the particular peer to the CID being provided, and the peer ID truncated to 16 characters.
@@ -193,6 +194,22 @@ This should be fixed in an updated visualization.
 The peers are ordered by the time they were discovered after the provide operation started.
 
 ---
+
+## Development
+
+1. Start postgres: `docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_USER=optprov -e POSTGRES_DB=optprov postgres:13`
+2. Build backend: `make build`
+3. Start backend `./optprov`
+4. Install node modules: `npm install`
+5. Start frontend dev server (`frontend` folder): `npm run dev`
+6. Open `localhost:3000/hosts`
+
+I'm developing with:
+
+1. Go `1.17.2`
+2. NPM `8.5.1`
+3. Node `v14.16.0`
+4. Docker
 
 ## Maintainers
 
