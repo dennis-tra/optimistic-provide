@@ -57,7 +57,7 @@ func (m *Measurement) StartProvide(ctx context.Context, h *dht.Host, config type
 	go func() {
 		for i := 0; i < config.Iterations; i++ {
 			log.Infow("Providing Content", "iteration", i, "hostID", util.FmtPeerID(h.ID()), "total", config.Iterations)
-			_, err := m.ps.Provide(provideCtx, h, ProvideSync(), ProvideType(config.ProvideType))
+			_, err := m.ps.Provide(provideCtx, h, ProvideSync(), ProvideType(config.ProvideType), ProvideMeasurementID(dbMeasure.ID))
 			if errors.Is(err, context.Canceled) {
 				break
 			} else if err != nil {

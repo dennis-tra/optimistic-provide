@@ -64,7 +64,7 @@ func (pc *ProvideController) Create(c *gin.Context) {
 		return
 	}
 
-	provide, err := pc.ps.Provide(pc.ctx, h, pr.Type)
+	provide, err := pc.ps.Provide(pc.ctx, h, service.ProvideType(pr.Type))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,

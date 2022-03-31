@@ -3,8 +3,9 @@ package service
 import "github.com/dennis-tra/optimistic-provide/pkg/api/types"
 
 type ProvideConfig struct {
-	Sync bool
-	Type types.ProvideType
+	Sync          bool
+	Type          types.ProvideType
+	MeasurementID int
 }
 
 // Apply applies the given options to the config, returning the first error
@@ -33,6 +34,13 @@ func ProvideSync() ProvideOption {
 func ProvideType(t types.ProvideType) ProvideOption {
 	return func(cfg *ProvideConfig) error {
 		cfg.Type = t
+		return nil
+	}
+}
+
+func ProvideMeasurementID(id int) ProvideOption {
+	return func(cfg *ProvideConfig) error {
+		cfg.MeasurementID = id
 		return nil
 	}
 }

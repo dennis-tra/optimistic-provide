@@ -89,6 +89,7 @@ func (ps *Provide) Provide(ctx context.Context, h *dht.Host, opts ...ProvideOpti
 	}
 
 	provide := &models.Provide{
+		MeasurementID:         null.NewInt(config.MeasurementID, config.MeasurementID != 0),
 		ProvideType:           string(config.Type),
 		ProviderID:            h.DBHost.PeerID,
 		ContentID:             content.CID.String(),
