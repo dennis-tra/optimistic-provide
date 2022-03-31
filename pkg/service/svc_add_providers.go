@@ -3,23 +3,21 @@ package service
 import (
 	"context"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/dht"
-	"github.com/dennis-tra/optimistic-provide/pkg/util"
+	"github.com/friendsofgo/errors"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-
 	ks "github.com/whyrusleeping/go-keyspace"
 
-	"github.com/friendsofgo/errors"
-
-	"github.com/volatiletech/null/v8"
-
+	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
 	"github.com/dennis-tra/optimistic-provide/pkg/repo"
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
 )
 
 type AddProvidersService interface {
 	List(ctx context.Context, provide *models.Provide) ([]*models.AddProviderRPC, error)
-	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, apReqs []*AddProvidersSpan) (models.AddProviderRPCSlice, error)
+	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, apReqs []*AddProvidersSpan, peerInfos map[peer.ID]*PeerInfo) (models.AddProviderRPCSlice, error)
 }
 
 var _ AddProvidersService = &AddProviders{}
@@ -44,12 +42,12 @@ func (ap *AddProviders) List(ctx context.Context, provide *models.Provide) ([]*m
 	return ap.apRepo.List(ctx, provide)
 }
 
-func (ap *AddProviders) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, apReqs []*AddProvidersSpan) (models.AddProviderRPCSlice, error) {
+func (ap *AddProviders) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, apReqs []*AddProvidersSpan, peerInfos map[peer.ID]*PeerInfo) (models.AddProviderRPCSlice, error) {
 	log.Info("Saving Add Provider RPCs")
 
 	dbaps := make([]*models.AddProviderRPC, len(apReqs))
 	for i, apReq := range apReqs {
-		remotePeer, err := ap.peerService.UpsertPeer(ctx, exec, h, apReq.RemotePeerID)
+		remotePeer, err := ap.peerService.UpsertPeerForInfo(ctx, exec, h, apReq.RemotePeerID, peerInfos[apReq.RemotePeerID])
 		if err != nil {
 			return nil, err
 		}

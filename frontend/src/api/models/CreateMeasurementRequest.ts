@@ -12,25 +12,33 @@
  * Do not edit the class manually.
  */
 
+import { exists, mapValues } from '../runtime';
 import {
-    MonitorProviderRecordMeasurementRequest,
-    MonitorProviderRecordMeasurementRequestFromJSON,
-    MonitorProviderRecordMeasurementRequestFromJSONTyped,
-    MonitorProviderRecordMeasurementRequestToJSON,
-} from './MonitorProviderRecordMeasurementRequest';
-import {
-    ProvideMeasurementRequest,
-    ProvideMeasurementRequestFromJSON,
-    ProvideMeasurementRequestFromJSONTyped,
-    ProvideMeasurementRequestToJSON,
-} from './ProvideMeasurementRequest';
+    ProvideMeasurementConfiguration,
+    ProvideMeasurementConfigurationFromJSON,
+    ProvideMeasurementConfigurationFromJSONTyped,
+    ProvideMeasurementConfigurationToJSON,
+} from './ProvideMeasurementConfiguration';
 
 /**
- * @type CreateMeasurementRequest
  * 
  * @export
+ * @interface CreateMeasurementRequest
  */
-export type CreateMeasurementRequest = ;
+export interface CreateMeasurementRequest {
+    /**
+     * The host to use for this measurement
+     * @type {string}
+     * @memberof CreateMeasurementRequest
+     */
+    hostId: string;
+    /**
+     * 
+     * @type {ProvideMeasurementConfiguration}
+     * @memberof CreateMeasurementRequest
+     */
+    _configuration: ProvideMeasurementConfiguration | null;
+}
 
 export function CreateMeasurementRequestFromJSON(json: any): CreateMeasurementRequest {
     return CreateMeasurementRequestFromJSONTyped(json, false);
@@ -40,10 +48,11 @@ export function CreateMeasurementRequestFromJSONTyped(json: any, ignoreDiscrimin
     if ((json === undefined) || (json === null)) {
         return json;
     }
-    switch (json['measurementType']) {
-        default:
-            throw new Error(`No variant of CreateMeasurementRequest exists with 'measurementType=${json['measurementType']}'`);
-    }
+    return {
+        
+        'hostId': json['hostId'],
+        '_configuration': ProvideMeasurementConfigurationFromJSON(json['configuration']),
+    };
 }
 
 export function CreateMeasurementRequestToJSON(value?: CreateMeasurementRequest | null): any {
@@ -53,9 +62,10 @@ export function CreateMeasurementRequestToJSON(value?: CreateMeasurementRequest 
     if (value === null) {
         return null;
     }
-    switch (value['measurementType']) {
-        default:
-            throw new Error(`No variant of CreateMeasurementRequest exists with 'measurementType=${value['measurementType']}'`);
-    }
+    return {
+        
+        'hostId': value.hostId,
+        'configuration': ProvideMeasurementConfigurationToJSON(value._configuration),
+    };
 }
 

@@ -117,12 +117,12 @@ func (rs *Retrieval) saveRetrieval(h *dht.Host, retrieval *models.Retrieval, sta
 		return errors.Wrap(err, "saving final routing table")
 	}
 
-	dbDials, err := rs.dialService.Save(saveCtx, txn, h, state.dials)
+	dbDials, err := rs.dialService.Save(saveCtx, txn, h, state.dials, nil)
 	if err != nil {
 		return errors.Wrap(err, "saving dials")
 	}
 
-	dbConns, err := rs.connService.Save(saveCtx, txn, h, state.connections)
+	dbConns, err := rs.connService.Save(saveCtx, txn, h, state.connections, nil)
 	if err != nil {
 		log.Warn(err)
 	}

@@ -85,20 +85,17 @@ type CreateHostRequest struct {
 	Name string `json:"name"`
 }
 
-// CreateProvideMeasurementRequest defines model for CreateProvideMeasurementRequest.
-type CreateProvideMeasurementRequest struct {
-	Concurrency int `json:"concurrency"`
+// CreateMeasurementRequest defines model for CreateMeasurementRequest.
+type CreateMeasurementRequest struct {
+	Configuration interface{} `json:"configuration"`
 
 	// The host to use for this measurement
-	HostId      string      `json:"hostId"`
-	Iterations  int         `json:"iterations"`
-	ProvideType ProvideType `json:"provideType"`
+	HostId string `json:"hostId"`
 }
 
-// CreateProvideMeasurementResponse defines model for CreateProvideMeasurementResponse.
-type CreateProvideMeasurementResponse struct {
+// CreateMeasurementResponse defines model for CreateMeasurementResponse.
+type CreateMeasurementResponse struct {
 	EndedAt       *string `json:"endedAt"`
-	Iterations    int     `json:"iterations"`
 	MeasurementId int     `json:"measurementId"`
 	StartedAt     string  `json:"startedAt"`
 }
@@ -220,6 +217,12 @@ type ProvideGraph struct {
 	Peers []ProvidePeerInfo `json:"peers"`
 }
 
+// ProvideMeasurementConfiguration defines model for ProvideMeasurementConfiguration.
+type ProvideMeasurementConfiguration struct {
+	Iterations  int         `json:"iterations"`
+	ProvideType ProvideType `json:"provideType"`
+}
+
 // ProvidePeerInfo defines model for ProvidePeerInfo.
 type ProvidePeerInfo struct {
 	AgentVersion      *string        `json:"agentVersion"`
@@ -325,8 +328,8 @@ type StartRetrievalJSONBody RetrievalRequest
 // RpcGetProvidersJSONBody defines parameters for RpcGetProviders.
 type RpcGetProvidersJSONBody GetProvidersRequest
 
-// CreateProvideMeasurementJSONBody defines parameters for CreateProvideMeasurement.
-type CreateProvideMeasurementJSONBody CreateProvideMeasurementRequest
+// CreateMeasurementJSONBody defines parameters for CreateMeasurement.
+type CreateMeasurementJSONBody CreateMeasurementRequest
 
 // CreateHostJSONRequestBody defines body for CreateHost for application/json ContentType.
 type CreateHostJSONRequestBody CreateHostJSONBody
@@ -340,6 +343,6 @@ type StartRetrievalJSONRequestBody StartRetrievalJSONBody
 // RpcGetProvidersJSONRequestBody defines body for RpcGetProviders for application/json ContentType.
 type RpcGetProvidersJSONRequestBody RpcGetProvidersJSONBody
 
-// CreateProvideMeasurementJSONRequestBody defines body for CreateProvideMeasurement for application/json ContentType.
-type CreateProvideMeasurementJSONRequestBody CreateProvideMeasurementJSONBody
+// CreateMeasurementJSONRequestBody defines body for CreateMeasurement for application/json ContentType.
+type CreateMeasurementJSONRequestBody CreateMeasurementJSONBody
 

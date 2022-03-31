@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 
+	"github.com/libp2p/go-libp2p-core/peer"
+
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
@@ -16,7 +18,7 @@ import (
 
 type DialService interface {
 	List(ctx context.Context, provide *models.Provide) (models.DialSlice, error)
-	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, dials []*DialSpan) (models.DialSlice, error)
+	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, dials []*DialSpan, peerInfos map[peer.ID]*PeerInfo) (models.DialSlice, error)
 }
 
 var _ DialService = &Dial{}
@@ -39,12 +41,12 @@ func (d *Dial) List(ctx context.Context, provide *models.Provide) (models.DialSl
 	return d.dialRepo.ListFromProvide(ctx, provide)
 }
 
-func (d *Dial) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, dials []*DialSpan) (models.DialSlice, error) {
+func (d *Dial) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, dials []*DialSpan, peerInfos map[peer.ID]*PeerInfo) (models.DialSlice, error) {
 	log.Info("Saving Dials")
 
 	dbDials := make([]*models.Dial, len(dials))
 	for i, dial := range dials {
-		remotePeer, err := d.peerService.UpsertPeer(ctx, exec, h, dial.RemotePeerID)
+		remotePeer, err := d.peerService.UpsertPeerForInfo(ctx, exec, h, dial.RemotePeerID, peerInfos[dial.RemotePeerID])
 		if err != nil {
 			return nil, err
 		}

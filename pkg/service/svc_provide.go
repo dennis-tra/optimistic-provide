@@ -26,8 +26,7 @@ import (
 var log = logging.Logger("optprov")
 
 type ProvideService interface {
-	Provide(ctx context.Context, h *dht.Host, t types.ProvideType) (*models.Provide, error)
-	ProvideSync(ctx context.Context, h *dht.Host, t types.ProvideType) (*models.Provide, error)
+	Provide(ctx context.Context, h *dht.Host, opts ...ProvideOption) (*models.Provide, error)
 	List(ctx context.Context, h *dht.Host) ([]*models.Provide, error)
 	Get(ctx context.Context, h *dht.Host, id int) (*models.Provide, error)
 	GetByID(ctx context.Context, id int) (*models.Provide, error)
@@ -63,7 +62,16 @@ func NewProvideService(peerService PeerService, hostService HostService, rtServi
 	}
 }
 
-func (ps *Provide) Provide(ctx context.Context, h *dht.Host, t types.ProvideType) (*models.Provide, error) {
+func (ps *Provide) Provide(ctx context.Context, h *dht.Host, opts ...ProvideOption) (*models.Provide, error) {
+	config := &ProvideConfig{
+		Sync: false,
+		Type: types.ProvideTypeSINGLEQUERY,
+	}
+
+	if err := config.Apply(opts...); err != nil {
+		return nil, errors.Wrap(err, "apply provide configuration options")
+	}
+
 	content, err := util.NewRandomContent()
 	if err != nil {
 		return nil, errors.Wrap(err, "new random content")
@@ -81,7 +89,7 @@ func (ps *Provide) Provide(ctx context.Context, h *dht.Host, t types.ProvideType
 	}
 
 	provide := &models.Provide{
-		ProvideType:           string(t),
+		ProvideType:           string(config.Type),
 		ProviderID:            h.DBHost.PeerID,
 		ContentID:             content.CID.String(),
 		Distance:              ks.XORKeySpace.Key([]byte(h.ID())).Distance(ks.XORKeySpace.Key(content.CID.Hash())).Bytes(),
@@ -97,59 +105,21 @@ func (ps *Provide) Provide(ctx context.Context, h *dht.Host, t types.ProvideType
 		return nil, errors.Wrap(err, "committing transaction")
 	}
 
-	switch t {
+	switch config.Type {
 	case types.ProvideTypeSINGLEQUERY:
-		go ps.startProviding(h, provide, content)
+		if config.Sync {
+			ps.startProviding(h, provide, content)
+		} else {
+			go ps.startProviding(h, provide, content)
+		}
 	case types.ProvideTypeMULTIQUERY:
-		go ps.startProvidingMultiQuery(h, provide, content)
+		if config.Sync {
+			ps.startProvidingMultiQuery(h, provide, content)
+		} else {
+			go ps.startProvidingMultiQuery(h, provide, content)
+		}
 	default:
-		return nil, fmt.Errorf("unexpected provide type %s", t)
-	}
-
-	return provide, nil
-}
-
-func (ps *Provide) ProvideSync(ctx context.Context, h *dht.Host, t types.ProvideType) (*models.Provide, error) {
-	txn, err := boil.BeginTx(ctx, nil)
-	if err != nil {
-		return nil, errors.Wrap(err, "begin transaction")
-	}
-	defer deferTxRollback(txn)
-
-	rts, err := ps.rtService.Save(ctx, txn, h)
-	if err != nil {
-		return nil, errors.Wrap(err, "save routing table")
-	}
-
-	content, err := util.NewRandomContent()
-	if err != nil {
-		return nil, errors.Wrap(err, "new random content")
-	}
-
-	provide := &models.Provide{
-		ProvideType:           string(t),
-		ProviderID:            h.DBHost.PeerID,
-		ContentID:             content.CID.String(),
-		Distance:              ks.XORKeySpace.Key([]byte(h.ID())).Distance(ks.XORKeySpace.Key(content.CID.Hash())).Bytes(),
-		InitialRoutingTableID: rts.ID,
-		StartedAt:             time.Now(),
-	}
-
-	if err = provide.Insert(ctx, txn, boil.Infer()); err != nil {
-		return nil, errors.Wrap(err, "inserting provide")
-	}
-
-	if err := txn.Commit(); err != nil {
-		return nil, errors.Wrap(err, "committing transaction")
-	}
-
-	switch t {
-	case types.ProvideTypeSINGLEQUERY:
-		ps.startProviding(h, provide, content)
-	case types.ProvideTypeMULTIQUERY:
-		ps.startProvidingMultiQuery(h, provide, content)
-	default:
-		return nil, fmt.Errorf("unexpected provide type %s", t)
+		return nil, fmt.Errorf("unexpected provide type %s", config.Type)
 	}
 
 	return provide, nil
@@ -207,6 +177,7 @@ func (ps *Provide) startProviding(h *dht.Host, provide *models.Provide, content 
 
 func (ps *Provide) saveProvide(h *dht.Host, provide *models.Provide, state *ProvideState) error {
 	saveCtx := context.Background()
+	peerInfos := state.PeerInfos()
 
 	txn, err := boil.BeginTx(saveCtx, nil)
 	if err != nil {
@@ -219,22 +190,22 @@ func (ps *Provide) saveProvide(h *dht.Host, provide *models.Provide, state *Prov
 		return errors.Wrap(err, "saving final routing table")
 	}
 
-	dbDials, err := ps.dialService.Save(saveCtx, txn, h, state.dials)
+	dbDials, err := ps.dialService.Save(saveCtx, txn, h, state.dials, peerInfos)
 	if err != nil {
 		return errors.Wrap(err, "saving dials")
 	}
 
-	dbConns, err := ps.connService.Save(saveCtx, txn, h, state.connections)
+	dbConns, err := ps.connService.Save(saveCtx, txn, h, state.connections, peerInfos)
 	if err != nil {
 		return errors.Wrap(err, "saving connections")
 	}
 
-	findNodesRPCs, err := ps.fnService.Save(saveCtx, txn, h, state.findNodes)
+	findNodesRPCs, err := ps.fnService.Save(saveCtx, txn, h, state.findNodes, peerInfos)
 	if err != nil {
 		return errors.Wrap(err, "saving find nodes RPCs")
 	}
 
-	addProviderRPCs, err := ps.apService.Save(saveCtx, txn, h, state.addProviders)
+	addProviderRPCs, err := ps.apService.Save(saveCtx, txn, h, state.addProviders, peerInfos)
 	if err != nil {
 		return errors.Wrap(err, "saving add provider RPCs")
 	}

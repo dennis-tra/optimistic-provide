@@ -3,13 +3,14 @@ package service
 import (
 	"context"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
-
 	"github.com/libp2p/go-libp2p-core/network"
 	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/routing"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 	pb "github.com/libp2p/go-libp2p-kad-dht/pb"
@@ -20,6 +21,56 @@ import (
 	"github.com/dennis-tra/optimistic-provide/pkg/util"
 	"github.com/dennis-tra/optimistic-provide/pkg/wrap"
 )
+
+type PeerInfo struct {
+	PeerID       peer.ID
+	AgentVersion string
+	Protocols    []string
+}
+
+func NewPeerInfo(pid peer.ID, ps peerstore.Peerstore) *PeerInfo {
+	pi := &PeerInfo{PeerID: pid}
+	pi.SetFromPeerstore(ps)
+	return pi
+}
+
+func (pi *PeerInfo) SetFromPeerstore(ps peerstore.Peerstore) bool {
+	changed := false
+
+	av := ""
+	if agent, err := ps.Get(pi.PeerID, "AgentVersion"); err == nil {
+		av = agent.(string)
+	}
+
+	if av != "" {
+		pi.AgentVersion = av
+		changed = true
+	}
+
+	protocols := []string{}
+	if prots, err := ps.GetProtocols(pi.PeerID); err == nil {
+		protocols = prots
+	}
+	sort.Strings(protocols)
+
+	if len(protocols) == 0 {
+		return changed
+	}
+
+	if len(protocols) != len(pi.Protocols) {
+		pi.Protocols = protocols
+		return true
+	}
+
+	for i := 0; i < len(protocols); i++ {
+		if pi.Protocols[i] != protocols[i] {
+			pi.Protocols = protocols
+			return true
+		}
+	}
+
+	return changed
+}
 
 type ProvideState struct {
 	h       *dht.Host
@@ -102,6 +153,36 @@ func (ps *ProvideState) Unregister() {
 
 	ps.filterDials()
 	ps.filterConnections()
+}
+
+func (ps *ProvideState) storeRelevantPeer(pid peer.ID) {
+	newPi := NewPeerInfo(pid, ps.h.Peerstore())
+	pi, loaded := ps.relevantPeers.LoadOrStore(pid, newPi)
+	if !loaded {
+		return
+	}
+
+	changed := pi.(*PeerInfo).SetFromPeerstore(ps.h.Peerstore())
+	if changed {
+		ps.relevantPeers.Store(pid, pi)
+	}
+}
+
+func (ps *ProvideState) PeerInfos() map[peer.ID]*PeerInfo {
+	pis := map[peer.ID]*PeerInfo{}
+
+	ps.relevantPeers.Range(func(pid, value interface{}) bool {
+		pi, ok := value.(*PeerInfo)
+		if !ok {
+			return false
+		}
+
+		pis[pi.PeerID] = pi
+
+		return true
+	})
+
+	return pis
 }
 
 func (ps *ProvideState) consumeLookupEvents(lookupEvents <-chan *kaddht.LookupEvent) {
@@ -235,9 +316,9 @@ func (ps *ProvideState) trackFindNodeRequest(evt *wrap.RPCSendRequestEndedEvent)
 	defer ps.findNodesLk.Unlock()
 
 	ps.findNodes = append(ps.findNodes, fns)
-	ps.relevantPeers.Store(evt.RemotePeer, struct{}{})
+	ps.storeRelevantPeer(evt.RemotePeer)
 	for _, p := range fns.CloserPeers {
-		ps.relevantPeers.Store(p.ID, struct{}{})
+		ps.storeRelevantPeer(p.ID)
 	}
 }
 
@@ -256,7 +337,7 @@ func (ps *ProvideState) trackAddProvidersRequest(evt *wrap.RPCSendMessageEndedEv
 	defer ps.addProvidersLk.Unlock()
 
 	ps.addProviders = append(ps.addProviders, aps)
-	ps.relevantPeers.Store(evt.RemotePeer, struct{}{})
+	ps.storeRelevantPeer(evt.RemotePeer)
 }
 
 func (ps *ProvideState) filterDials() {

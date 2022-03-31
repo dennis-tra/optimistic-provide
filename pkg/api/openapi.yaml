@@ -511,35 +511,35 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /provide-measurements:
+  /measurements:
     post:
-      operationId: createProvideMeasurement
+      operationId: createMeasurement
       tags:
-        - Provide Measurements
+        - Measurements
       summary: Starts a new measurement with the provided configuration
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateProvideMeasurementRequest'
+              $ref: '#/components/schemas/CreateMeasurementRequest'
       responses:
         '200':
           description: The measurement instance.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateProvideMeasurementResponse'
+                $ref: '#/components/schemas/CreateMeasurementResponse'
         default:
           description: A JSON object with error information.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /provide-measurements/{measurementId}/stop:
+  /measurements/{measurementId}/stop:
     post:
-      operationId: stopProvideMeasurement
+      operationId: stopMeasurement
       tags:
-        - Provide Measurements
+        - Measurements
       summary: Stops the given measurement.
       parameters:
         - name: measurementId
@@ -559,46 +559,31 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 components:
   schemas:
-    CreateProvideMeasurementRequest:
+    ProvideMeasurementConfiguration:
+      type: object
+      properties:
+        iterations:
+          type: integer
+          default: 1
+          minimum: 1
+        provideType:
+          $ref: '#/components/schemas/ProvideType'
+      required:
+        - iterations
+        - provideType
+    CreateMeasurementRequest:
       type: object
       properties:
         hostId:
           type: string
           description: The host to use for this measurement
-        iterations:
-          type: integer
-          default: 1
-          minimum: 0
-        concurrency:
-          type: integer
-          default: 1
-          minimum: 0
-        provideType:
-          $ref: '#/components/schemas/ProvideType'
+        configuration:
+          oneOf:
+            - $ref: '#/components/schemas/ProvideMeasurementConfiguration'
       required:
         - hostId
-        - iterations
-        - measurementType
-        - provideType
-        - concurrency
-    CreateProviderRecordMeasurementRequest:
-      type: object
-      properties:
-        hostId:
-          type: string
-          description: The host to monitor for this measurement
-        endAt:
-          type: string
-        measurementType:
-          type: string
-        provideType:
-          $ref: '#/components/schemas/ProvideType'
-      required:
-        - hostId
-        - iterations
-        - measurementType
-        - provideType
-    CreateProvideMeasurementResponse:
+        - configuration
+    CreateMeasurementResponse:
       type: object
       properties:
         measurementId:
@@ -608,13 +593,10 @@ components:
         endedAt:
           type: string
           nullable: true
-        iterations:
-          type: integer
       required:
         - measurementId
         - startedAt
         - endedAt
-        - iterations
     AddrInfo:
       type: object
       properties:

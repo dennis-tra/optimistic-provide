@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
@@ -31,8 +32,8 @@ func NewProvideMeasurementController(ctx context.Context, hs service.HostService
 
 // Create starts a new provide measurement
 func (rpc *MeasurementController) Create(c *gin.Context) {
-	cpmr := &types.CreateProvideMeasurementRequest{}
-	if err := c.BindJSON(cpmr); err != nil {
+	cmr := &types.CreateMeasurementRequest{}
+	if err := c.BindJSON(cmr); err != nil {
 		c.JSON(http.StatusBadRequest, types.ErrorResponse{
 			Code:    types.ErrorCodeMALFORMEDREQUEST,
 			Message: "Could not start provide measurement due to malformed request.",
@@ -41,11 +42,30 @@ func (rpc *MeasurementController) Create(c *gin.Context) {
 		return
 	}
 
-	hostID, err := peer.Decode(cpmr.HostId)
+	config := types.ProvideMeasurementConfiguration{}
+	configDat, err := json.Marshal(cmr.Configuration)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse{
+			Code:    types.ErrorCodeMALFORMEDREQUEST,
+			Message: "Could not marshal configuration to JSON",
+			Details: types.ErrDetails(err),
+		})
+		return
+	}
+	if err = json.Unmarshal(configDat, &config); err != nil {
+		c.JSON(http.StatusBadRequest, types.ErrorResponse{
+			Code:    types.ErrorCodeMALFORMEDREQUEST,
+			Message: "Could not unmarshal configuration from JSON",
+			Details: types.ErrDetails(err),
+		})
+		return
+	}
+
+	hostID, err := peer.Decode(cmr.HostId)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusNotFound, types.ErrorResponse{
 			Code:    types.ErrorCodeMALFORMEDPEERID,
-			Message: "Host ID " + cpmr.HostId + " could not be decoded.",
+			Message: "Host ID " + cmr.HostId + " could not be decoded.",
 			Details: types.ErrDetails(err),
 		})
 		return
@@ -77,7 +97,7 @@ func (rpc *MeasurementController) Create(c *gin.Context) {
 		return
 	}
 
-	dbMeasurement, err := rpc.ms.Start(c.Request.Context(), h, cpmr.ProvideType, cpmr.Iterations)
+	dbMeasurement, err := rpc.ms.StartProvide(c.Request.Context(), h, config)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeHOSTNOTFOUND,
@@ -87,9 +107,8 @@ func (rpc *MeasurementController) Create(c *gin.Context) {
 		return
 	}
 
-	resp := &types.CreateProvideMeasurementResponse{
+	resp := &types.CreateMeasurementResponse{
 		MeasurementId: dbMeasurement.ID,
-		Iterations:    dbMeasurement.Iterations,
 		StartedAt:     dbMeasurement.StartedAt.Format(time.RFC3339Nano),
 	}
 

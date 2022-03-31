@@ -21,6 +21,12 @@ import { exists, mapValues } from '../runtime';
 export interface CreateMeasurementResponse {
     /**
      * 
+     * @type {number}
+     * @memberof CreateMeasurementResponse
+     */
+    measurementId: number;
+    /**
+     * 
      * @type {string}
      * @memberof CreateMeasurementResponse
      */
@@ -30,13 +36,7 @@ export interface CreateMeasurementResponse {
      * @type {string}
      * @memberof CreateMeasurementResponse
      */
-    endedAt: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof CreateMeasurementResponse
-     */
-    iterations: number;
+    endedAt: string | null;
 }
 
 export function CreateMeasurementResponseFromJSON(json: any): CreateMeasurementResponse {
@@ -49,9 +49,9 @@ export function CreateMeasurementResponseFromJSONTyped(json: any, ignoreDiscrimi
     }
     return {
         
+        'measurementId': json['measurementId'],
         'startedAt': json['startedAt'],
         'endedAt': json['endedAt'],
-        'iterations': json['iterations'],
     };
 }
 
@@ -64,9 +64,9 @@ export function CreateMeasurementResponseToJSON(value?: CreateMeasurementRespons
     }
     return {
         
+        'measurementId': value.measurementId,
         'startedAt': value.startedAt,
         'endedAt': value.endedAt,
-        'iterations': value.iterations,
     };
 }
 

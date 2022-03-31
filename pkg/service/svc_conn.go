@@ -3,17 +3,17 @@ package service
 import (
 	"context"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/dht"
-
+	"github.com/libp2p/go-libp2p-core/peer"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
+	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
 	"github.com/dennis-tra/optimistic-provide/pkg/repo"
 )
 
 type ConnectionService interface {
 	List(ctx context.Context, provide *models.Provide) (models.ConnectionSlice, error)
-	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, conns []*ConnectionSpan) (models.ConnectionSlice, error)
+	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, conns []*ConnectionSpan, peerInfos map[peer.ID]*PeerInfo) (models.ConnectionSlice, error)
 }
 
 var _ ConnectionService = &Connection{}
@@ -36,12 +36,12 @@ func NewConnectionService(peerService PeerService, maService MultiAddressService
 	}
 }
 
-func (c *Connection) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, conns []*ConnectionSpan) (models.ConnectionSlice, error) {
+func (c *Connection) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, conns []*ConnectionSpan, peerInfos map[peer.ID]*PeerInfo) (models.ConnectionSlice, error) {
 	log.Info("Saving Connections")
 
 	dbConns := make([]*models.Connection, len(conns))
 	for i, conn := range conns {
-		remotePeer, err := c.peerService.UpsertPeer(ctx, exec, h, conn.RemotePeerID)
+		remotePeer, err := c.peerService.UpsertPeerForInfo(ctx, exec, h, conn.RemotePeerID, peerInfos[conn.RemotePeerID])
 		if err != nil {
 			return nil, err
 		}

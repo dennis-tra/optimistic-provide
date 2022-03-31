@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -17,7 +18,7 @@ import (
 )
 
 type MeasurementService interface {
-	Start(ctx context.Context, h *dht.Host, t types.ProvideType, iterations int) (*models.ProvideMeasurement, error)
+	StartProvide(ctx context.Context, h *dht.Host, config types.ProvideMeasurementConfiguration) (*models.Measurement, error)
 	Stop(measurementID int) error
 }
 
@@ -26,62 +27,68 @@ var _ MeasurementService = &Measurement{}
 type Measurement struct {
 	ps ProvideService
 
-	provideMeasurementsLk sync.RWMutex
-	provideMeasurements   map[int]context.CancelFunc
+	measurementsLk sync.RWMutex
+	measurements   map[int]context.CancelFunc
 }
 
 func NewProvideMeasurementService(ps ProvideService) *Measurement {
 	return &Measurement{
-		ps:                  ps,
-		provideMeasurements: map[int]context.CancelFunc{},
+		ps:           ps,
+		measurements: map[int]context.CancelFunc{},
 	}
 }
 
-func (m *Measurement) Start(ctx context.Context, h *dht.Host, t types.ProvideType, iterations int) (*models.ProvideMeasurement, error) {
-	measurement := &models.ProvideMeasurement{
-		HostID:      h.DBHost.ID,
-		StartedAt:   time.Now(),
-		ProvideType: string(t),
-		Iterations:  iterations,
+func (m *Measurement) StartProvide(ctx context.Context, h *dht.Host, config types.ProvideMeasurementConfiguration) (*models.Measurement, error) {
+	configData, err := json.Marshal(config)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshal provide measurement config")
 	}
-	if err := measurement.Insert(ctx, boil.GetContextDB(), boil.Infer()); err != nil {
+
+	dbMeasure := &models.Measurement{
+		HostID:        h.DBHost.ID,
+		StartedAt:     time.Now(),
+		Configuration: configData,
+	}
+	if err = dbMeasure.Insert(ctx, boil.GetContextDB(), boil.Infer()); err != nil {
 		return nil, errors.Wrap(err, "insert provide measurement")
 	}
 
 	provideCtx, cancel := context.WithCancel(context.Background())
 	go func() {
-		for i := 0; i < iterations; i++ {
-			log.Infow("Providing Content", "iteration", i, "hostID", util.FmtPeerID(h.ID()), "total", iterations)
-			if _, err := m.ps.ProvideSync(provideCtx, h, types.ProvideTypeSINGLEQUERY); err != nil {
+		for i := 0; i < config.Iterations; i++ {
+			log.Infow("Providing Content", "iteration", i, "hostID", util.FmtPeerID(h.ID()), "total", config.Iterations)
+			_, err := m.ps.Provide(provideCtx, h, ProvideSync(), ProvideType(config.ProvideType))
+			if errors.Is(err, context.Canceled) {
+				break
+			} else if err != nil {
 				log.Warnw("Error during provide operation", "err", err)
 			}
 		}
 
-		m.provideMeasurementsLk.Lock()
-		delete(m.provideMeasurements, measurement.ID)
-		m.provideMeasurementsLk.Unlock()
+		m.measurementsLk.Lock()
+		delete(m.measurements, dbMeasure.ID)
+		m.measurementsLk.Unlock()
 
-		measurement.EndedAt = null.TimeFrom(time.Now())
-		if _, err := measurement.Update(context.Background(), boil.GetContextDB(), boil.Infer()); err != nil {
+		dbMeasure.EndedAt = null.TimeFrom(time.Now())
+		if _, err := dbMeasure.Update(context.Background(), boil.GetContextDB(), boil.Infer()); err != nil {
 			log.Warnw("Could not update measurement", "err", err.Error())
 		}
 
 		log.Infow("Measurement finished")
 	}()
 
-	m.provideMeasurementsLk.Lock()
-	defer m.provideMeasurementsLk.Unlock()
+	m.measurementsLk.Lock()
+	m.measurements[dbMeasure.ID] = cancel
+	m.measurementsLk.Unlock()
 
-	m.provideMeasurements[measurement.ID] = cancel
-
-	return measurement, nil
+	return dbMeasure, nil
 }
 
 func (m *Measurement) Stop(measurementID int) error {
-	m.provideMeasurementsLk.Lock()
-	defer m.provideMeasurementsLk.Unlock()
+	m.measurementsLk.Lock()
+	defer m.measurementsLk.Unlock()
 
-	measurementCtxCancel, found := m.provideMeasurements[measurementID]
+	measurementCtxCancel, found := m.measurements[measurementID]
 	if !found {
 		return fmt.Errorf("provide measurement is not running")
 	}

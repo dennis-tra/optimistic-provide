@@ -3,20 +3,18 @@ package service
 import (
 	"context"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/util"
-
-	"github.com/dennis-tra/optimistic-provide/pkg/dht"
-
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"github.com/volatiletech/null/v8"
-
+	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
 	"github.com/dennis-tra/optimistic-provide/pkg/repo"
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
 )
 
 type FindNodesService interface {
-	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, fnReqs []*FindNodesSpan) (models.FindNodesRPCSlice, error)
+	Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, fnReqs []*FindNodesSpan, peerInfos map[peer.ID]*PeerInfo) (models.FindNodesRPCSlice, error)
 }
 
 var _ FindNodesService = &FindNodes{}
@@ -37,13 +35,13 @@ func NewFindNodesService(peerService PeerService, maService MultiAddressService,
 	}
 }
 
-func (fn *FindNodes) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, fnReqs []*FindNodesSpan) (models.FindNodesRPCSlice, error) {
+func (fn *FindNodes) Save(ctx context.Context, exec boil.ContextExecutor, h *dht.Host, fnReqs []*FindNodesSpan, peerInfos map[peer.ID]*PeerInfo) (models.FindNodesRPCSlice, error) {
 	log.Info("Saving Find Nodes RPCs")
 
 	dbFindNodesRPCs := make([]*models.FindNodesRPC, len(fnReqs))
 	for i, fnReq := range fnReqs {
 
-		remotePeer, err := fn.peerService.UpsertPeer(ctx, exec, h, fnReq.RemotePeerID)
+		remotePeer, err := fn.peerService.UpsertPeerForInfo(ctx, exec, h, fnReq.RemotePeerID, peerInfos[fnReq.RemotePeerID])
 		if err != nil {
 			return nil, err
 		}
