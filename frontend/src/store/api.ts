@@ -16,7 +16,7 @@ import { ProvideGraph } from "../api/models/ProvideGraph";
 // Define a service using a base URL and expected endpoints
 export const optprovApi = createApi({
   reducerPath: "optprovApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://116.203.45.194:7000" }),
+  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:7000" }),
   tagTypes: ["Host", "RoutingTable", "Provide", "Retrieval", "Dial", "Connection"],
   endpoints: (builder) => ({
     startProvide: builder.mutation<Host, { hostId: string; body: ProvideRequest }>({
@@ -123,7 +123,7 @@ export const optprovApi = createApi({
     listenRoutingTable: builder.query<RoutingTablePeer[], string>({
       query: (hostId) => `hosts/${hostId}/routing-table`,
       onCacheEntryAdded: async (hostId, { cacheDataLoaded, cacheEntryRemoved, dispatch }) => {
-        const ws = new WebSocket(`ws://116.203.45.194:7000/hosts/${hostId}/routing-tables/listen`);
+        const ws = new WebSocket(`ws://localhost:7000/hosts/${hostId}/routing-tables/listen`);
         try {
           const fullUpdate = await cacheDataLoaded;
           dispatch(bucketsActions.replace({ hostId, peers: fullUpdate.data }));
