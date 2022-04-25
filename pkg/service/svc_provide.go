@@ -119,6 +119,12 @@ func (ps *Provide) Provide(ctx context.Context, h *dht.Host, opts ...ProvideOpti
 		} else {
 			go ps.startProvidingMultiQuery(h, provide, content)
 		}
+	case types.ProvideTypeESTIMATOR:
+		if config.Sync {
+			ps.startProvidingEstimator(h, provide, content)
+		} else {
+			go ps.startProvidingEstimator(h, provide, content)
+		}
 	default:
 		return nil, fmt.Errorf("unexpected provide type %s", config.Type)
 	}
@@ -136,6 +142,25 @@ func (ps *Provide) GetByID(ctx context.Context, provideID int) (*models.Provide,
 
 func (ps *Provide) Get(ctx context.Context, h *dht.Host, provideID int) (*models.Provide, error) {
 	return ps.provideRepo.Get(ctx, h.PeerID(), provideID)
+}
+
+func (ps *Provide) startProvidingEstimator(h *dht.Host, provide *models.Provide, content *util.Content) {
+	ctx := context.Background()
+
+	state := NewProvideState(h, content)
+	ctx = state.Register(ctx)
+	log.Infow("Start providing content estimator", "cid", content.CID.String())
+	err := h.DHT.ProvideEstimator(ctx, content.CID)
+	log.Infow("Done providing content estimator", "cid", content.CID.String())
+	end := time.Now()
+	state.Unregister()
+
+	provide.Error = null.StringFromPtr(util.ErrorStr(err))
+	provide.EndedAt = null.TimeFrom(end)
+
+	if err = ps.saveProvide(h, provide, state); err != nil {
+		log.Errorw("error saving provide operation", "err", err)
+	}
 }
 
 func (ps *Provide) startProvidingMultiQuery(h *dht.Host, provide *models.Provide, content *util.Content) {

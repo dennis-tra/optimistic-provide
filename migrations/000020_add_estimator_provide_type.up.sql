@@ -1,0 +1,1 @@
+ALTER TYPE provide_type ADD VALUE 'ESTIMATOR';

@@ -10,15 +10,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	logging "github.com/ipfs/go-log"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/api/types"
 	"github.com/dennis-tra/optimistic-provide/pkg/dht"
 	"github.com/dennis-tra/optimistic-provide/pkg/service"
+	"github.com/dennis-tra/optimistic-provide/pkg/util"
 )
-
-var log = logging.Logger("optprov")
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
@@ -178,11 +177,11 @@ func (rtc *RoutingTableController) Listen(c *gin.Context) {
 		for update := range rtl.Updates() {
 			data, err := json.Marshal(update)
 			if err != nil {
-				log.Warnf("Could not marshal routing table update %v: %s", update, err)
+				log.WithError(err).Warnf("Could not marshal routing table update %v", update)
 				continue
 			}
 			if err = conn.WriteMessage(websocket.TextMessage, data); err != nil {
-				log.Warn("Could not write websocket message", err)
+				log.WithError(err).Warn("Could not write websocket message")
 				continue
 			}
 		}
@@ -198,8 +197,11 @@ func (rtc *RoutingTableController) Refresh(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
 
 	go func() {
-		err := <-h.DHT.RefreshRoutingTable()
-		log.Warn("Routing Table refresh", err)
+		if err := <-h.DHT.RefreshRoutingTable(); err != nil {
+			log.WithField("hostID", util.FmtPeerID(h.ID())).WithError(err).Warnln("Routing table refresh failed")
+		} else {
+			log.WithField("hostID", util.FmtPeerID(h.ID())).Infoln("Routing table refresh finished!")
+		}
 	}()
 
 	c.Status(http.StatusNoContent)

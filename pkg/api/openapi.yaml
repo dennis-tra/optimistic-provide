@@ -282,6 +282,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /hosts/{hostId}/routing-tables/refresh:
+    post:
+      operationId: refreshRoutingTable
+      tags:
+        - Routing Table
+      summary: Instructs the host to refresh its routing table.
+      description: Instructs the host to refresh its routing table.
+      parameters:
+        - name: hostId
+          in: path
+          description: The host identifier.
+          required: true
+          example: QmSKVUFAyCddg2wDUdZVCfvqG5YCwwJTWY1HRmorebXcKG
+          schema:
+            type: string
+      responses:
+        '201':
+          description: The routing table started the refresh procedure
+        default:
+          description: A JSON object with error information.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /hosts/{hostId}/provides:
     post:
       operationId: startProvide
@@ -873,6 +897,7 @@ components:
       enum:
         - SINGLE_QUERY
         - MULTI_QUERY
+        - ESTIMATOR
     ProvideRequest:
       type: object
       properties:

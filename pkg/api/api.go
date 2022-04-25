@@ -6,8 +6,8 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	logging "github.com/ipfs/go-log"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/api/controller"
 	"github.com/dennis-tra/optimistic-provide/pkg/api/middlewares"
@@ -17,13 +17,19 @@ import (
 	"github.com/dennis-tra/optimistic-provide/pkg/service"
 )
 
-var log = logging.Logger("optprov")
-
 // Run starts the REST API to control libp2p hosts.
 func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
-	router := gin.Default()
+	router := gin.New()
 
 	router.Use(cors.Default())
+	router.Use(Logger(), gin.Recovery())
+
+	gin.DebugPrintRouteFunc = func(method, absPath, handlerName string, handlerCount int) {
+		log.WithFields(log.Fields{
+			"handlerCount": handlerCount,
+			"handlerName":  handlerName,
+		}).Infof("%s %s", method, absPath)
+	}
 
 	dbclient, err := db.NewClient(cfg)
 	if err != nil {
@@ -160,7 +166,7 @@ func Run(ctx context.Context, cfg *config.Config) (*http.Server, error) {
 	}
 
 	// Initializing the server in a goroutine so that
-	// it won't block the graceful shutdown handling below
+	// it won't block the graceful shutdown handling
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("listen: %s\n", err)

@@ -19,7 +19,8 @@
  */
 export enum ProvideType {
     SingleQuery = 'SINGLE_QUERY',
-    MultiQuery = 'MULTI_QUERY'
+    MultiQuery = 'MULTI_QUERY',
+    Estimator = 'ESTIMATOR'
 }
 
 export function ProvideTypeFromJSON(json: any): ProvideType {

@@ -24,6 +24,8 @@ const (
 
 // Defines values for ProvideType.
 const (
+	ProvideTypeESTIMATOR ProvideType = "ESTIMATOR"
+
 	ProvideTypeMULTIQUERY ProvideType = "MULTI_QUERY"
 
 	ProvideTypeSINGLEQUERY ProvideType = "SINGLE_QUERY"

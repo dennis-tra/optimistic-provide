@@ -84,7 +84,6 @@ func (e *eventChannel) send(ctx context.Context, ev interface{}) {
 	select {
 	case e.ch <- ev:
 	case <-e.ctx.Done():
-	case <-ctx.Done():
 	}
 	e.mu.Unlock()
 }

@@ -10,12 +10,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/config"
+	log "github.com/sirupsen/logrus"
 
-	"github.com/dennis-tra/optimistic-provide/pkg/api"
 	logging "github.com/ipfs/go-log"
 	"github.com/pkg/errors"
 	"github.com/urfave/cli/v2"
+
+	"github.com/dennis-tra/optimistic-provide/pkg/api"
+	"github.com/dennis-tra/optimistic-provide/pkg/config"
 )
 
 var (
@@ -25,11 +27,6 @@ var (
 	// -ldflags "-X main.RawVersion=${VERSION}"
 	RawVersion  = "dev"
 	ShortCommit = "5f3759df" // quake
-
-	// IDLength is here as a variable so that it can be decreased for tests with mocknet where IDs are way shorter.
-	// The call to FmtPeerID would panic if this value stayed at 16.
-	IDLength = 16
-	log      = logging.Logger("optprov")
 )
 
 func main() {
@@ -153,8 +150,10 @@ func RootAction(c *cli.Context) error {
 		return errors.Wrap(err, "new config")
 	}
 
-	if err := logging.SetLogLevel("optprov", cfg.App.LogLevel); err != nil {
-		return errors.Wrap(err, "set optprov log level")
+	if lvl, err := log.ParseLevel(cfg.App.LogLevel); err != nil {
+		return errors.Wrap(err, "set log level")
+	} else {
+		log.SetLevel(lvl)
 	}
 
 	if err := logging.SetLogLevel("dht", cfg.App.LogLevel); err != nil {
@@ -163,9 +162,9 @@ func RootAction(c *cli.Context) error {
 
 	go func() {
 		pprofAddr := cfg.PProf.Host + ":" + cfg.PProf.Port
-		log.Debugw("Starting profiling endpoint at", pprofAddr)
+		log.Debugf("Starting profiling endpoint at %s", pprofAddr)
 		if err := http.ListenAndServe(pprofAddr, nil); err != nil {
-			log.Errorw("Error serving pprof", err)
+			log.WithError(err).Error("Error serving pprof")
 		}
 	}()
 

@@ -61,8 +61,8 @@ func ProvideID(c *gin.Context) {
 	provideID, err := strconv.Atoi(param)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, types.ErrorResponse{
-			Code:    types.ErrorCodeROUTINGTABLENOTFOUND,
-			Message: "Could not convert " + param + "to integer",
+			Code:    types.ErrorCodeMALFORMEDREQUEST,
+			Message: "Could not convert provide ID " + param + "to integer",
 		})
 		return
 	}
@@ -85,8 +85,8 @@ func MeasurementID(c *gin.Context) {
 	measurementID, err := strconv.Atoi(param)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, types.ErrorResponse{
-			Code:    types.ErrorCodeROUTINGTABLENOTFOUND,
-			Message: "Could not convert " + param + "to integer",
+			Code:    types.ErrorCodeMALFORMEDREQUEST,
+			Message: "Could not convert measurement ID " + param + "to integer",
 		})
 		return
 	}
@@ -109,7 +109,7 @@ func RoutingTableID(c *gin.Context) {
 	routingTableID, err := strconv.Atoi(param)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, types.ErrorResponse{
-			Code:    types.ErrorCodeROUTINGTABLENOTFOUND,
+			Code:    types.ErrorCodeMALFORMEDREQUEST,
 			Message: "Could not convert " + param + "to integer",
 		})
 		return

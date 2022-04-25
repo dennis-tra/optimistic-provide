@@ -188,10 +188,10 @@ func (ps *ProvideState) PeerInfos() map[peer.ID]*PeerInfo {
 func (ps *ProvideState) consumeLookupEvents(lookupEvents <-chan *kaddht.LookupEvent) {
 	for event := range lookupEvents {
 		ps.ensurePeerset(event)
-		if event.Response != nil {
-			ps.trackLookupResponse(event)
-		} else if event.Request != nil {
+		if event.Request != nil {
 			ps.trackLookupRequest(event)
+		} else if event.Response != nil {
+			ps.trackLookupResponse(event)
 		}
 	}
 }
