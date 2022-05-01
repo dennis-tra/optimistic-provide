@@ -126,6 +126,7 @@ var PeerRels = struct {
 	RemoteGetProvidersRPCS string
 	Hosts                  string
 	HostMeasurements       string
+	NetworkSizeEstimates   string
 	PeerLogs               string
 	PeerStates             string
 	ReferrerPeerStates     string
@@ -148,6 +149,7 @@ var PeerRels = struct {
 	RemoteGetProvidersRPCS: "RemoteGetProvidersRPCS",
 	Hosts:                  "Hosts",
 	HostMeasurements:       "HostMeasurements",
+	NetworkSizeEstimates:   "NetworkSizeEstimates",
 	PeerLogs:               "PeerLogs",
 	PeerStates:             "PeerStates",
 	ReferrerPeerStates:     "ReferrerPeerStates",
@@ -173,6 +175,7 @@ type peerR struct {
 	RemoteGetProvidersRPCS GetProvidersRPCSlice      `boil:"RemoteGetProvidersRPCS" json:"RemoteGetProvidersRPCS" toml:"RemoteGetProvidersRPCS" yaml:"RemoteGetProvidersRPCS"`
 	Hosts                  HostSlice                 `boil:"Hosts" json:"Hosts" toml:"Hosts" yaml:"Hosts"`
 	HostMeasurements       MeasurementSlice          `boil:"HostMeasurements" json:"HostMeasurements" toml:"HostMeasurements" yaml:"HostMeasurements"`
+	NetworkSizeEstimates   NetworkSizeEstimateSlice  `boil:"NetworkSizeEstimates" json:"NetworkSizeEstimates" toml:"NetworkSizeEstimates" yaml:"NetworkSizeEstimates"`
 	PeerLogs               PeerLogSlice              `boil:"PeerLogs" json:"PeerLogs" toml:"PeerLogs" yaml:"PeerLogs"`
 	PeerStates             PeerStateSlice            `boil:"PeerStates" json:"PeerStates" toml:"PeerStates" yaml:"PeerStates"`
 	ReferrerPeerStates     PeerStateSlice            `boil:"ReferrerPeerStates" json:"ReferrerPeerStates" toml:"ReferrerPeerStates" yaml:"ReferrerPeerStates"`
@@ -741,6 +744,27 @@ func (o *Peer) HostMeasurements(mods ...qm.QueryMod) measurementQuery {
 
 	if len(queries.GetSelect(query.Query)) == 0 {
 		queries.SetSelect(query.Query, []string{"\"measurements\".*"})
+	}
+
+	return query
+}
+
+// NetworkSizeEstimates retrieves all the network_size_estimate's NetworkSizeEstimates with an executor.
+func (o *Peer) NetworkSizeEstimates(mods ...qm.QueryMod) networkSizeEstimateQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"network_size_estimates\".\"peer_id\"=?", o.ID),
+	)
+
+	query := NetworkSizeEstimates(queryMods...)
+	queries.SetFrom(query.Query, "\"network_size_estimates\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"network_size_estimates\".*"})
 	}
 
 	return query
@@ -2180,6 +2204,104 @@ func (peerL) LoadHostMeasurements(ctx context.Context, e boil.ContextExecutor, s
 					foreign.R = &measurementR{}
 				}
 				foreign.R.Host = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadNetworkSizeEstimates allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (peerL) LoadNetworkSizeEstimates(ctx context.Context, e boil.ContextExecutor, singular bool, maybePeer interface{}, mods queries.Applicator) error {
+	var slice []*Peer
+	var object *Peer
+
+	if singular {
+		object = maybePeer.(*Peer)
+	} else {
+		slice = *maybePeer.(*[]*Peer)
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &peerR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &peerR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`network_size_estimates`),
+		qm.WhereIn(`network_size_estimates.peer_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load network_size_estimates")
+	}
+
+	var resultSlice []*NetworkSizeEstimate
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice network_size_estimates")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on network_size_estimates")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for network_size_estimates")
+	}
+
+	if len(networkSizeEstimateAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.NetworkSizeEstimates = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &networkSizeEstimateR{}
+			}
+			foreign.R.Peer = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.PeerID {
+				local.R.NetworkSizeEstimates = append(local.R.NetworkSizeEstimates, foreign)
+				if foreign.R == nil {
+					foreign.R = &networkSizeEstimateR{}
+				}
+				foreign.R.Peer = local
 				break
 			}
 		}
@@ -3656,6 +3778,59 @@ func (o *Peer) AddHostMeasurements(ctx context.Context, exec boil.ContextExecuto
 			}
 		} else {
 			rel.R.Host = o
+		}
+	}
+	return nil
+}
+
+// AddNetworkSizeEstimates adds the given related objects to the existing relationships
+// of the peer, optionally inserting them as new records.
+// Appends related to o.R.NetworkSizeEstimates.
+// Sets related.R.Peer appropriately.
+func (o *Peer) AddNetworkSizeEstimates(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*NetworkSizeEstimate) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.PeerID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"network_size_estimates\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"peer_id"}),
+				strmangle.WhereClause("\"", "\"", 2, networkSizeEstimatePrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.PeerID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &peerR{
+			NetworkSizeEstimates: related,
+		}
+	} else {
+		o.R.NetworkSizeEstimates = append(o.R.NetworkSizeEstimates, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &networkSizeEstimateR{
+				Peer: o,
+			}
+		} else {
+			rel.R.Peer = o
 		}
 	}
 	return nil

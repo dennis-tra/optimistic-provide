@@ -15,6 +15,7 @@ var TableNames = struct {
 	Measurements                string
 	MultiAddresses              string
 	MultiAddressesXIPAddresses  string
+	NetworkSizeEstimates        string
 	PeerLogs                    string
 	PeerStates                  string
 	Peers                       string
@@ -44,6 +45,7 @@ var TableNames = struct {
 	Measurements:                "measurements",
 	MultiAddresses:              "multi_addresses",
 	MultiAddressesXIPAddresses:  "multi_addresses_x_ip_addresses",
+	NetworkSizeEstimates:        "network_size_estimates",
 	PeerLogs:                    "peer_logs",
 	PeerStates:                  "peer_states",
 	Peers:                       "peers",

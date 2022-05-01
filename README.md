@@ -30,7 +30,6 @@ This repo contains:
 - [Contributing](#contributing)
 - [License](#license)
 
-
 ## Proposal - Optimistic Provide
 
 ### Abstract
@@ -106,7 +105,7 @@ The discrepancy between the time the provide operations take and the time it cou
 This would trade storing these records on potentially more than 20 peers for decreasing the time content becomes available in the network.
 Further, it requires a priori information about the current network size.
 
- <!-- which can be estimated based on network observation of crawls like it was implemented in the [new experimental DHT mode](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.12.0). -->
+<!-- which can be estimated based on network observation of crawls like it was implemented in the [new experimental DHT mode](https://github.com/libp2p/go-libp2p-kad-dht/releases/tag/v0.12.0). -->
 
 #### Procedure
 

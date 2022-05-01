@@ -2,8 +2,12 @@ package dht
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
+
+	"github.com/volatiletech/null/v8"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"github.com/libp2p/go-libp2p-core/peer"
 
@@ -50,6 +54,12 @@ func New(ctx context.Context, key crypto.PrivKey) (*Host, error) {
 	quic, quicTrpt := wrap.NewQuicTransport()
 	msgSender := wrap.NewMessageSenderImpl()
 
+	newHost := &Host{
+		MsgSender:   msgSender,
+		Transports:  []*wrap.Notifier{tcp.Notifier, ws.Notifier, quic.Notifier},
+		rtListeners: map[RoutingTableListener]*sync.WaitGroup{},
+	}
+
 	var dht *kaddht.IpfsDHT
 	h, err := libp2p.New(
 		libp2p.DefaultListenAddrs,
@@ -62,6 +72,7 @@ func New(ctx context.Context, key crypto.PrivKey) (*Host, error) {
 			dht, err = kaddht.New(ctx, h,
 				kaddht.Mode(kaddht.ModeClient),
 				kaddht.MessageSenderImpl(msgSender.Init),
+				kaddht.NetworkSizeHook(newHost.SaveNetworkSizeEstimate),
 			)
 			return dht, err
 		}),
@@ -71,22 +82,30 @@ func New(ctx context.Context, key crypto.PrivKey) (*Host, error) {
 	}
 
 	now := time.Now()
-	newHost := &Host{
-		Host:          h,
-		DHT:           dht,
-		MsgSender:     msgSender,
-		StartedAt:     &now,
-		Transports:    []*wrap.Notifier{tcp.Notifier, ws.Notifier, quic.Notifier},
-		rtListeners:   map[RoutingTableListener]*sync.WaitGroup{},
-		rtPeerAdded:   dht.RoutingTable().PeerAdded,
-		rtPeerRemoved: dht.RoutingTable().PeerRemoved,
-	}
+	newHost.Host = h
+	newHost.DHT = dht
+	newHost.StartedAt = &now
+	newHost.rtPeerAdded = dht.RoutingTable().PeerAdded
+	newHost.rtPeerRemoved = dht.RoutingTable().PeerRemoved
 
 	dht.RoutingTable().PeerAdded = newHost.peerAdded
 	dht.RoutingTable().PeerRemoved = newHost.peerRemoved
 
 	log.Infow("Initialized new libp2p host", "localID", util.FmtPeerID(h.ID()))
 	return newHost, nil
+}
+
+func (h *Host) SaveNetworkSizeEstimate(avg float64, std float64, r2 float64, i int) {
+	estimate := models.NetworkSizeEstimate{
+		PeerID:         h.DBHost.ID,
+		NetworkSize:    avg,
+		NetworkSizeErr: std,
+		RSquared:       r2,
+		Extra:          null.StringFrom("linear-regression"),
+	}
+	if err := estimate.Insert(context.Background(), boil.GetContextDB(), boil.Infer()); err != nil {
+		fmt.Printf("Error inserting network size estimate: %s", err)
+	}
 }
 
 func (h *Host) PeerID() string {

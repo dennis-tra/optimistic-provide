@@ -26,6 +26,8 @@ func TestUpsert(t *testing.T) {
 
 	t.Run("MultiAddresses", testMultiAddressesUpsert)
 
+	t.Run("NetworkSizeEstimates", testNetworkSizeEstimatesUpsert)
+
 	t.Run("PeerLogs", testPeerLogsUpsert)
 
 	t.Run("PeerStates", testPeerStatesUpsert)

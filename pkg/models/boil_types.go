@@ -71,4 +71,5 @@ const (
 const (
 	ProvideTypeSINGLE_QUERY = "SINGLE_QUERY"
 	ProvideTypeMULTI_QUERY  = "MULTI_QUERY"
+	ProvideTypeESTIMATOR    = "ESTIMATOR"
 )
