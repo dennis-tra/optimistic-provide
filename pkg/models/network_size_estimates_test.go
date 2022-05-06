@@ -677,7 +677,7 @@ func testNetworkSizeEstimatesSelect(t *testing.T) {
 }
 
 var (
-	networkSizeEstimateDBTypes = map[string]string{`ID`: `integer`, `PeerID`: `integer`, `NetworkSize`: `double precision`, `NetworkSizeErr`: `double precision`, `RSquared`: `double precision`, `Extra`: `text`, `CreatedAt`: `timestamp with time zone`}
+	networkSizeEstimateDBTypes = map[string]string{`ID`: `integer`, `PeerID`: `integer`, `NetworkSize`: `double precision`, `NetworkSizeErr`: `double precision`, `RSquared`: `double precision`, `SampleSize`: `integer`, `CreatedAt`: `timestamp with time zone`}
 	_                          = bytes.MinRead
 )
 

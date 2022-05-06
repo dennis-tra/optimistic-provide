@@ -3,10 +3,10 @@ package dht
 import (
 	"context"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
-	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"github.com/libp2p/go-libp2p-core/peer"
@@ -96,12 +96,16 @@ func New(ctx context.Context, key crypto.PrivKey) (*Host, error) {
 }
 
 func (h *Host) SaveNetworkSizeEstimate(avg float64, std float64, r2 float64, i int) {
+	if h.DBHost == nil || math.IsNaN(avg) || math.IsNaN(std) || math.IsNaN(r2) {
+		return
+	}
+
 	estimate := models.NetworkSizeEstimate{
 		PeerID:         h.DBHost.ID,
 		NetworkSize:    avg,
 		NetworkSizeErr: std,
 		RSquared:       r2,
-		Extra:          null.StringFrom("linear-regression"),
+		SampleSize:     i,
 	}
 	if err := estimate.Insert(context.Background(), boil.GetContextDB(), boil.Infer()); err != nil {
 		fmt.Printf("Error inserting network size estimate: %s", err)

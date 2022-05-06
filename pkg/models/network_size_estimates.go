@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/friendsofgo/errors"
-	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -24,13 +23,13 @@ import (
 
 // NetworkSizeEstimate is an object representing the database table.
 type NetworkSizeEstimate struct {
-	ID             int         `boil:"id" json:"id" toml:"id" yaml:"id"`
-	PeerID         int         `boil:"peer_id" json:"peer_id" toml:"peer_id" yaml:"peer_id"`
-	NetworkSize    float64     `boil:"network_size" json:"network_size" toml:"network_size" yaml:"network_size"`
-	NetworkSizeErr float64     `boil:"network_size_err" json:"network_size_err" toml:"network_size_err" yaml:"network_size_err"`
-	RSquared       float64     `boil:"r_squared" json:"r_squared" toml:"r_squared" yaml:"r_squared"`
-	Extra          null.String `boil:"extra" json:"extra,omitempty" toml:"extra" yaml:"extra,omitempty"`
-	CreatedAt      time.Time   `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ID             int       `boil:"id" json:"id" toml:"id" yaml:"id"`
+	PeerID         int       `boil:"peer_id" json:"peer_id" toml:"peer_id" yaml:"peer_id"`
+	NetworkSize    float64   `boil:"network_size" json:"network_size" toml:"network_size" yaml:"network_size"`
+	NetworkSizeErr float64   `boil:"network_size_err" json:"network_size_err" toml:"network_size_err" yaml:"network_size_err"`
+	RSquared       float64   `boil:"r_squared" json:"r_squared" toml:"r_squared" yaml:"r_squared"`
+	SampleSize     int       `boil:"sample_size" json:"sample_size" toml:"sample_size" yaml:"sample_size"`
+	CreatedAt      time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
 
 	R *networkSizeEstimateR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L networkSizeEstimateL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -42,7 +41,7 @@ var NetworkSizeEstimateColumns = struct {
 	NetworkSize    string
 	NetworkSizeErr string
 	RSquared       string
-	Extra          string
+	SampleSize     string
 	CreatedAt      string
 }{
 	ID:             "id",
@@ -50,7 +49,7 @@ var NetworkSizeEstimateColumns = struct {
 	NetworkSize:    "network_size",
 	NetworkSizeErr: "network_size_err",
 	RSquared:       "r_squared",
-	Extra:          "extra",
+	SampleSize:     "sample_size",
 	CreatedAt:      "created_at",
 }
 
@@ -60,7 +59,7 @@ var NetworkSizeEstimateTableColumns = struct {
 	NetworkSize    string
 	NetworkSizeErr string
 	RSquared       string
-	Extra          string
+	SampleSize     string
 	CreatedAt      string
 }{
 	ID:             "network_size_estimates.id",
@@ -68,7 +67,7 @@ var NetworkSizeEstimateTableColumns = struct {
 	NetworkSize:    "network_size_estimates.network_size",
 	NetworkSizeErr: "network_size_estimates.network_size_err",
 	RSquared:       "network_size_estimates.r_squared",
-	Extra:          "network_size_estimates.extra",
+	SampleSize:     "network_size_estimates.sample_size",
 	CreatedAt:      "network_size_estimates.created_at",
 }
 
@@ -109,7 +108,7 @@ var NetworkSizeEstimateWhere = struct {
 	NetworkSize    whereHelperfloat64
 	NetworkSizeErr whereHelperfloat64
 	RSquared       whereHelperfloat64
-	Extra          whereHelpernull_String
+	SampleSize     whereHelperint
 	CreatedAt      whereHelpertime_Time
 }{
 	ID:             whereHelperint{field: "\"network_size_estimates\".\"id\""},
@@ -117,7 +116,7 @@ var NetworkSizeEstimateWhere = struct {
 	NetworkSize:    whereHelperfloat64{field: "\"network_size_estimates\".\"network_size\""},
 	NetworkSizeErr: whereHelperfloat64{field: "\"network_size_estimates\".\"network_size_err\""},
 	RSquared:       whereHelperfloat64{field: "\"network_size_estimates\".\"r_squared\""},
-	Extra:          whereHelpernull_String{field: "\"network_size_estimates\".\"extra\""},
+	SampleSize:     whereHelperint{field: "\"network_size_estimates\".\"sample_size\""},
 	CreatedAt:      whereHelpertime_Time{field: "\"network_size_estimates\".\"created_at\""},
 }
 
@@ -142,8 +141,8 @@ func (*networkSizeEstimateR) NewStruct() *networkSizeEstimateR {
 type networkSizeEstimateL struct{}
 
 var (
-	networkSizeEstimateAllColumns            = []string{"id", "peer_id", "network_size", "network_size_err", "r_squared", "extra", "created_at"}
-	networkSizeEstimateColumnsWithoutDefault = []string{"peer_id", "network_size", "network_size_err", "r_squared", "extra", "created_at"}
+	networkSizeEstimateAllColumns            = []string{"id", "peer_id", "network_size", "network_size_err", "r_squared", "sample_size", "created_at"}
+	networkSizeEstimateColumnsWithoutDefault = []string{"peer_id", "network_size", "network_size_err", "r_squared", "sample_size", "created_at"}
 	networkSizeEstimateColumnsWithDefault    = []string{"id"}
 	networkSizeEstimatePrimaryKeyColumns     = []string{"id"}
 )
