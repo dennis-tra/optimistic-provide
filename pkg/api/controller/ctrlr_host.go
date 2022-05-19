@@ -39,7 +39,7 @@ func (hc *HostController) Create(c *gin.Context) {
 		return
 	}
 
-	h, err := hc.hs.Create(hc.ctx, chr.Name)
+	h, err := hc.hs.Create(hc.ctx, chr.Name, chr.Network)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,
@@ -52,6 +52,7 @@ func (hc *HostController) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, &types.Host{
 		Name:           h.DBHost.Name,
 		HostId:         h.PeerID(),
+		Network:        types.NetworkType(h.DBHost.Network),
 		BootstrappedAt: nil,
 		StartedAt:      util.StrPtr(h.StartedAt.Format(time.RFC3339Nano)),
 		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339Nano),
@@ -75,6 +76,7 @@ func (hc *HostController) List(c *gin.Context) {
 	for _, dbHost := range dbHosts {
 		respHost := &types.Host{
 			Name:      dbHost.Name,
+			Network:   types.NetworkType(dbHost.Network),
 			HostId:    dbHost.R.Peer.MultiHash,
 			CreatedAt: dbHost.CreatedAt.Format(time.RFC3339Nano),
 		}
@@ -103,6 +105,7 @@ func (hc *HostController) Get(c *gin.Context) {
 	h := c.MustGet("host").(*dht.Host)
 	c.JSON(http.StatusOK, &types.Host{
 		Name:           h.DBHost.Name,
+		Network:        types.NetworkType(h.DBHost.Network),
 		HostId:         h.PeerID(),
 		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
 		StartedAt:      util.TimeToStr(h.StartedAt),
@@ -126,6 +129,7 @@ func (hc *HostController) Start(c *gin.Context) {
 	c.JSON(http.StatusOK, &types.Host{
 		Name:           h.DBHost.Name,
 		HostId:         h.PeerID(),
+		Network:        types.NetworkType(h.DBHost.Network),
 		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
 		StartedAt:      util.StrPtr(h.StartedAt.Format(time.RFC3339Nano)),
 		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339Nano),
@@ -138,6 +142,7 @@ func (hc *HostController) Stop(c *gin.Context) {
 	if h.Host == nil {
 		c.JSON(http.StatusOK, &types.Host{
 			Name:           h.DBHost.Name,
+			Network:        types.NetworkType(h.DBHost.Network),
 			HostId:         h.PeerID(),
 			BootstrappedAt: nil,
 			StartedAt:      nil,
@@ -157,6 +162,7 @@ func (hc *HostController) Stop(c *gin.Context) {
 
 	c.JSON(http.StatusOK, &types.Host{
 		Name:           h.DBHost.Name,
+		Network:        types.NetworkType(h.DBHost.Network),
 		HostId:         h.PeerID(),
 		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
 		StartedAt:      nil,
@@ -175,7 +181,7 @@ func (hc *HostController) Bootstrap(c *gin.Context) {
 		return
 	}
 
-	if err := h.Bootstrap(hc.ctx); err != nil {
+	if err := h.Bootstrap(hc.ctx, types.NetworkType(h.DBHost.Network)); err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,
 			Message: "Could not bootstrap host",
@@ -187,6 +193,7 @@ func (hc *HostController) Bootstrap(c *gin.Context) {
 	c.JSON(http.StatusOK, &types.Host{
 		Name:           h.DBHost.Name,
 		HostId:         h.PeerID(),
+		Network:        types.NetworkType(h.DBHost.Network),
 		BootstrappedAt: util.TimeToStr(h.Bootstrapped),
 		StartedAt:      util.StrPtr(h.StartedAt.Format(time.RFC3339Nano)),
 		CreatedAt:      h.DBHost.CreatedAt.Format(time.RFC3339Nano),

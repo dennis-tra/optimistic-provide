@@ -3,28 +3,25 @@ package dht
 import (
 	"context"
 	"fmt"
-	"math"
 	"sync"
 	"time"
 
-	"github.com/volatiletech/sqlboiler/v4/boil"
-
-	"github.com/libp2p/go-libp2p-core/peer"
-
-	logging "github.com/ipfs/go-log"
 	"github.com/libp2p/go-libp2p"
 	"github.com/libp2p/go-libp2p-core/crypto"
 	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/peer"
+	"github.com/libp2p/go-libp2p-core/protocol"
 	"github.com/libp2p/go-libp2p-core/routing"
 	kaddht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
+	"github.com/volatiletech/sqlboiler/v4/boil"
 
+	"github.com/dennis-tra/optimistic-provide/pkg/api/types"
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
 	"github.com/dennis-tra/optimistic-provide/pkg/util"
 	"github.com/dennis-tra/optimistic-provide/pkg/wrap"
 )
-
-var log = logging.Logger("optprov")
 
 type RoutingTableListener interface {
 	PeerAdded(p peer.ID)
@@ -48,7 +45,7 @@ type Host struct {
 	rtListeners   map[RoutingTableListener]*sync.WaitGroup
 }
 
-func New(ctx context.Context, key crypto.PrivKey) (*Host, error) {
+func New(ctx context.Context, key crypto.PrivKey, network types.NetworkType) (*Host, error) {
 	tcp, tcpTrpt := wrap.NewTCPTransport()
 	ws, wsTrpt := wrap.NewWSTransport()
 	quic, quicTrpt := wrap.NewQuicTransport()
@@ -58,6 +55,20 @@ func New(ctx context.Context, key crypto.PrivKey) (*Host, error) {
 		MsgSender:   msgSender,
 		Transports:  []*wrap.Notifier{tcp.Notifier, ws.Notifier, quic.Notifier},
 		rtListeners: map[RoutingTableListener]*sync.WaitGroup{},
+	}
+
+	protocols := []protocol.ID{}
+	switch network {
+	case types.NetworkTypeIPFS:
+		protocols = kaddht.DefaultProtocols
+	case types.NetworkTypeFILECOIN:
+		protocols = protocolsFilecoin
+	case types.NetworkTypePOLKADOT:
+		protocols = protocolsPolkadot
+	case types.NetworkTypeKUSAMA:
+		protocols = protocolsKusama
+	default:
+		return nil, fmt.Errorf("unknown network type: %s", network)
 	}
 
 	var dht *kaddht.IpfsDHT
@@ -71,6 +82,7 @@ func New(ctx context.Context, key crypto.PrivKey) (*Host, error) {
 			var err error
 			dht, err = kaddht.New(ctx, h,
 				kaddht.Mode(kaddht.ModeClient),
+				kaddht.V1ProtocolOverride(protocols[0]),
 				kaddht.MessageSenderImpl(msgSender.Init),
 				kaddht.NetworkSizeHook(newHost.SaveNetworkSizeEstimate),
 			)
@@ -91,21 +103,24 @@ func New(ctx context.Context, key crypto.PrivKey) (*Host, error) {
 	dht.RoutingTable().PeerAdded = newHost.peerAdded
 	dht.RoutingTable().PeerRemoved = newHost.peerRemoved
 
-	log.Infow("Initialized new libp2p host", "localID", util.FmtPeerID(h.ID()))
+	log.WithField("localID", util.FmtPeerID(h.ID())).Info("Initialized new libp2p host")
 	return newHost, nil
 }
 
-func (h *Host) SaveNetworkSizeEstimate(avg float64, std float64, r2 float64, i int) {
-	if h.DBHost == nil || math.IsNaN(avg) || math.IsNaN(std) || math.IsNaN(r2) {
+func (h *Host) SaveNetworkSizeEstimate(avg float64, std float64, r2 float64, sampleCount int, cpl int, distances []float64, key string) {
+	if h.DBHost == nil {
 		return
 	}
 
 	estimate := models.NetworkSizeEstimate{
-		PeerID:         h.DBHost.ID,
+		HostID:         h.DBHost.ID,
 		NetworkSize:    avg,
 		NetworkSizeErr: std,
 		RSquared:       r2,
-		SampleSize:     i,
+		SampleSize:     sampleCount,
+		CPL:            cpl,
+		Distances:      distances,
+		Key:            key,
 	}
 	if err := estimate.Insert(context.Background(), boil.GetContextDB(), boil.Infer()); err != nil {
 		fmt.Printf("Error inserting network size estimate: %s", err)
@@ -132,9 +147,23 @@ func (h *Host) Close() error {
 	return h.Host.Close()
 }
 
-func (h *Host) Bootstrap(ctx context.Context) error {
-	for _, bp := range kaddht.GetDefaultBootstrapPeerAddrInfos() {
-		log.Infow("Connecting to bootstrap peer", "remoteID", util.FmtPeerID(bp.ID))
+func (h *Host) Bootstrap(ctx context.Context, network types.NetworkType) error {
+	bootstrapPeers := []peer.AddrInfo{}
+	switch network {
+	case types.NetworkTypeIPFS:
+		bootstrapPeers = kaddht.GetDefaultBootstrapPeerAddrInfos()
+	case types.NetworkTypeFILECOIN:
+		bootstrapPeers = bpFilecoin
+	case types.NetworkTypePOLKADOT:
+		bootstrapPeers = bpPolkadot
+	case types.NetworkTypeKUSAMA:
+		bootstrapPeers = bpKusama
+	default:
+		return fmt.Errorf("unknown network type: %s", network)
+	}
+
+	for _, bp := range bootstrapPeers {
+		log.Infof("Connecting to bootstrap peer %s %s\n", "remoteID", util.FmtPeerID(bp.ID))
 		if err := h.Host.Connect(ctx, bp); err != nil {
 			return errors.Wrap(err, "connecting to bootstrap peer")
 		}

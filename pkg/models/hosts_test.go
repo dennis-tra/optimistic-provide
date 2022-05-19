@@ -494,6 +494,159 @@ func testHostsInsertWhitelist(t *testing.T) {
 	}
 }
 
+func testHostToManyNetworkSizeEstimates(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Host
+	var b, c NetworkSizeEstimate
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, hostDBTypes, true, hostColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Host struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, networkSizeEstimateDBTypes, false, networkSizeEstimateColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, networkSizeEstimateDBTypes, false, networkSizeEstimateColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.HostID = a.ID
+	c.HostID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.NetworkSizeEstimates().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.HostID == b.HostID {
+			bFound = true
+		}
+		if v.HostID == c.HostID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := HostSlice{&a}
+	if err = a.L.LoadNetworkSizeEstimates(ctx, tx, false, (*[]*Host)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.NetworkSizeEstimates); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.NetworkSizeEstimates = nil
+	if err = a.L.LoadNetworkSizeEstimates(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.NetworkSizeEstimates); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
+func testHostToManyAddOpNetworkSizeEstimates(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a Host
+	var b, c, d, e NetworkSizeEstimate
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, hostDBTypes, false, strmangle.SetComplement(hostPrimaryKeyColumns, hostColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*NetworkSizeEstimate{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, networkSizeEstimateDBTypes, false, strmangle.SetComplement(networkSizeEstimatePrimaryKeyColumns, networkSizeEstimateColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*NetworkSizeEstimate{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddNetworkSizeEstimates(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.HostID {
+			t.Error("foreign key was wrong value", a.ID, first.HostID)
+		}
+		if a.ID != second.HostID {
+			t.Error("foreign key was wrong value", a.ID, second.HostID)
+		}
+
+		if first.R.Host != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.Host != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.NetworkSizeEstimates[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.NetworkSizeEstimates[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.NetworkSizeEstimates().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
 func testHostToOnePeerUsingPeer(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -677,7 +830,7 @@ func testHostsSelect(t *testing.T) {
 }
 
 var (
-	hostDBTypes = map[string]string{`ID`: `integer`, `PeerID`: `integer`, `Name`: `text`, `PrivateKey`: `bytea`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`}
+	hostDBTypes = map[string]string{`ID`: `integer`, `PeerID`: `integer`, `Name`: `text`, `PrivateKey`: `bytea`, `CreatedAt`: `timestamp with time zone`, `UpdatedAt`: `timestamp with time zone`, `ArchivedAt`: `timestamp with time zone`, `Network`: `enum.network_type('IPFS','FILECOIN','POLKADOT','KUSAMA')`}
 	_           = bytes.MinRead
 )
 

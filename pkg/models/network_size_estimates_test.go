@@ -494,32 +494,32 @@ func testNetworkSizeEstimatesInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testNetworkSizeEstimateToOnePeerUsingPeer(t *testing.T) {
+func testNetworkSizeEstimateToOneHostUsingHost(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
 	defer func() { _ = tx.Rollback() }()
 
 	var local NetworkSizeEstimate
-	var foreign Peer
+	var foreign Host
 
 	seed := randomize.NewSeed()
 	if err := randomize.Struct(seed, &local, networkSizeEstimateDBTypes, false, networkSizeEstimateColumnsWithDefault...); err != nil {
 		t.Errorf("Unable to randomize NetworkSizeEstimate struct: %s", err)
 	}
-	if err := randomize.Struct(seed, &foreign, peerDBTypes, false, peerColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Peer struct: %s", err)
+	if err := randomize.Struct(seed, &foreign, hostDBTypes, false, hostColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize Host struct: %s", err)
 	}
 
 	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	local.PeerID = foreign.ID
+	local.HostID = foreign.ID
 	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
 		t.Fatal(err)
 	}
 
-	check, err := local.Peer().One(ctx, tx)
+	check, err := local.Host().One(ctx, tx)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -529,23 +529,23 @@ func testNetworkSizeEstimateToOnePeerUsingPeer(t *testing.T) {
 	}
 
 	slice := NetworkSizeEstimateSlice{&local}
-	if err = local.L.LoadPeer(ctx, tx, false, (*[]*NetworkSizeEstimate)(&slice), nil); err != nil {
+	if err = local.L.LoadHost(ctx, tx, false, (*[]*NetworkSizeEstimate)(&slice), nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.Peer == nil {
+	if local.R.Host == nil {
 		t.Error("struct should have been eager loaded")
 	}
 
-	local.R.Peer = nil
-	if err = local.L.LoadPeer(ctx, tx, true, &local, nil); err != nil {
+	local.R.Host = nil
+	if err = local.L.LoadHost(ctx, tx, true, &local, nil); err != nil {
 		t.Fatal(err)
 	}
-	if local.R.Peer == nil {
+	if local.R.Host == nil {
 		t.Error("struct should have been eager loaded")
 	}
 }
 
-func testNetworkSizeEstimateToOneSetOpPeerUsingPeer(t *testing.T) {
+func testNetworkSizeEstimateToOneSetOpHostUsingHost(t *testing.T) {
 	var err error
 
 	ctx := context.Background()
@@ -553,16 +553,16 @@ func testNetworkSizeEstimateToOneSetOpPeerUsingPeer(t *testing.T) {
 	defer func() { _ = tx.Rollback() }()
 
 	var a NetworkSizeEstimate
-	var b, c Peer
+	var b, c Host
 
 	seed := randomize.NewSeed()
 	if err = randomize.Struct(seed, &a, networkSizeEstimateDBTypes, false, strmangle.SetComplement(networkSizeEstimatePrimaryKeyColumns, networkSizeEstimateColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &b, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &b, hostDBTypes, false, strmangle.SetComplement(hostPrimaryKeyColumns, hostColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
-	if err = randomize.Struct(seed, &c, peerDBTypes, false, strmangle.SetComplement(peerPrimaryKeyColumns, peerColumnsWithoutDefault)...); err != nil {
+	if err = randomize.Struct(seed, &c, hostDBTypes, false, strmangle.SetComplement(hostPrimaryKeyColumns, hostColumnsWithoutDefault)...); err != nil {
 		t.Fatal(err)
 	}
 
@@ -573,32 +573,32 @@ func testNetworkSizeEstimateToOneSetOpPeerUsingPeer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for i, x := range []*Peer{&b, &c} {
-		err = a.SetPeer(ctx, tx, i != 0, x)
+	for i, x := range []*Host{&b, &c} {
+		err = a.SetHost(ctx, tx, i != 0, x)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		if a.R.Peer != x {
+		if a.R.Host != x {
 			t.Error("relationship struct not set to correct value")
 		}
 
 		if x.R.NetworkSizeEstimates[0] != &a {
 			t.Error("failed to append to foreign relationship struct")
 		}
-		if a.PeerID != x.ID {
-			t.Error("foreign key was wrong value", a.PeerID)
+		if a.HostID != x.ID {
+			t.Error("foreign key was wrong value", a.HostID)
 		}
 
-		zero := reflect.Zero(reflect.TypeOf(a.PeerID))
-		reflect.Indirect(reflect.ValueOf(&a.PeerID)).Set(zero)
+		zero := reflect.Zero(reflect.TypeOf(a.HostID))
+		reflect.Indirect(reflect.ValueOf(&a.HostID)).Set(zero)
 
 		if err = a.Reload(ctx, tx); err != nil {
 			t.Fatal("failed to reload", err)
 		}
 
-		if a.PeerID != x.ID {
-			t.Error("foreign key was wrong value", a.PeerID, x.ID)
+		if a.HostID != x.ID {
+			t.Error("foreign key was wrong value", a.HostID, x.ID)
 		}
 	}
 }
@@ -677,7 +677,7 @@ func testNetworkSizeEstimatesSelect(t *testing.T) {
 }
 
 var (
-	networkSizeEstimateDBTypes = map[string]string{`ID`: `integer`, `PeerID`: `integer`, `NetworkSize`: `double precision`, `NetworkSizeErr`: `double precision`, `RSquared`: `double precision`, `SampleSize`: `integer`, `CreatedAt`: `timestamp with time zone`}
+	networkSizeEstimateDBTypes = map[string]string{`ID`: `integer`, `HostID`: `integer`, `NetworkSize`: `double precision`, `NetworkSizeErr`: `double precision`, `RSquared`: `double precision`, `SampleSize`: `integer`, `CreatedAt`: `timestamp with time zone`, `CPL`: `integer`, `Distances`: `ARRAYdouble precision`, `Key`: `text`}
 	_                          = bytes.MinRead
 )
 

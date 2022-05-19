@@ -6,17 +6,24 @@ import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
 import TextField from "@mui/material/TextField";
 import { useCreateHostMutation } from "../store/api";
+import { FormControl, InputLabel, MenuItem, Select, SelectChangeEvent } from "@mui/material";
+import { NetworkType } from "../api/models/NetworkType";
 
 interface NewHostCardProps {}
 
 const NewHostCard: React.FC<NewHostCardProps> = ({}) => {
   const [createHost, { isLoading }] = useCreateHostMutation();
   const [hostName, setHostName] = useState("");
+  const [network, setNetwork] = useState<NetworkType>(NetworkType.Ipfs);
+
+  const handleChange = (event: SelectChangeEvent) => {
+    setNetwork(event.target.value as NetworkType);
+  };
 
   const handleSubmit = async (event: React.MouseEvent<HTMLElement>) => {
     event.preventDefault();
     try {
-      await createHost({ name: hostName }).unwrap();
+      await createHost({ name: hostName, network: network }).unwrap();
       setHostName("");
     } catch (err) {
       console.error("Failed to create new host: ", err);
@@ -31,7 +38,6 @@ const NewHostCard: React.FC<NewHostCardProps> = ({}) => {
             p: 2,
             display: "flex",
             flexDirection: "column",
-            height: 240,
             gap: 2,
           }}
         >
@@ -45,8 +51,28 @@ const NewHostCard: React.FC<NewHostCardProps> = ({}) => {
             value={hostName}
             onChange={(event) => setHostName(event.target.value)}
           />
+          <FormControl>
+            <InputLabel id="select-network">Network</InputLabel>
+            <Select
+              labelId="select-network"
+              id="select-network"
+              value={network}
+              label="Network"
+              onChange={handleChange}
+            >
+              <MenuItem value={NetworkType.Ipfs}>IPFS</MenuItem>
+              <MenuItem value={NetworkType.Filecoin}>Filecoin</MenuItem>
+              <MenuItem value={NetworkType.Polkadot}>Polkadot</MenuItem>
+              <MenuItem value={NetworkType.Kusama}>Kusama</MenuItem>
+            </Select>
+          </FormControl>
           <Box sx={{ flex: 1 }} />
-          <Button type="submit" variant="contained" onClick={handleSubmit} disabled={!hostName || isLoading}>
+          <Button
+            type="submit"
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={!hostName || !network || isLoading}
+          >
             Create
           </Button>
         </Paper>

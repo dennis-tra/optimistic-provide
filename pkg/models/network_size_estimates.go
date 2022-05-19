@@ -18,18 +18,22 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/queries/qmhelper"
+	"github.com/volatiletech/sqlboiler/v4/types"
 	"github.com/volatiletech/strmangle"
 )
 
 // NetworkSizeEstimate is an object representing the database table.
 type NetworkSizeEstimate struct {
-	ID             int       `boil:"id" json:"id" toml:"id" yaml:"id"`
-	PeerID         int       `boil:"peer_id" json:"peer_id" toml:"peer_id" yaml:"peer_id"`
-	NetworkSize    float64   `boil:"network_size" json:"network_size" toml:"network_size" yaml:"network_size"`
-	NetworkSizeErr float64   `boil:"network_size_err" json:"network_size_err" toml:"network_size_err" yaml:"network_size_err"`
-	RSquared       float64   `boil:"r_squared" json:"r_squared" toml:"r_squared" yaml:"r_squared"`
-	SampleSize     int       `boil:"sample_size" json:"sample_size" toml:"sample_size" yaml:"sample_size"`
-	CreatedAt      time.Time `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	ID             int                `boil:"id" json:"id" toml:"id" yaml:"id"`
+	HostID         int                `boil:"host_id" json:"host_id" toml:"host_id" yaml:"host_id"`
+	NetworkSize    float64            `boil:"network_size" json:"network_size" toml:"network_size" yaml:"network_size"`
+	NetworkSizeErr float64            `boil:"network_size_err" json:"network_size_err" toml:"network_size_err" yaml:"network_size_err"`
+	RSquared       float64            `boil:"r_squared" json:"r_squared" toml:"r_squared" yaml:"r_squared"`
+	SampleSize     int                `boil:"sample_size" json:"sample_size" toml:"sample_size" yaml:"sample_size"`
+	CreatedAt      time.Time          `boil:"created_at" json:"created_at" toml:"created_at" yaml:"created_at"`
+	CPL            int                `boil:"cpl" json:"cpl" toml:"cpl" yaml:"cpl"`
+	Distances      types.Float64Array `boil:"distances" json:"distances" toml:"distances" yaml:"distances"`
+	Key            string             `boil:"key" json:"key" toml:"key" yaml:"key"`
 
 	R *networkSizeEstimateR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L networkSizeEstimateL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -37,38 +41,50 @@ type NetworkSizeEstimate struct {
 
 var NetworkSizeEstimateColumns = struct {
 	ID             string
-	PeerID         string
+	HostID         string
 	NetworkSize    string
 	NetworkSizeErr string
 	RSquared       string
 	SampleSize     string
 	CreatedAt      string
+	CPL            string
+	Distances      string
+	Key            string
 }{
 	ID:             "id",
-	PeerID:         "peer_id",
+	HostID:         "host_id",
 	NetworkSize:    "network_size",
 	NetworkSizeErr: "network_size_err",
 	RSquared:       "r_squared",
 	SampleSize:     "sample_size",
 	CreatedAt:      "created_at",
+	CPL:            "cpl",
+	Distances:      "distances",
+	Key:            "key",
 }
 
 var NetworkSizeEstimateTableColumns = struct {
 	ID             string
-	PeerID         string
+	HostID         string
 	NetworkSize    string
 	NetworkSizeErr string
 	RSquared       string
 	SampleSize     string
 	CreatedAt      string
+	CPL            string
+	Distances      string
+	Key            string
 }{
 	ID:             "network_size_estimates.id",
-	PeerID:         "network_size_estimates.peer_id",
+	HostID:         "network_size_estimates.host_id",
 	NetworkSize:    "network_size_estimates.network_size",
 	NetworkSizeErr: "network_size_estimates.network_size_err",
 	RSquared:       "network_size_estimates.r_squared",
 	SampleSize:     "network_size_estimates.sample_size",
 	CreatedAt:      "network_size_estimates.created_at",
+	CPL:            "network_size_estimates.cpl",
+	Distances:      "network_size_estimates.distances",
+	Key:            "network_size_estimates.key",
 }
 
 // Generated where
@@ -102,34 +118,61 @@ func (w whereHelperfloat64) NIN(slice []float64) qm.QueryMod {
 	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
 }
 
+type whereHelpertypes_Float64Array struct{ field string }
+
+func (w whereHelpertypes_Float64Array) EQ(x types.Float64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.EQ, x)
+}
+func (w whereHelpertypes_Float64Array) NEQ(x types.Float64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.NEQ, x)
+}
+func (w whereHelpertypes_Float64Array) LT(x types.Float64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LT, x)
+}
+func (w whereHelpertypes_Float64Array) LTE(x types.Float64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.LTE, x)
+}
+func (w whereHelpertypes_Float64Array) GT(x types.Float64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GT, x)
+}
+func (w whereHelpertypes_Float64Array) GTE(x types.Float64Array) qm.QueryMod {
+	return qmhelper.Where(w.field, qmhelper.GTE, x)
+}
+
 var NetworkSizeEstimateWhere = struct {
 	ID             whereHelperint
-	PeerID         whereHelperint
+	HostID         whereHelperint
 	NetworkSize    whereHelperfloat64
 	NetworkSizeErr whereHelperfloat64
 	RSquared       whereHelperfloat64
 	SampleSize     whereHelperint
 	CreatedAt      whereHelpertime_Time
+	CPL            whereHelperint
+	Distances      whereHelpertypes_Float64Array
+	Key            whereHelperstring
 }{
 	ID:             whereHelperint{field: "\"network_size_estimates\".\"id\""},
-	PeerID:         whereHelperint{field: "\"network_size_estimates\".\"peer_id\""},
+	HostID:         whereHelperint{field: "\"network_size_estimates\".\"host_id\""},
 	NetworkSize:    whereHelperfloat64{field: "\"network_size_estimates\".\"network_size\""},
 	NetworkSizeErr: whereHelperfloat64{field: "\"network_size_estimates\".\"network_size_err\""},
 	RSquared:       whereHelperfloat64{field: "\"network_size_estimates\".\"r_squared\""},
 	SampleSize:     whereHelperint{field: "\"network_size_estimates\".\"sample_size\""},
 	CreatedAt:      whereHelpertime_Time{field: "\"network_size_estimates\".\"created_at\""},
+	CPL:            whereHelperint{field: "\"network_size_estimates\".\"cpl\""},
+	Distances:      whereHelpertypes_Float64Array{field: "\"network_size_estimates\".\"distances\""},
+	Key:            whereHelperstring{field: "\"network_size_estimates\".\"key\""},
 }
 
 // NetworkSizeEstimateRels is where relationship names are stored.
 var NetworkSizeEstimateRels = struct {
-	Peer string
+	Host string
 }{
-	Peer: "Peer",
+	Host: "Host",
 }
 
 // networkSizeEstimateR is where relationships are stored.
 type networkSizeEstimateR struct {
-	Peer *Peer `boil:"Peer" json:"Peer" toml:"Peer" yaml:"Peer"`
+	Host *Host `boil:"Host" json:"Host" toml:"Host" yaml:"Host"`
 }
 
 // NewStruct creates a new relationship struct
@@ -141,9 +184,9 @@ func (*networkSizeEstimateR) NewStruct() *networkSizeEstimateR {
 type networkSizeEstimateL struct{}
 
 var (
-	networkSizeEstimateAllColumns            = []string{"id", "peer_id", "network_size", "network_size_err", "r_squared", "sample_size", "created_at"}
-	networkSizeEstimateColumnsWithoutDefault = []string{"peer_id", "network_size", "network_size_err", "r_squared", "sample_size", "created_at"}
-	networkSizeEstimateColumnsWithDefault    = []string{"id"}
+	networkSizeEstimateAllColumns            = []string{"id", "host_id", "network_size", "network_size_err", "r_squared", "sample_size", "created_at", "cpl", "distances", "key"}
+	networkSizeEstimateColumnsWithoutDefault = []string{"host_id", "network_size", "network_size_err", "r_squared", "sample_size", "created_at"}
+	networkSizeEstimateColumnsWithDefault    = []string{"id", "cpl", "distances", "key"}
 	networkSizeEstimatePrimaryKeyColumns     = []string{"id"}
 )
 
@@ -422,23 +465,23 @@ func (q networkSizeEstimateQuery) Exists(ctx context.Context, exec boil.ContextE
 	return count > 0, nil
 }
 
-// Peer pointed to by the foreign key.
-func (o *NetworkSizeEstimate) Peer(mods ...qm.QueryMod) peerQuery {
+// Host pointed to by the foreign key.
+func (o *NetworkSizeEstimate) Host(mods ...qm.QueryMod) hostQuery {
 	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.PeerID),
+		qm.Where("\"id\" = ?", o.HostID),
 	}
 
 	queryMods = append(queryMods, mods...)
 
-	query := Peers(queryMods...)
-	queries.SetFrom(query.Query, "\"peers\"")
+	query := Hosts(queryMods...)
+	queries.SetFrom(query.Query, "\"hosts\"")
 
 	return query
 }
 
-// LoadPeer allows an eager lookup of values, cached into the
+// LoadHost allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for an N-1 relationship.
-func (networkSizeEstimateL) LoadPeer(ctx context.Context, e boil.ContextExecutor, singular bool, maybeNetworkSizeEstimate interface{}, mods queries.Applicator) error {
+func (networkSizeEstimateL) LoadHost(ctx context.Context, e boil.ContextExecutor, singular bool, maybeNetworkSizeEstimate interface{}, mods queries.Applicator) error {
 	var slice []*NetworkSizeEstimate
 	var object *NetworkSizeEstimate
 
@@ -453,7 +496,7 @@ func (networkSizeEstimateL) LoadPeer(ctx context.Context, e boil.ContextExecutor
 		if object.R == nil {
 			object.R = &networkSizeEstimateR{}
 		}
-		args = append(args, object.PeerID)
+		args = append(args, object.HostID)
 
 	} else {
 	Outer:
@@ -463,12 +506,12 @@ func (networkSizeEstimateL) LoadPeer(ctx context.Context, e boil.ContextExecutor
 			}
 
 			for _, a := range args {
-				if a == obj.PeerID {
+				if a == obj.HostID {
 					continue Outer
 				}
 			}
 
-			args = append(args, obj.PeerID)
+			args = append(args, obj.HostID)
 
 		}
 	}
@@ -478,8 +521,8 @@ func (networkSizeEstimateL) LoadPeer(ctx context.Context, e boil.ContextExecutor
 	}
 
 	query := NewQuery(
-		qm.From(`peers`),
-		qm.WhereIn(`peers.id in ?`, args...),
+		qm.From(`hosts`),
+		qm.WhereIn(`hosts.id in ?`, args...),
 	)
 	if mods != nil {
 		mods.Apply(query)
@@ -487,19 +530,19 @@ func (networkSizeEstimateL) LoadPeer(ctx context.Context, e boil.ContextExecutor
 
 	results, err := query.QueryContext(ctx, e)
 	if err != nil {
-		return errors.Wrap(err, "failed to eager load Peer")
+		return errors.Wrap(err, "failed to eager load Host")
 	}
 
-	var resultSlice []*Peer
+	var resultSlice []*Host
 	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Peer")
+		return errors.Wrap(err, "failed to bind eager loaded slice Host")
 	}
 
 	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for peers")
+		return errors.Wrap(err, "failed to close results of eager load for hosts")
 	}
 	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for peers")
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for hosts")
 	}
 
 	if len(networkSizeEstimateAfterSelectHooks) != 0 {
@@ -516,9 +559,9 @@ func (networkSizeEstimateL) LoadPeer(ctx context.Context, e boil.ContextExecutor
 
 	if singular {
 		foreign := resultSlice[0]
-		object.R.Peer = foreign
+		object.R.Host = foreign
 		if foreign.R == nil {
-			foreign.R = &peerR{}
+			foreign.R = &hostR{}
 		}
 		foreign.R.NetworkSizeEstimates = append(foreign.R.NetworkSizeEstimates, object)
 		return nil
@@ -526,10 +569,10 @@ func (networkSizeEstimateL) LoadPeer(ctx context.Context, e boil.ContextExecutor
 
 	for _, local := range slice {
 		for _, foreign := range resultSlice {
-			if local.PeerID == foreign.ID {
-				local.R.Peer = foreign
+			if local.HostID == foreign.ID {
+				local.R.Host = foreign
 				if foreign.R == nil {
-					foreign.R = &peerR{}
+					foreign.R = &hostR{}
 				}
 				foreign.R.NetworkSizeEstimates = append(foreign.R.NetworkSizeEstimates, local)
 				break
@@ -540,10 +583,10 @@ func (networkSizeEstimateL) LoadPeer(ctx context.Context, e boil.ContextExecutor
 	return nil
 }
 
-// SetPeer of the networkSizeEstimate to the related item.
-// Sets o.R.Peer to related.
+// SetHost of the networkSizeEstimate to the related item.
+// Sets o.R.Host to related.
 // Adds o to related.R.NetworkSizeEstimates.
-func (o *NetworkSizeEstimate) SetPeer(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Peer) error {
+func (o *NetworkSizeEstimate) SetHost(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Host) error {
 	var err error
 	if insert {
 		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
@@ -553,7 +596,7 @@ func (o *NetworkSizeEstimate) SetPeer(ctx context.Context, exec boil.ContextExec
 
 	updateQuery := fmt.Sprintf(
 		"UPDATE \"network_size_estimates\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"peer_id"}),
+		strmangle.SetParamNames("\"", "\"", 1, []string{"host_id"}),
 		strmangle.WhereClause("\"", "\"", 2, networkSizeEstimatePrimaryKeyColumns),
 	)
 	values := []interface{}{related.ID, o.ID}
@@ -567,17 +610,17 @@ func (o *NetworkSizeEstimate) SetPeer(ctx context.Context, exec boil.ContextExec
 		return errors.Wrap(err, "failed to update local table")
 	}
 
-	o.PeerID = related.ID
+	o.HostID = related.ID
 	if o.R == nil {
 		o.R = &networkSizeEstimateR{
-			Peer: related,
+			Host: related,
 		}
 	} else {
-		o.R.Peer = related
+		o.R.Host = related
 	}
 
 	if related.R == nil {
-		related.R = &peerR{
+		related.R = &hostR{
 			NetworkSizeEstimates: NetworkSizeEstimateSlice{o},
 		}
 	} else {

@@ -13,6 +13,13 @@
  */
 
 import { exists, mapValues } from '../runtime';
+import {
+    NetworkType,
+    NetworkTypeFromJSON,
+    NetworkTypeFromJSONTyped,
+    NetworkTypeToJSON,
+} from './NetworkType';
+
 /**
  * 
  * @export
@@ -31,6 +38,12 @@ export interface Host {
      * @memberof Host
      */
     name: string;
+    /**
+     * 
+     * @type {NetworkType}
+     * @memberof Host
+     */
+    network: NetworkType;
     /**
      * 
      * @type {string}
@@ -69,6 +82,7 @@ export function HostFromJSONTyped(json: any, ignoreDiscriminator: boolean): Host
         
         'hostId': json['hostId'],
         'name': json['name'],
+        'network': NetworkTypeFromJSON(json['network']),
         'startedAt': json['startedAt'],
         'createdAt': json['createdAt'],
         'bootstrappedAt': json['bootstrappedAt'],
@@ -87,6 +101,7 @@ export function HostToJSON(value?: Host | null): any {
         
         'hostId': value.hostId,
         'name': value.name,
+        'network': NetworkTypeToJSON(value.network),
         'startedAt': value.startedAt,
         'createdAt': value.createdAt,
         'bootstrappedAt': value.bootstrappedAt,

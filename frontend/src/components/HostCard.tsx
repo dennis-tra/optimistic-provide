@@ -107,6 +107,7 @@ const HostCard: React.FC<HostCardProps> = ({ host }) => {
               />
             </Tooltip>
           )}
+          <Chip label={host.network} color="default" variant="filled" />
         </Stack>
         <Box sx={{ flex: 1 }}></Box>
         <Stack direction="row" spacing={1} justifyContent="space-between" alignItems="center">

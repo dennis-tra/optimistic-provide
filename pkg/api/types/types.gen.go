@@ -22,6 +22,17 @@ const (
 	ErrorCodeSAVINGROUTINGTABLE ErrorCode = "SAVING_ROUTING_TABLE"
 )
 
+// Defines values for NetworkType.
+const (
+	NetworkTypeFILECOIN NetworkType = "FILECOIN"
+
+	NetworkTypeIPFS NetworkType = "IPFS"
+
+	NetworkTypeKUSAMA NetworkType = "KUSAMA"
+
+	NetworkTypePOLKADOT NetworkType = "POLKADOT"
+)
+
 // Defines values for ProvideType.
 const (
 	ProvideTypeESTIMATOR ProvideType = "ESTIMATOR"
@@ -84,7 +95,8 @@ type Connection struct {
 // CreateHostRequest defines model for CreateHostRequest.
 type CreateHostRequest struct {
 	// An arbitrary name for this host.
-	Name string `json:"name"`
+	Name    string      `json:"name"`
+	Network NetworkType `json:"network"`
 }
 
 // CreateMeasurementRequest defines model for CreateMeasurementRequest.
@@ -165,13 +177,17 @@ type GetProvidersResponse struct {
 
 // Host defines model for Host.
 type Host struct {
-	BootstrappedAt       *string `json:"bootstrappedAt"`
-	CreatedAt            string  `json:"createdAt"`
-	HostId               string  `json:"hostId"`
-	Name                 string  `json:"name"`
-	RunningProvidesCount float32 `json:"runningProvidesCount"`
-	StartedAt            *string `json:"startedAt"`
+	BootstrappedAt       *string     `json:"bootstrappedAt"`
+	CreatedAt            string      `json:"createdAt"`
+	HostId               string      `json:"hostId"`
+	Name                 string      `json:"name"`
+	Network              NetworkType `json:"network"`
+	RunningProvidesCount float32     `json:"runningProvidesCount"`
+	StartedAt            *string     `json:"startedAt"`
 }
+
+// NetworkType defines model for NetworkType.
+type NetworkType string
 
 // Peer defines model for Peer.
 type Peer struct {

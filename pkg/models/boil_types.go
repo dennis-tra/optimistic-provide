@@ -59,6 +59,14 @@ const (
 	DialTransportUDP  = "udp"
 )
 
+// Enum values for network_type
+const (
+	NetworkTypeIPFS     = "IPFS"
+	NetworkTypeFILECOIN = "FILECOIN"
+	NetworkTypePOLKADOT = "POLKADOT"
+	NetworkTypeKUSAMA   = "KUSAMA"
+)
+
 // Enum values for peer_state
 const (
 	PeerStateHEARD       = "HEARD"

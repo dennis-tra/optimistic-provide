@@ -33,10 +33,10 @@ make open-api:
 	openapi-generator generate -g typescript-fetch -i ./pkg/api/openapi.yaml -o ./frontend/src/api --global-property models --additional-properties=supportsES6=true,typescriptThreePlus=true
 
 database:
-	docker run --rm -p 5432:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_USER=optprov -e POSTGRES_DB=optprov_dev postgres:13
+	docker run --rm -p 5433:5432 -e POSTGRES_PASSWORD=password -e POSTGRES_USER=optprov -e POSTGRES_DB=optprov_dev postgres:13
 
 migrate-up:
-	migrate -database 'postgres://optprov:password@localhost:5432/optprov_dev?sslmode=disable' -path migrations up
+	migrate -database 'postgres://optprov:password@localhost:5433/optprov_dev?sslmode=disable' -path migrations up
 
 migrate-down:
 	migrate -database 'postgres://optprov:password@localhost:5432/optprov_dev?sslmode=disable' -path migrations down

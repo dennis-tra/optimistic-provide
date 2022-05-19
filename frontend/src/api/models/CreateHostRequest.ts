@@ -13,6 +13,13 @@
  */
 
 import { exists, mapValues } from '../runtime';
+import {
+    NetworkType,
+    NetworkTypeFromJSON,
+    NetworkTypeFromJSONTyped,
+    NetworkTypeToJSON,
+} from './NetworkType';
+
 /**
  * 
  * @export
@@ -25,6 +32,12 @@ export interface CreateHostRequest {
      * @memberof CreateHostRequest
      */
     name: string;
+    /**
+     * 
+     * @type {NetworkType}
+     * @memberof CreateHostRequest
+     */
+    network: NetworkType;
 }
 
 export function CreateHostRequestFromJSON(json: any): CreateHostRequest {
@@ -38,6 +51,7 @@ export function CreateHostRequestFromJSONTyped(json: any, ignoreDiscriminator: b
     return {
         
         'name': json['name'],
+        'network': NetworkTypeFromJSON(json['network']),
     };
 }
 
@@ -51,6 +65,7 @@ export function CreateHostRequestToJSON(value?: CreateHostRequest | null): any {
     return {
         
         'name': value.name,
+        'network': NetworkTypeToJSON(value.network),
     };
 }
 

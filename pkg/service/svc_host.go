@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/dennis-tra/optimistic-provide/pkg/api/types"
+
 	"github.com/dennis-tra/optimistic-provide/pkg/repo"
 
 	"github.com/dennis-tra/optimistic-provide/pkg/models"
@@ -18,7 +20,7 @@ import (
 )
 
 type HostService interface {
-	Create(ctx context.Context, name string) (*dht.Host, error)
+	Create(ctx context.Context, name string, network types.NetworkType) (*dht.Host, error)
 	Hosts(ctx context.Context) (map[string]*dht.Host, models.HostSlice, error)
 	Host(ctx context.Context, p peer.ID) (*dht.Host, error)
 	Start(ctx context.Context, h *dht.Host) (*dht.Host, error)
@@ -46,7 +48,7 @@ func NewHostService(peerService PeerService, rtService RoutingTableService, host
 	}
 }
 
-func (hs *Host) Create(ctx context.Context, name string) (*dht.Host, error) {
+func (hs *Host) Create(ctx context.Context, name string, network types.NetworkType) (*dht.Host, error) {
 	key, _, err := crypto.GenerateKeyPair(crypto.Secp256k1, 256)
 	if err != nil {
 		return nil, errors.Wrap(err, "generate key pair")
@@ -57,7 +59,7 @@ func (hs *Host) Create(ctx context.Context, name string) (*dht.Host, error) {
 		return nil, errors.Wrap(err, "marshal private key")
 	}
 
-	h, err := dht.New(ctx, key)
+	h, err := dht.New(ctx, key, network)
 	if err != nil {
 		return nil, errors.Wrap(err, "new dht host")
 	}
@@ -79,6 +81,7 @@ func (hs *Host) Create(ctx context.Context, name string) (*dht.Host, error) {
 
 	dbHost := &models.Host{
 		Name:       name,
+		Network:    string(network),
 		PrivateKey: keyDat,
 	}
 
@@ -112,7 +115,7 @@ func (hs *Host) Start(ctx context.Context, h *dht.Host) (*dht.Host, error) {
 		return nil, errors.Wrap(err, "marshal private key")
 	}
 
-	startedHost, err := dht.New(ctx, keyDat)
+	startedHost, err := dht.New(ctx, keyDat, types.NetworkType(h.DBHost.Network))
 	if err != nil {
 		return nil, errors.Wrap(err, "new dht host")
 	}

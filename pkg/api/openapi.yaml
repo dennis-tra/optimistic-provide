@@ -659,13 +659,23 @@ components:
       required:
         - providers
         - closerPeers
+    NetworkType:
+      type: string
+      enum:
+        - IPFS
+        - FILECOIN
+        - POLKADOT
+        - KUSAMA
     CreateHostRequest:
       type: object
       properties:
         name:
           description: An arbitrary name for this host.
           type: string
+        network:
+          $ref: '#/components/schemas/NetworkType'
       required:
+        - network
         - name
     ErrorCode:
       type: string
@@ -828,6 +838,8 @@ components:
           type: string
         name:
           type: string
+        network:
+          $ref: '#/components/schemas/NetworkType'
         startedAt:
           type: string
           format: date-format
@@ -844,6 +856,7 @@ components:
       required:
         - hostId
         - name
+        - network
         - startedAt
         - createdAt
         - bootstrappedAt
