@@ -33,6 +33,12 @@ export interface ProvideMeasurementConfiguration {
      */
     iterations: number;
     /**
+     * Multi-Query parallelism.
+     * @type {number}
+     * @memberof ProvideMeasurementConfiguration
+     */
+    concurrency?: number;
+    /**
      * 
      * @type {ProvideType}
      * @memberof ProvideMeasurementConfiguration
@@ -51,6 +57,7 @@ export function ProvideMeasurementConfigurationFromJSONTyped(json: any, ignoreDi
     return {
         
         'iterations': json['iterations'],
+        'concurrency': !exists(json, 'concurrency') ? undefined : json['concurrency'],
         'provideType': ProvideTypeFromJSON(json['provideType']),
     };
 }
@@ -65,6 +72,7 @@ export function ProvideMeasurementConfigurationToJSON(value?: ProvideMeasurement
     return {
         
         'iterations': value.iterations,
+        'concurrency': value.concurrency,
         'provideType': ProvideTypeToJSON(value.provideType),
     };
 }

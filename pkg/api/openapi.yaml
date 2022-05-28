@@ -590,6 +590,11 @@ components:
           type: integer
           default: 1
           minimum: 1
+        concurrency:
+          type: integer
+          description: Multi-Query parallelism.
+          default: 2
+          minimum: 2
         provideType:
           $ref: '#/components/schemas/ProvideType'
       required:

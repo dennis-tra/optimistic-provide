@@ -237,6 +237,8 @@ type ProvideGraph struct {
 
 // ProvideMeasurementConfiguration defines model for ProvideMeasurementConfiguration.
 type ProvideMeasurementConfiguration struct {
+	// Multi-Query parallelism.
+	Concurrency *int        `json:"concurrency,omitempty"`
 	Iterations  int         `json:"iterations"`
 	ProvideType ProvideType `json:"provideType"`
 }

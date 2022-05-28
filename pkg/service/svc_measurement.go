@@ -53,11 +53,16 @@ func (m *Measurement) StartProvide(ctx context.Context, h *dht.Host, config type
 		return nil, errors.Wrap(err, "insert provide measurement")
 	}
 
+	multiQueryConcurrency := 2
+	if config.Concurrency != nil {
+		multiQueryConcurrency = *config.Concurrency
+	}
+
 	provideCtx, cancel := context.WithCancel(context.Background())
 	go func() {
 		for i := 0; i < config.Iterations; i++ {
 			log.Infow("Providing Content", "iteration", i, "hostID", util.FmtPeerID(h.ID()), "total", config.Iterations)
-			_, err := m.ps.Provide(provideCtx, h, ProvideSync(), ProvideType(config.ProvideType), ProvideMeasurementID(dbMeasure.ID))
+			_, err := m.ps.Provide(provideCtx, h, ProvideSync(), ProvideType(config.ProvideType), ProvideMeasurementID(dbMeasure.ID), ProvideMultiQueryConcurrency(multiQueryConcurrency))
 			if errors.Is(err, context.Canceled) {
 				break
 			} else if err != nil {

@@ -63,9 +63,11 @@ func NewProvideService(peerService PeerService, hostService HostService, rtServi
 }
 
 func (ps *Provide) Provide(ctx context.Context, h *dht.Host, opts ...ProvideOption) (*models.Provide, error) {
+	// Define Defaults
 	config := &ProvideConfig{
-		Sync: false,
-		Type: types.ProvideTypeSINGLEQUERY,
+		Sync:                  false,
+		Type:                  types.ProvideTypeSINGLEQUERY,
+		MultiQueryConcurrency: 2,
 	}
 
 	if err := config.Apply(opts...); err != nil {
@@ -115,9 +117,9 @@ func (ps *Provide) Provide(ctx context.Context, h *dht.Host, opts ...ProvideOpti
 		}
 	case types.ProvideTypeMULTIQUERY:
 		if config.Sync {
-			ps.startProvidingMultiQuery(h, provide, content)
+			ps.startProvidingMultiQuery(h, provide, content, config.MultiQueryConcurrency)
 		} else {
-			go ps.startProvidingMultiQuery(h, provide, content)
+			go ps.startProvidingMultiQuery(h, provide, content, config.MultiQueryConcurrency)
 		}
 	case types.ProvideTypeESTIMATOR:
 		if config.Sync {
@@ -163,13 +165,13 @@ func (ps *Provide) startProvidingEstimator(h *dht.Host, provide *models.Provide,
 	}
 }
 
-func (ps *Provide) startProvidingMultiQuery(h *dht.Host, provide *models.Provide, content *util.Content) {
+func (ps *Provide) startProvidingMultiQuery(h *dht.Host, provide *models.Provide, content *util.Content, concurrency int) {
 	ctx := context.Background()
 
 	state := NewProvideState(h, content)
 	ctx = state.Register(ctx)
 	log.Infow("Start providing content multi query", "cid", content.CID.String())
-	err := h.DHT.ProvideMultiQuery(ctx, content.CID)
+	err := h.DHT.ProvideMultiQuery(ctx, content.CID, concurrency)
 	log.Infow("Done providing content multi query", "cid", content.CID.String())
 	end := time.Now()
 	state.Unregister()
