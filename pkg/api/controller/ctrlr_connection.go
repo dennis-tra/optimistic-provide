@@ -28,7 +28,7 @@ func NewConnectionController(ctx context.Context, ds service.ConnectionService, 
 	}
 }
 
-// List lists returns all running libp2p hosts.
+// List lists returns all connections for the given provide id
 func (cc *ConnectionController) List(c *gin.Context) {
 	provideID := c.MustGet("provideID").(int)
 
@@ -46,15 +46,15 @@ func (cc *ConnectionController) List(c *gin.Context) {
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, types.ErrorResponse{
 			Code:    types.ErrorCodeINTERNAL,
-			Message: "Could not get dials from DB",
+			Message: "Could not get connections from DB",
 			Details: types.ErrDetails(err),
 		})
 		return
 	}
 
-	dials := make([]*types.Connection, len(dbConnections))
+	connections := make([]*types.Connection, len(dbConnections))
 	for i, dbConnection := range dbConnections {
-		dials[i] = &types.Connection{
+		connections[i] = &types.Connection{
 			Id:           dbConnection.ID,
 			MultiAddress: dbConnection.R.MultiAddress.Maddr,
 			RemoteId:     dbConnection.R.Remote.MultiHash,
@@ -64,5 +64,5 @@ func (cc *ConnectionController) List(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, dials)
+	c.JSON(http.StatusOK, connections)
 }

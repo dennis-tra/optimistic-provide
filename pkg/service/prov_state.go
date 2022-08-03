@@ -275,6 +275,11 @@ func (ps *ProvideState) trackLookupRequest(evt *kaddht.LookupEvent) {
 func (ps *ProvideState) trackConnectionStart(p peer.ID) {
 	ps.connectionsStartedLk.Lock()
 	defer ps.connectionsStartedLk.Unlock()
+
+	if _, found := ps.connectionsStarted[p]; found {
+		return
+	}
+
 	ps.connectionsStarted[p] = time.Now()
 }
 
@@ -390,6 +395,7 @@ func (ps *ProvideState) ClosedStream(network network.Network, stream network.Str
 ////
 
 func (ps *ProvideState) DialStarted(trpt string, raddr ma.Multiaddr, p peer.ID, start time.Time) {
+	ps.trackConnectionStart(p)
 }
 
 func (ps *ProvideState) DialEnded(trpt string, raddr ma.Multiaddr, p peer.ID, start time.Time, end time.Time, err error) {
